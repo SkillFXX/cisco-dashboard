@@ -14,11 +14,11 @@ def get_assignments(current_user: User = Depends(get_current_user), db: Session 
         url=creds.moodle_url if creds else None,
         username=creds.moodle_username if creds else None,
         password=creds.moodle_password if creds else None,
-        token=creds.moodle_token if creds else None,
-        use_mock_fallback=creds.use_mock_fallback if creds else True
+        token=creds.moodle_token if creds else None
     )
     return {
-        "is_mock": data.get("is_mock", False),
+        "configured": data.get("configured", False),
+        "connection_error": data.get("connection_error"),
         "site_name": data.get("site_name", "Moodle"),
         "assignments": data.get("upcoming_assignments", [])
     }
@@ -30,12 +30,11 @@ def get_courses(current_user: User = Depends(get_current_user), db: Session = De
         url=creds.moodle_url if creds else None,
         username=creds.moodle_username if creds else None,
         password=creds.moodle_password if creds else None,
-        token=creds.moodle_token if creds else None,
-        use_mock_fallback=creds.use_mock_fallback if creds else True
+        token=creds.moodle_token if creds else None
     )
     return {
-        "is_mock": data.get("is_mock", False),
+        "configured": data.get("configured", False),
+        "connection_error": data.get("connection_error"),
         "site_name": data.get("site_name", "Moodle"),
         "courses": data.get("courses", [])
     }
-

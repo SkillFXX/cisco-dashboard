@@ -37,8 +37,8 @@ class UserCredentials(Base):
     # UM Net / ADE Campus iCal URL
     ical_url = Column(Text, nullable=True)
 
-    # If true, provide simulated BUT R&T data when credentials are not yet set or external service fails
-    use_mock_fallback = Column(Boolean, default=True)
+    # Fallback simulation
+    use_mock_fallback = Column(Boolean, default=False)
 
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 

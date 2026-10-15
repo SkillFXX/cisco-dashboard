@@ -19,20 +19,21 @@ def get_summary(
         url=creds.scodoc_url if creds else None,
         username=creds.scodoc_username if creds else None,
         password=creds.scodoc_password if creds else None,
-        force_refresh=force_refresh,
-        use_mock_fallback=creds.use_mock_fallback if creds else True
+        force_refresh=force_refresh
     )
+    absences = data.get("absences", {})
     return {
-        "is_mock": data.get("is_mock", False),
+        "configured": data.get("configured", False),
+        "connection_error": data.get("connection_error"),
         "formation": data.get("formation"),
         "annee_universitaire": data.get("annee_universitaire"),
         "etudiant": data.get("etudiant"),
         "stats": data.get("stats"),
         "absences_summary": {
-            "total_nb": data["absences"]["total_nb"],
-            "total_heures": data["absences"]["total_heures"],
-            "injustifiees_nb": data["absences"]["injustifiees_nb"],
-            "injustifiees_heures": data["absences"]["injustifiees_heures"]
+            "total_nb": absences.get("total_nb", 0),
+            "total_heures": absences.get("total_heures", 0.0),
+            "injustifiees_nb": absences.get("injustifiees_nb", 0),
+            "injustifiees_heures": absences.get("injustifiees_heures", 0.0)
         },
         "recent_grades": data.get("recent_grades", [])[:5]
     }
@@ -49,10 +50,11 @@ def get_grades(
         url=creds.scodoc_url if creds else None,
         username=creds.scodoc_username if creds else None,
         password=creds.scodoc_password if creds else None,
-        force_refresh=force_refresh,
-        use_mock_fallback=creds.use_mock_fallback if creds else True
+        force_refresh=force_refresh
     )
     return {
+        "configured": data.get("configured", False),
+        "connection_error": data.get("connection_error"),
         "stats": data.get("stats"),
         "ues": data.get("ues", []),
         "matieres": data.get("matieres", []),
@@ -71,8 +73,6 @@ def get_absences(
         url=creds.scodoc_url if creds else None,
         username=creds.scodoc_username if creds else None,
         password=creds.scodoc_password if creds else None,
-        force_refresh=force_refresh,
-        use_mock_fallback=creds.use_mock_fallback if creds else True
+        force_refresh=force_refresh
     )
     return data.get("absences", {})
-

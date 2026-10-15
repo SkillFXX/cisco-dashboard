@@ -35,7 +35,7 @@ class UserResponse(BaseModel):
     has_scodoc: bool
     has_moodle: bool
     has_ical: bool
-    use_mock_fallback: bool
+    use_mock_fallback: bool = False
 
 # Credentials Schemas
 class CredentialsUpdate(BaseModel):
@@ -47,7 +47,7 @@ class CredentialsUpdate(BaseModel):
     moodle_password: Optional[str] = None
     moodle_token: Optional[str] = None
     ical_url: Optional[str] = None
-    use_mock_fallback: Optional[bool] = None
+    use_mock_fallback: Optional[bool] = False
 
 class CredentialsResponse(BaseModel):
     scodoc_url: Optional[str]
@@ -58,7 +58,7 @@ class CredentialsResponse(BaseModel):
     moodle_configured: bool
     ical_url: Optional[str]
     ical_configured: bool
-    use_mock_fallback: bool
+    use_mock_fallback: bool = False
 
 # Tasks / DS Schemas
 class PersonalTaskCreate(BaseModel):

@@ -1,119 +1,14 @@
 import logging
 import datetime
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 import requests
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
-def get_rt_mock_moodle() -> Dict[str, Any]:
-    """Retourne des cours et devoirs Moodle réalistes pour un étudiant BUT R&T."""
-    today = datetime.datetime.now()
 
-    def future_iso(days: int, hours: int = 23, minutes: int = 59) -> str:
-        d = today + datetime.timedelta(days=days)
-        return d.replace(hour=hours, minute=minutes, second=0, microsecond=0).isoformat()
-
-    return {
-        "is_mock": True,
-        "site_name": "Moodle Université de Montpellier",
-        "courses": [
-            {
-                "id": 101,
-                "fullname": "R101 - Initiation aux Réseaux Informatiques",
-                "shortname": "BUT1-RT-R101",
-                "category": "Ressources Réseaux",
-                "teacher": "M. DELMAS",
-                "assignments_count": 2
-            },
-            {
-                "id": 102,
-                "fullname": "R102 - Principes des Télécommunications & Signal",
-                "shortname": "BUT1-RT-R102",
-                "category": "Ressources Télécoms",
-                "teacher": "M. LEROUX",
-                "assignments_count": 1
-            },
-            {
-                "id": 107,
-                "fullname": "R107 - Fondamentaux des Systèmes Linux",
-                "shortname": "BUT1-RT-R107",
-                "category": "Systèmes & Outils",
-                "teacher": "Mme MARTINEZ",
-                "assignments_count": 1
-            },
-            {
-                "id": 108,
-                "fullname": "R108 - Initiation au Développement Python",
-                "shortname": "BUT1-RT-R108",
-                "category": "Développement",
-                "teacher": "M. ROUSTAN",
-                "assignments_count": 0
-            },
-            {
-                "id": 110,
-                "fullname": "SAÉ 1.1 - Découverte & Maquettage Réseau Local",
-                "shortname": "BUT1-RT-SAE11",
-                "category": "SAÉ Projets",
-                "teacher": "Équipe R&T",
-                "assignments_count": 1
-            }
-        ],
-        "upcoming_assignments": [
-            {
-                "id": 201,
-                "course_id": 101,
-                "course_name": "R101 - Initiation aux Réseaux",
-                "name": "DM 1 : Capture Wireshark et Analyse des trames ARP / ICMP",
-                "duedate": future_iso(days=2, hours=23, minutes=59),
-                "days_left": 2,
-                "status": "pending",
-                "submission_allowed": True,
-                "submitted": False,
-                "description": "Analyser le fichier pcap fourni. Compléter le rapport PDF et justifier les échanges de requêtes ARP et encapsulation Ethernet."
-            },
-            {
-                "id": 202,
-                "course_id": 107,
-                "course_name": "R107 - Systèmes Linux",
-                "name": "TP Noté : Script Bash de sauvegarde et parsing de logs",
-                "duedate": future_iso(days=5, hours=18, minutes=0),
-                "days_left": 5,
-                "status": "pending",
-                "submission_allowed": True,
-                "submitted": False,
-                "description": "Déposer votre script 'backup_logs.sh' documenté avec gestion des arguments et droits d'exécution."
-            },
-            {
-                "id": 203,
-                "course_id": 102,
-                "course_name": "R102 - Principes Télécoms",
-                "name": "Compte-Rendu : Bilan de liaison radio & Atténuation en espace libre",
-                "duedate": future_iso(days=8, hours=23, minutes=59),
-                "days_left": 8,
-                "status": "pending",
-                "submission_allowed": True,
-                "submitted": False,
-                "description": "Calculs de puissance reçue Pr, formule de Friis et graphes sous Python ou Excel."
-            },
-            {
-                "id": 204,
-                "course_id": 110,
-                "course_name": "SAÉ 1.1 - Réseau d'entreprise",
-                "name": "Dossier Technique SAÉ 1.1 & Fichier Cisco Packet Tracer (.pkt)",
-                "duedate": future_iso(days=12, hours=12, minutes=0),
-                "days_left": 12,
-                "status": "pending",
-                "submission_allowed": True,
-                "submitted": False,
-                "description": "Rapport complet de l'architecture réseau de la PME avec le plan d'adressage IPv4 VLSM et maquette opérationnelle."
-            }
-        ]
-    }
-
-
-def clean_html(raw_html: Optional[str]) -> str:
-    """Nettoie le HTML d'une description Moodle pour n'en garder que le texte clair."""
+def clean_html(raw_html: str) -> str:
+    """Nettoie le HTML des descriptions Moodle pour affichage texte."""
     if not raw_html:
         return ""
     try:
@@ -127,15 +22,12 @@ def fetch_moodle_data(
     url: Optional[str],
     username: Optional[str],
     password: Optional[str],
-    token: Optional[str] = None,
-    use_mock_fallback: bool = True
+    token: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Récupère les cours et devoirs depuis l'API Moodle WebService."""
+    """Récupère les cours et devoirs réels depuis l'API Moodle WebService."""
     if not url or (not token and (not username or not password)):
-        if use_mock_fallback:
-            return get_rt_mock_moodle()
         return {
-            "is_mock": False,
+            "configured": False,
             "site_name": "Moodle",
             "courses": [],
             "upcoming_assignments": [],
@@ -175,12 +67,8 @@ def fetch_moodle_data(
                 logger.debug(f"Test token Moodle sur {cand} échoué: {e}")
 
     if not auth_token:
-        if use_mock_fallback:
-            mock = get_rt_mock_moodle()
-            mock["connection_error"] = "Échec d'authentification Moodle (Token indisponible)."
-            return mock
         return {
-            "is_mock": False,
+            "configured": False,
             "site_name": "Moodle",
             "courses": [],
             "upcoming_assignments": [],
@@ -201,52 +89,62 @@ def fetch_moodle_data(
             timeout=12
         )
         site_info = site_info_resp.json()
-        userid = site_info.get("userid")
+        user_id = site_info.get("userid")
 
-        # 2. Cours
+        if not user_id:
+            return {
+                "configured": False,
+                "site_name": "Moodle",
+                "courses": [],
+                "upcoming_assignments": [],
+                "connection_error": f"Erreur Moodle : {site_info.get('message', 'Utilisateur non identifié')}"
+            }
+
+        # 2. Courses
         courses_resp = requests.get(
             ws_url,
             params={
                 "wstoken": auth_token,
                 "wsfunction": "core_enrol_get_users_courses",
-                "userid": userid,
+                "userid": user_id,
                 "moodlewsrestformat": "json"
             },
             timeout=12
         )
-        raw_courses = courses_resp.json() if isinstance(courses_resp.json(), list) else []
+        raw_courses = courses_resp.json()
+        if not isinstance(raw_courses, list):
+            raw_courses = []
+
         course_ids = [c["id"] for c in raw_courses if "id" in c]
 
-        # 3. Devoirs (assignments)
+        # 3. Assignments
         upcoming = []
         if course_ids:
-            assign_params = {
+            params = {
                 "wstoken": auth_token,
                 "wsfunction": "mod_assign_get_assignments",
                 "moodlewsrestformat": "json"
             }
-            # Prendre jusqu'à 30 cours
-            for idx, cid in enumerate(course_ids[:30]):
-                assign_params[f"courseids[{idx}]"] = cid
+            for i, cid in enumerate(course_ids[:20]):
+                params[f"courseids[{i}]"] = cid
 
-            assign_resp = requests.get(ws_url, params=assign_params, timeout=12)
+            assign_resp = requests.get(ws_url, params=params, timeout=15)
             assign_data = assign_resp.json()
+
+            now = datetime.datetime.now()
             courses_assignments = assign_data.get("courses", [])
 
-            today_date = datetime.date.today()
-
-            for c in courses_assignments:
-                c_name = c.get("fullname", "")
-                for a in c.get("assignments", []):
-                    duedate = a.get("duedate", 0)
-                    if duedate and duedate > 0:
-                        due_dt = datetime.datetime.fromtimestamp(duedate)
-                        # Ne conserver STRICTEMENT que les devoirs d'aujourd'hui et à venir
-                        if due_dt.date() >= today_date:
-                            days_left = (due_dt.date() - today_date).days
+            for ca in courses_assignments:
+                c_name = ca.get("fullname", "Cours")
+                for a in ca.get("assignments", []):
+                    due_ts = a.get("duedate")
+                    if due_ts and due_ts > 0:
+                        due_dt = datetime.datetime.fromtimestamp(due_ts)
+                        days_left = (due_dt.date() - now.date()).days
+                        if days_left >= 0:
                             upcoming.append({
                                 "id": a.get("id"),
-                                "course_id": c.get("id"),
+                                "course_id": a.get("course"),
                                 "course_name": c_name,
                                 "name": a.get("name"),
                                 "duedate": due_dt.isoformat(),
@@ -265,27 +163,24 @@ def fetch_moodle_data(
                 "fullname": c.get("fullname"),
                 "shortname": c.get("shortname"),
                 "category": c.get("categoryname", "Cours"),
-                "teacher": "Enseignant R&T",
+                "teacher": "Enseignant",
                 "assignments_count": 0
             }
             for c in raw_courses
         ]
 
         return {
-            "is_mock": False,
+            "configured": True,
             "site_name": site_info.get("sitename", "Moodle"),
             "courses": parsed_courses,
-            "upcoming_assignments": upcoming
+            "upcoming_assignments": upcoming,
+            "connection_error": None
         }
 
     except Exception as e:
         logger.error(f"Erreur Moodle API: {e}")
-        if use_mock_fallback:
-            mock = get_rt_mock_moodle()
-            mock["connection_error"] = str(e)
-            return mock
         return {
-            "is_mock": False,
+            "configured": False,
             "site_name": "Moodle",
             "courses": [],
             "upcoming_assignments": [],

@@ -41,7 +41,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
         moodle_password=payload.moodle_password,
         moodle_token=payload.moodle_token,
         ical_url=payload.ical_url,
-        use_mock_fallback=True
+        use_mock_fallback=False
     )
     db.add(creds)
     db.commit()
@@ -90,6 +90,6 @@ def get_me(current_user: User = Depends(get_current_user), db: Session = Depends
         "has_scodoc": bool(creds and creds.scodoc_username and creds.scodoc_password),
         "has_moodle": bool(creds and (creds.moodle_token or (creds.moodle_username and creds.moodle_password))),
         "has_ical": bool(creds and creds.ical_url),
-        "use_mock_fallback": creds.use_mock_fallback if creds else True
+        "use_mock_fallback": creds.use_mock_fallback if creds else False
     }
 

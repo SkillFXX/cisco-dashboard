@@ -5,9 +5,9 @@ import datetime
 from ..database import get_db
 from ..models import User, PersonalTask
 from ..auth import get_current_user
-from ..services.scodoc_service import fetch_scodoc_data, get_rt_mock_scodoc
-from ..services.moodle_service import fetch_moodle_data, get_rt_mock_moodle
-from ..services.ical_service import fetch_timetable, generate_rt_week_schedule, _format_timetable_response
+from ..services.scodoc_service import fetch_scodoc_data, get_empty_scodoc_data
+from ..services.moodle_service import fetch_moodle_data
+from ..services.ical_service import fetch_timetable
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +24,11 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
             url=creds.scodoc_url if creds else None,
             username=creds.scodoc_username if creds else None,
             password=creds.scodoc_password if creds else None,
-            force_refresh=False,
-            use_mock_fallback=creds.use_mock_fallback if creds else True
+            force_refresh=False
         )
     except Exception as e:
         logger.warning(f"ScoDoc error in dashboard overview: {e}")
-        scodoc_data = get_rt_mock_scodoc()
-        scodoc_data["connection_error"] = str(e)
+        scodoc_data = get_empty_scodoc_data(str(e))
 
     # 2. Moodle
     try:
@@ -38,25 +36,33 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
             url=creds.moodle_url if creds else None,
             username=creds.moodle_username if creds else None,
             password=creds.moodle_password if creds else None,
-            token=creds.moodle_token if creds else None,
-            use_mock_fallback=creds.use_mock_fallback if creds else True
+            token=creds.moodle_token if creds else None
         )
     except Exception as e:
         logger.warning(f"Moodle error in dashboard overview: {e}")
-        moodle_data = get_rt_mock_moodle()
-        moodle_data["connection_error"] = str(e)
+        moodle_data = {
+            "configured": bool(creds and creds.moodle_url),
+            "site_name": "Moodle",
+            "courses": [],
+            "upcoming_assignments": [],
+            "connection_error": str(e)
+        }
 
     # 3. Timetable
     try:
         timetable_data = fetch_timetable(
-            ical_url=creds.ical_url if creds else None,
-            use_mock_fallback=creds.use_mock_fallback if creds else True
+            ical_url=creds.ical_url if creds else None
         )
     except Exception as e:
         logger.warning(f"Timetable error in dashboard overview: {e}")
-        events = generate_rt_week_schedule()
-        timetable_data = _format_timetable_response(events, is_mock=True)
-        timetable_data["connection_error"] = str(e)
+        timetable_data = {
+            "configured": bool(creds and creds.ical_url),
+            "connection_error": str(e),
+            "current_course": None,
+            "next_course": None,
+            "today_events": [],
+            "all_events": []
+        }
 
     # 4. Personal Tasks / DS from SQLite
     now = datetime.datetime.now()
@@ -103,11 +109,21 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
     # Tri par date / urgence
     unified_assignments.sort(key=lambda x: (x.get("days_left", 99), x.get("due_date", "")))
 
+    student_name = ""
+    if current_user.full_name:
+        student_name = current_user.full_name
+    elif scodoc_data.get("etudiant"):
+        student_name = f"{scodoc_data['etudiant'].get('prenom', '')} {scodoc_data['etudiant'].get('nom', '')}".strip()
+
+    scodoc_connected = bool(scodoc_data.get("configured", False) and not scodoc_data.get("connection_error"))
+    moodle_connected = bool(moodle_data.get("configured", False) and not moodle_data.get("connection_error"))
+    ical_connected = bool(timetable_data.get("configured", False) and not timetable_data.get("connection_error"))
+
     return {
         "user": {
             "id": current_user.id,
             "username": current_user.username,
-            "full_name": current_user.full_name or scodoc_data.get("etudiant", {}).get("prenom", "") + " " + scodoc_data.get("etudiant", {}).get("nom", "")
+            "full_name": student_name or current_user.username
         },
         "stats": {
             "moyenne_generale": scodoc_data.get("stats", {}).get("moyenne_generale"),
@@ -130,9 +146,9 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
         "recent_grades": scodoc_data.get("recent_grades", [])[:6],
         "upcoming_tasks": unified_assignments[:8],
         "services_status": {
-            "scodoc": not scodoc_data.get("is_mock", False),
-            "moodle": not moodle_data.get("is_mock", False),
-            "ical": not timetable_data.get("is_mock", False),
-            "using_simulation": scodoc_data.get("is_mock", False) or moodle_data.get("is_mock", False) or timetable_data.get("is_mock", False)
+            "scodoc": scodoc_connected,
+            "moodle": moodle_connected,
+            "ical": ical_connected,
+            "using_simulation": False
         }
     }
