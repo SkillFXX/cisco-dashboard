@@ -59,6 +59,9 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
         timetable_data["connection_error"] = str(e)
 
     # 4. Personal Tasks / DS from SQLite
+    now = datetime.datetime.now()
+    today_date = now.date()
+
     personal_tasks = db.query(PersonalTask).filter(
         PersonalTask.user_id == current_user.id,
         PersonalTask.status == "todo"
@@ -66,34 +69,36 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
 
     unified_assignments = []
 
-    # Inject personal tasks
-    now = datetime.datetime.now()
+    # Inject personal tasks (strictement aujourd'hui et à venir)
     for t in personal_tasks:
-        days_left = (t.due_date.date() - now.date()).days
-        unified_assignments.append({
-            "id": f"personal-{t.id}",
-            "task_id": t.id,
-            "is_personal": True,
-            "title": t.title,
-            "subject": t.subject or "Personnel",
-            "due_date": t.due_date.isoformat(),
-            "days_left": days_left,
-            "type": t.event_type, # "ds", "dm", "todo", "tp"
-            "description": t.description
-        })
+        if t.due_date.date() >= today_date:
+            days_left = (t.due_date.date() - today_date).days
+            unified_assignments.append({
+                "id": f"personal-{t.id}",
+                "task_id": t.id,
+                "is_personal": True,
+                "title": t.title,
+                "subject": t.subject or "Personnel",
+                "due_date": t.due_date.isoformat(),
+                "days_left": days_left,
+                "type": t.event_type, # "ds", "dm", "todo", "tp"
+                "description": t.description
+            })
 
-    # Inject Moodle assignments
+    # Inject Moodle assignments (strictement aujourd'hui et à venir)
     for m in moodle_data.get("upcoming_assignments", []):
-        unified_assignments.append({
-            "id": f"moodle-{m['id']}",
-            "is_personal": False,
-            "title": m["name"],
-            "subject": m["course_name"],
-            "due_date": m["duedate"],
-            "days_left": m["days_left"],
-            "type": "dm",
-            "description": m["description"]
-        })
+        days_left = m.get("days_left", -1)
+        if days_left >= 0:
+            unified_assignments.append({
+                "id": f"moodle-{m['id']}",
+                "is_personal": False,
+                "title": m["name"],
+                "subject": m["course_name"],
+                "due_date": m["duedate"],
+                "days_left": days_left,
+                "type": "dm",
+                "description": m["description"]
+            })
 
     # Tri par date / urgence
     unified_assignments.sort(key=lambda x: (x.get("days_left", 99), x.get("due_date", "")))

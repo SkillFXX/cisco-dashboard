@@ -233,33 +233,29 @@ def fetch_moodle_data(
             assign_data = assign_resp.json()
             courses_assignments = assign_data.get("courses", [])
 
-            now_ts = int(datetime.datetime.now().timestamp())
+            today_date = datetime.date.today()
 
             for c in courses_assignments:
                 c_name = c.get("fullname", "")
                 for a in c.get("assignments", []):
                     duedate = a.get("duedate", 0)
-                    due_dt = None
-                    days_left = 0
-
                     if duedate and duedate > 0:
                         due_dt = datetime.datetime.fromtimestamp(duedate)
-                        days_left = max(0, (due_dt.date() - datetime.date.today()).days)
-
-                    # On conserve les devoirs futurs ou sans date limite
-                    if duedate == 0 or duedate > (now_ts - 86400 * 30):
-                        upcoming.append({
-                            "id": a.get("id"),
-                            "course_id": c.get("id"),
-                            "course_name": c_name,
-                            "name": a.get("name"),
-                            "duedate": due_dt.isoformat() if due_dt else datetime.datetime.now().isoformat(),
-                            "days_left": days_left if duedate > 0 else 99,
-                            "status": "pending",
-                            "submission_allowed": True,
-                            "submitted": False,
-                            "description": clean_html(a.get("intro", ""))
-                        })
+                        # Ne conserver STRICTEMENT que les devoirs d'aujourd'hui et à venir
+                        if due_dt.date() >= today_date:
+                            days_left = (due_dt.date() - today_date).days
+                            upcoming.append({
+                                "id": a.get("id"),
+                                "course_id": c.get("id"),
+                                "course_name": c_name,
+                                "name": a.get("name"),
+                                "duedate": due_dt.isoformat(),
+                                "days_left": days_left,
+                                "status": "pending",
+                                "submission_allowed": True,
+                                "submitted": False,
+                                "description": clean_html(a.get("intro", ""))
+                            })
 
         upcoming.sort(key=lambda x: (x["days_left"], x["duedate"]))
 
