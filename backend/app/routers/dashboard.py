@@ -1,9 +1,9 @@
 import logging
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 import datetime
 from ..database import get_db
-from ..models import User, PersonalTask
+from ..models import User, PersonalTask, CompletedExternalTask
 from ..auth import get_current_user
 from ..services.scodoc_service import fetch_scodoc_data, get_empty_scodoc_data
 from ..services.moodle_service import fetch_moodle_data
@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 @router.get("/overview")
-def get_dashboard_overview(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_dashboard_overview(
+    force_refresh: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     creds = current_user.credentials
 
     # 1. ScoDoc
@@ -24,7 +28,7 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
             url=creds.scodoc_url if creds else None,
             username=creds.scodoc_username if creds else None,
             password=creds.scodoc_password if creds else None,
-            force_refresh=False
+            force_refresh=force_refresh
         )
     except Exception as e:
         logger.warning(f"ScoDoc error in dashboard overview: {e}")
@@ -36,7 +40,8 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
             url=creds.moodle_url if creds else None,
             username=creds.moodle_username if creds else None,
             password=creds.moodle_password if creds else None,
-            token=creds.moodle_token if creds else None
+            token=creds.moodle_token if creds else None,
+            force_refresh=force_refresh
         )
     except Exception as e:
         logger.warning(f"Moodle error in dashboard overview: {e}")
@@ -51,7 +56,8 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
     # 3. Timetable
     try:
         timetable_data = fetch_timetable(
-            ical_url=creds.ical_url if creds else None
+            ical_url=creds.ical_url if creds else None,
+            force_refresh=force_refresh
         )
     except Exception as e:
         logger.warning(f"Timetable error in dashboard overview: {e}")
@@ -64,9 +70,13 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
             "all_events": []
         }
 
-    # 4. Personal Tasks / DS from SQLite
+    # 4. Personal Tasks / DS & External completed items
     now = datetime.datetime.now()
     today_date = now.date()
+
+    completed_ext_ids = set(
+        r.item_id for r in db.query(CompletedExternalTask).filter(CompletedExternalTask.user_id == current_user.id).all()
+    )
 
     personal_tasks = db.query(PersonalTask).filter(
         PersonalTask.user_id == current_user.id,
@@ -83,6 +93,7 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
                 "id": f"personal-{t.id}",
                 "task_id": t.id,
                 "is_personal": True,
+                "source": "personal",
                 "title": t.title,
                 "subject": t.subject or "Personnel",
                 "due_date": t.due_date.isoformat(),
@@ -91,20 +102,49 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
                 "description": t.description
             })
 
-    # Inject Moodle assignments (strictement aujourd'hui et à venir)
+    # Inject Moodle assignments (strictement aujourd'hui et à venir, non cochés)
     for m in moodle_data.get("upcoming_assignments", []):
+        m_id = f"moodle-{m['id']}"
+        if m_id in completed_ext_ids:
+            continue
         days_left = m.get("days_left", -1)
         if days_left >= 0:
             unified_assignments.append({
-                "id": f"moodle-{m['id']}",
+                "id": m_id,
                 "is_personal": False,
+                "source": "moodle",
                 "title": m["name"],
                 "subject": m["course_name"],
                 "due_date": m["duedate"],
                 "days_left": days_left,
                 "type": "dm",
-                "description": m["description"]
+                "description": m["description"],
+                "url": m.get("url")
             })
+
+    # Inject Timetable DS events (contrôles ADE aujourd'hui et à venir, non cochés)
+    for ev in timetable_data.get("all_events", []):
+        if ev.get("type") == "DS":
+            tt_id = f"timetable-{ev.get('id', ev['dt_start'])}"
+            if tt_id in completed_ext_ids:
+                continue
+            try:
+                dt_start = datetime.datetime.fromisoformat(ev["dt_start"])
+                if dt_start.date() >= today_date:
+                    days_left = (dt_start.date() - today_date).days
+                    unified_assignments.append({
+                        "id": tt_id,
+                        "is_personal": False,
+                        "source": "timetable",
+                        "title": ev.get("title", "Contrôle DS"),
+                        "subject": ev.get("location") or "Calendrier",
+                        "due_date": ev.get("dt_start"),
+                        "days_left": days_left,
+                        "type": "ds",
+                        "description": f"Épreuve surveillée de {ev.get('start_time')} à {ev.get('end_time')} ({ev.get('location', 'Salle non précisée')} - Calendrier)"
+                    })
+            except Exception:
+                pass
 
     # Tri par date / urgence
     unified_assignments.sort(key=lambda x: (x.get("days_left", 99), x.get("due_date", "")))

@@ -92,3 +92,7 @@ class PersonalTaskResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class ItemStatusToggle(BaseModel):
+    item_id: str
+    status: str # "todo" or "done"
+

@@ -81,8 +81,8 @@ export const api = {
 	},
 
 	// Dashboard
-	async getDashboardOverview() {
-		return await request<any>("/dashboard/overview");
+	async getDashboardOverview(forceRefresh = false) {
+		return await request<any>(`/dashboard/overview?force_refresh=${forceRefresh}`);
 	},
 
 	// ScoDoc
@@ -112,12 +112,12 @@ export const api = {
 	},
 
 	// Moodle
-	async getMoodleAssignments() {
-		return await request<any>("/moodle/assignments");
+	async getMoodleAssignments(forceRefresh = false) {
+		return await request<any>(`/moodle/assignments?force_refresh=${forceRefresh}`);
 	},
 
-	async getMoodleCourses() {
-		return await request<any>("/moodle/courses");
+	async getMoodleCourses(forceRefresh = false) {
+		return await request<any>(`/moodle/courses?force_refresh=${forceRefresh}`);
 	},
 
 	// Timetable (ADE / UM Net iCal)
@@ -133,6 +133,17 @@ export const api = {
 	async getTasks(statusFilter?: string) {
 		const query = statusFilter ? `?status_filter=${statusFilter}` : "";
 		return await request<any[]>(`/tasks${query}`);
+	},
+
+	async getCompletedExternalTasks() {
+		return await request<string[]>("/tasks/completed-external");
+	},
+
+	async toggleItemStatus(itemId: string, status: "todo" | "done") {
+		return await request<any>("/tasks/toggle-status", {
+			method: "POST",
+			body: JSON.stringify({ item_id: itemId, status })
+		});
 	},
 
 	async createTask(task: {

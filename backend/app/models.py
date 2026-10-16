@@ -70,3 +70,12 @@ class KVCache(Base):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
     ttl_seconds = Column(Integer, default=900) # 15 minutes par defaut
 
+
+class CompletedExternalTask(Base):
+    __tablename__ = "completed_external_tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    item_id = Column(String(150), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+

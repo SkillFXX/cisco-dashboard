@@ -19,11 +19,21 @@
 
 	let {
 		onOpenAddTask,
-		onNavigate
+		onNavigate,
+		tasksRefreshTrigger = 0
 	}: {
 		onOpenAddTask?: () => void;
 		onNavigate?: (tab: string) => void;
+		tasksRefreshTrigger?: number;
 	} = $props();
+
+	let lastDashboardTrigger = $state(0);
+	$effect(() => {
+		if (tasksRefreshTrigger > lastDashboardTrigger) {
+			lastDashboardTrigger = tasksRefreshTrigger;
+			loadOverview(true);
+		}
+	});
 
 	let overview = $state<any>(null);
 	let isLoading = $state(true);
@@ -32,11 +42,11 @@
 
 	import { auth } from "$lib/stores/auth.svelte";
 
-	async function loadOverview(silent = false) {
+	async function loadOverview(silent = false, forceRefresh = false) {
 		if (!silent) isLoading = true;
 		error = "";
 		try {
-			overview = await api.getDashboardOverview();
+			overview = await api.getDashboardOverview(forceRefresh);
 			if (overview?.user?.photo_base64 && auth.user) {
 				auth.user.photo_base64 = overview.user.photo_base64;
 				if (typeof window !== "undefined") {
@@ -52,16 +62,15 @@
 	}
 
 	async function toggleTaskStatus(task: any) {
-		if (task.is_personal) {
-			try {
-				const newStatus = task.status === "done" ? "todo" : "done";
-				await api.updateTask(task.task_id, { status: newStatus });
-				await loadOverview(true);
-			} catch (e) {
-				console.error(e);
-			}
-		} else {
-			task.done = !task.done;
+		const currentDone = task.status === "done" || task.done;
+		const newStatus = currentDone ? "todo" : "done";
+		task.done = !currentDone;
+		task.status = newStatus;
+		try {
+			await api.toggleItemStatus(task.id, newStatus);
+			await loadOverview(true);
+		} catch (e) {
+			console.error(e);
 		}
 	}
 
@@ -457,7 +466,11 @@
 												Urgent
 											</span>
 										{/if}
-										{#if !item.is_personal}
+										{#if item.type === "ds" || item.source === "timetable"}
+											<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-600 text-white">
+												DS
+											</span>
+										{:else if item.source === "moodle"}
 											<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-600 text-white">
 												Moodle
 											</span>

@@ -16,12 +16,14 @@
 
 	let activeTab = $state("dashboard");
 	let isAddTaskOpen = $state(false);
+	let tasksRefreshTrigger = $state(0);
 
 	onMount(async () => {
 		await auth.init();
 	});
 
 	function handleTaskCreated() {
+		tasksRefreshTrigger += 1;
 		activeTab = "tasks";
 	}
 </script>
@@ -52,6 +54,7 @@
 				<main class="flex-1 p-6 max-w-7xl w-full mx-auto overflow-y-auto">
 					{#if activeTab === "dashboard"}
 						<DashboardTab
+							{tasksRefreshTrigger}
 							onOpenAddTask={() => (isAddTaskOpen = true)}
 							onNavigate={(tab: string) => (activeTab = tab)}
 						/>
@@ -60,7 +63,10 @@
 					{:else if activeTab === "timetable"}
 						<TimetableTab />
 					{:else if activeTab === "tasks"}
-						<TasksTab onOpenAddTask={() => (isAddTaskOpen = true)} />
+						<TasksTab
+							{tasksRefreshTrigger}
+							onOpenAddTask={() => (isAddTaskOpen = true)}
+						/>
 					{:else if activeTab === "absences"}
 						<AbsencesTab />
 					{:else if activeTab === "settings"}

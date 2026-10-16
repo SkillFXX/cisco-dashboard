@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import Card from "../Card.svelte";
-	import Badge from "../Badge.svelte";
-	import Button from "../Button.svelte";
+	import TaskModal from "../TaskModal.svelte";
 	import { api } from "$lib/api";
 	import { formatDateFr } from "$lib/utils";
 	import {
@@ -12,45 +11,156 @@
 		Circle,
 		Trash2,
 		Calendar,
-		RefreshCw
+		RefreshCw,
+		ChevronDown,
+		ChevronRight,
+		ExternalLink,
+		X,
+		Clock,
+		BookOpen,
+		MapPin,
+		Check,
+		Pencil
 	} from "lucide-svelte";
 
 	let {
-		onOpenAddTask
+		onOpenAddTask,
+		tasksRefreshTrigger = 0
 	}: {
 		onOpenAddTask?: () => void;
+		tasksRefreshTrigger?: number;
 	} = $props();
 
-	let tasks = $state<any[]>([]);
+	let lastTasksTrigger = $state(0);
+	$effect(() => {
+		if (tasksRefreshTrigger > lastTasksTrigger) {
+			lastTasksTrigger = tasksRefreshTrigger;
+			loadAllData(false);
+		}
+	});
+
+	let personalTasks = $state<any[]>([]);
 	let moodleAssignments = $state<any[]>([]);
+	let timetableEvents = $state<any[]>([]);
+	let completedExternalIds = $state<Set<string>>(new Set());
+
 	let isLoading = $state(true);
 	let error = $state("");
-	let filterType = $state<string>("ALL"); // ALL, TODO, DONE, DS, MOODLE
+	let activeCategory = $state<string>("ALL"); // ALL, DS, DM, TP, AUTRES
 
-	async function loadAllData() {
+	// Accordéon pour les 3 catégories
+	let isTodoOpen = $state(true);
+	let isLongTermOpen = $state(true);
+	let isDoneOpen = $state(false);
+
+	// Sidebar tiroir pour le détail d'un devoir
+	let selectedTask = $state<any>(null);
+
+	// Modal d'édition d'une tâche personnelle
+	let isEditModalOpen = $state(false);
+	let taskToEdit = $state<any>(null);
+
+	function computeDaysLeft(isoDateStr: string): number {
+		const now = new Date();
+		now.setHours(0, 0, 0, 0);
+		const dueDate = new Date(isoDateStr);
+		const dueDateMidnight = new Date(dueDate);
+		dueDateMidnight.setHours(0, 0, 0, 0);
+		return Math.round((dueDateMidnight.getTime() - now.getTime()) / (1000 * 3600 * 24));
+	}
+
+	function formatFullDate(isoDateStr: string): string {
+		if (!isoDateStr) return "--";
+		try {
+			const d = new Date(isoDateStr);
+			return d.toLocaleDateString("fr-FR", {
+				weekday: "long",
+				day: "numeric",
+				month: "long",
+				year: "numeric"
+			});
+		} catch {
+			return isoDateStr;
+		}
+	}
+
+	function formatTime(isoDateStr: string): string {
+		if (!isoDateStr) return "";
+		try {
+			const d = new Date(isoDateStr);
+			const hours = d.getHours().toString().padStart(2, "0");
+			const minutes = d.getMinutes().toString().padStart(2, "0");
+			return `${hours}:${minutes}`;
+		} catch {
+			return "";
+		}
+	}
+
+	async function loadAllData(forceRefresh = false) {
 		isLoading = true;
 		error = "";
 		try {
-			const [personalList, moodleData] = await Promise.all([
+			// Charger le cache local des tâches externes cochées
+			let localCompleted: string[] = [];
+			if (typeof window !== "undefined") {
+				try {
+					localCompleted = JSON.parse(localStorage.getItem("cisco_completed_tasks") || "[]");
+				} catch {
+					localCompleted = [];
+				}
+			}
+
+			const [pTasks, mData, tData, serverCompleted] = await Promise.all([
 				api.getTasks(),
-				api.getMoodleAssignments().catch(() => ({ assignments: [] }))
+				api.getMoodleAssignments(forceRefresh).catch(() => ({ assignments: [] })),
+				api.getTimetableWeek(forceRefresh).catch(() => ({ all_events: [] })),
+				api.getCompletedExternalTasks().catch(() => [])
 			]);
-			tasks = personalList;
-			moodleAssignments = moodleData.assignments || [];
+
+			personalTasks = pTasks || [];
+			moodleAssignments = mData.assignments || [];
+			timetableEvents = tData.all_events || [];
+
+			// Fusion des identifiants cochés (serveur + local)
+			const mergedSet = new Set<string>([...localCompleted, ...(serverCompleted || [])]);
+			completedExternalIds = mergedSet;
+			if (typeof window !== "undefined") {
+				localStorage.setItem("cisco_completed_tasks", JSON.stringify(Array.from(mergedSet)));
+			}
 		} catch (err: any) {
-			error = err.message || "Erreur lors du chargement des tâches.";
+			error = err.message || "Erreur lors du chargement des devoirs.";
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	async function toggleStatus(task: any) {
-		const newStatus = task.status === "done" ? "todo" : "done";
+	async function toggleTask(task: any) {
+		const isCurrentlyDone = task.status === "done";
+		const newStatus = isCurrentlyDone ? "todo" : "done";
+
+		// Mise à jour optimiste immédiate
+		task.status = newStatus;
+		if (selectedTask && selectedTask.id === task.id) {
+			selectedTask.status = newStatus;
+		}
+
+		if (!task.is_personal) {
+			const nextSet = new Set(completedExternalIds);
+			if (newStatus === "done") {
+				nextSet.add(task.id);
+			} else {
+				nextSet.delete(task.id);
+			}
+			completedExternalIds = nextSet;
+			if (typeof window !== "undefined") {
+				localStorage.setItem("cisco_completed_tasks", JSON.stringify(Array.from(nextSet)));
+			}
+		}
+
 		try {
-			await api.updateTask(task.id, { status: newStatus });
-			task.status = newStatus;
-		} catch (e) {
-			console.error(e);
+			await api.toggleItemStatus(task.id, newStatus);
+		} catch (err) {
+			console.error("Erreur toggle task:", err);
 		}
 	}
 
@@ -58,216 +168,723 @@
 		if (!confirm("Voulez-vous supprimer cette épreuve / tâche ?")) return;
 		try {
 			await api.deleteTask(id);
-			tasks = tasks.filter((t) => t.id !== id);
-		} catch (e) {
-			console.error(e);
+			personalTasks = personalTasks.filter((t) => t.id !== id);
+			if (selectedTask?.id === `personal-${id}`) {
+				selectedTask = null;
+			}
+		} catch (err) {
+			console.error(err);
 		}
 	}
 
 	onMount(() => {
 		loadAllData();
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				selectedTask = null;
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
 	});
 
-	let displayedItems = $derived(() => {
-		// Personal tasks
-		const now = new Date();
-		now.setHours(0, 0, 0, 0);
+	// Liste unifiée de tous les devoirs
+	let allUnifiedItems = $derived(() => {
+		// 1. Tâches personnelles
+		const personal = personalTasks.map((t) => {
+			const daysLeft = computeDaysLeft(t.due_date);
+			let cat = "AUTRES";
+			if (t.event_type === "ds") cat = "DS";
+			else if (t.event_type === "dm") cat = "DM";
+			else if (t.event_type === "tp") cat = "TP";
 
-		const personal = tasks.map((t) => {
-			const dueDate = new Date(t.due_date);
-			const dueDateMidnight = new Date(dueDate);
-			dueDateMidnight.setHours(0, 0, 0, 0);
-			const daysLeft = Math.round((dueDateMidnight.getTime() - now.getTime()) / (1000 * 3600 * 24));
 			return {
-				...t,
+				id: `personal-${t.id}`,
+				task_id: t.id,
+				title: t.title,
+				subject: t.subject || "Personnel",
+				category: cat,
+				due_date: t.due_date,
+				days_left: daysLeft,
+				status: t.status || "todo",
+				description: t.description,
 				is_personal: true,
-				days_left: daysLeft
+				source: "personal"
 			};
 		});
 
-		// Moodle assignments (uniquement aujourd'hui et à venir)
-		const moodle = moodleAssignments
-			.filter((m) => m.days_left >= 0)
-			.map((m) => ({
-				id: `m-${m.id}`,
+		// 2. Moodle (automatiquement dans DM)
+		const moodle = moodleAssignments.map((m) => {
+			const itemId = `moodle-${m.id}`;
+			const isDone = completedExternalIds.has(itemId);
+			const daysLeft = m.days_left !== undefined ? m.days_left : computeDaysLeft(m.duedate);
+
+			return {
+				id: itemId,
 				title: m.name,
-				subject: m.course_name,
+				subject: m.course_name || "Moodle",
+				category: "DM",
 				due_date: m.duedate,
-				days_left: m.days_left,
-				event_type: "dm",
-				status: "todo",
+				days_left: daysLeft,
+				status: isDone ? "done" : "todo",
 				description: m.description,
-				is_personal: false
-			}));
+				url: m.url,
+				is_personal: false,
+				source: "moodle"
+			};
+		});
 
-		const all = [...personal, ...moodle];
+		// 3. Timetable Calendrier (avec tag DS)
+		const timetableDs = (timetableEvents || [])
+			.filter((e) => e.type === "DS")
+			.map((e) => {
+				const itemId = `timetable-${e.id || e.dt_start}`;
+				const isDone = completedExternalIds.has(itemId);
+				const daysLeft = computeDaysLeft(e.dt_start || e.date);
 
-		if (filterType === "TODO") return all.filter((i) => i.status === "todo" && i.days_left >= 0);
-		if (filterType === "DONE") return all.filter((i) => i.status === "done");
-		if (filterType === "DS") return all.filter((i) => i.event_type === "ds");
-		if (filterType === "MOODLE") return all.filter((i) => !i.is_personal && i.days_left >= 0);
+				return {
+					id: itemId,
+					title: e.title,
+					subject: e.location ? `Salle ${e.location}` : "Calendrier",
+					category: "DS",
+					due_date: e.dt_start || e.date,
+					days_left: daysLeft,
+					status: isDone ? "done" : "todo",
+					description: `Épreuve surveillée de ${e.start_time || ""} à ${e.end_time || ""} (${e.location || "Salle non précisée"} - Calendrier)`,
+					is_personal: false,
+					source: "timetable",
+					start_time: e.start_time,
+					end_time: e.end_time,
+					location: e.location
+				};
+			});
 
-		// Vue par défaut : aujourd'hui et à venir
-		return all
-			.filter((i) => i.status === "done" || i.days_left >= 0)
+		return [...personal, ...moodle, ...timetableDs];
+	});
+
+	// Filtrage par catégorie sélectionnée (Toutes, DS, DM, TP, Autres)
+	let filteredItems = $derived(() => {
+		const items = allUnifiedItems();
+		if (activeCategory === "ALL") return items;
+		return items.filter((i) => i.category === activeCategory);
+	});
+
+	// Répartition dans les 3 groupes
+	let todoItems = $derived(() => {
+		return filteredItems()
+			.filter((i) => i.status !== "done" && i.days_left <= 30)
 			.sort((a, b) => a.days_left - b.days_left);
+	});
+
+	let longTermItems = $derived(() => {
+		return filteredItems()
+			.filter((i) => i.status !== "done" && i.days_left > 30)
+			.sort((a, b) => a.days_left - b.days_left);
+	});
+
+	let doneItems = $derived(() => {
+		return filteredItems()
+			.filter((i) => i.status === "done")
+			.sort((a, b) => b.days_left - a.days_left);
 	});
 </script>
 
-<div class="space-y-6">
-	<!-- Header -->
+<div class="space-y-6 relative">
+	<!-- En-tête de la page -->
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
 		<div>
 			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
 				<ListTodo class="w-5 h-5 text-cyan-400" />
-				<span>Devoirs, DM Moodle & Dates de DS</span>
+				<span>Devoirs & Contrôles</span>
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
-				Gérez l'ensemble de vos échéances : devoirs Moodle synchronisés et contrôles / DS ajoutés manuellement.
+				Consultez et suivez l'ensemble de vos échéances : DM Moodle, DS Calendrier et tâches personnelles.
 			</p>
 		</div>
 
 		<div class="flex items-center gap-2">
 			<button
-				onclick={loadAllData}
+				onclick={() => loadAllData(true)}
 				disabled={isLoading}
 				class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-white/[0.04] border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
 			>
 				<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 				<span>Actualiser</span>
 			</button>
-			{#if onOpenAddTask}
-				<button
-					onclick={onOpenAddTask}
-					class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
-				>
-					<PlusCircle class="w-3.5 h-3.5" />
-					<span>Ajouter un DS / Devoir</span>
-				</button>
-			{/if}
+			<button
+				onclick={() => {
+					taskToEdit = null;
+					isEditModalOpen = true;
+				}}
+				class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
+			>
+				<PlusCircle class="w-3.5 h-3.5" />
+				<span>Ajouter un devoir</span>
+			</button>
 		</div>
 	</div>
 
-	<!-- Filters -->
+	<!-- Filtres de Catégories (DS / DM / TP / Autres) sans parenthèses -->
 	<div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-app-border">
 		{#each [
-			{ id: 'ALL', label: 'Toutes les échéances' },
-			{ id: 'TODO', label: 'À faire' },
-			{ id: 'DS', label: 'Contrôles (DS)' },
-			{ id: 'MOODLE', label: 'Moodle' },
-			{ id: 'DONE', label: 'Terminés' }
-		] as f}
+			{ id: 'ALL', label: 'Toutes les catégories' },
+			{ id: 'DS', label: 'DS' },
+			{ id: 'DM', label: 'DM' },
+			{ id: 'TP', label: 'TP' },
+			{ id: 'AUTRES', label: 'Autres' }
+		] as cat}
 			<button
-				onclick={() => (filterType = f.id)}
-				class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer {filterType === f.id
+				onclick={() => (activeCategory = cat.id)}
+				class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer {activeCategory === cat.id
 					? 'bg-white/[0.08] text-white shadow-xs'
 					: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
 			>
-				{f.label}
+				{cat.label}
 			</button>
 		{/each}
 	</div>
 
 	{#if isLoading}
-		<div class="flex flex-col items-center justify-center p-12 text-zinc-400">
+		<div class="flex flex-col items-center justify-center p-16 text-zinc-400">
 			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
-			<p class="text-xs">Chargement des devoirs et contrôles programmés...</p>
+			<p class="text-xs">Chargement et synchronisation de vos devoirs...</p>
 		</div>
 	{:else if error}
 		<div class="p-4 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">
 			{error}
 		</div>
 	{:else}
-		<div class="space-y-3">
-			{#if displayedItems().length === 0}
-				<Card class="text-center py-12 text-zinc-500 text-xs">
-					Aucun devoir ou contrôle correspondant à ce filtre.
-				</Card>
-			{:else}
-				{#each displayedItems() as item}
-					<Card class="p-4 hover:border-zinc-700 {item.status === 'done' ? 'opacity-60' : ''}">
-						<div class="flex items-start justify-between gap-4">
-							<div class="flex items-start gap-3">
-								{#if item.is_personal}
-									<button
-										onclick={() => toggleStatus(item)}
-										class="mt-1 text-zinc-400 hover:text-cyan-400 transition-colors cursor-pointer"
-										title={item.status === 'done' ? 'Marquer comme non fait' : 'Marquer comme fait'}
-									>
-										{#if item.status === 'done'}
-											<CheckCircle2 class="w-5 h-5 text-emerald-400" />
-										{:else}
-											<Circle class="w-5 h-5" />
-										{/if}
-									</button>
-								{:else}
-									<div class="mt-1 w-5 h-5 rounded-full bg-amber-600/30 flex items-center justify-center shrink-0" title="Synchronisé depuis Moodle">
-										<span class="w-2 h-2 rounded-full bg-amber-400"></span>
-									</div>
-								{/if}
+		<div class="space-y-6">
+			<!-- Section 1 : À faire (dans le mois) -->
+			<div class="space-y-2">
+				<button
+					type="button"
+					onclick={() => (isTodoOpen = !isTodoOpen)}
+					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.02] text-left transition-colors cursor-pointer"
+				>
+					<div class="flex items-center gap-2">
+						{#if isTodoOpen}
+							<ChevronDown class="w-4 h-4 text-zinc-400" />
+						{:else}
+							<ChevronRight class="w-4 h-4 text-zinc-400" />
+						{/if}
+						<span class="text-sm font-bold text-white">À faire</span>
+						<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-cyan-600 text-white">
+							{todoItems().length}
+						</span>
+					</div>
+					<span class="text-xs text-zinc-500">Échéance d'ici 30 jours</span>
+				</button>
 
-								<div class="space-y-1">
-									<div class="flex items-center gap-2 flex-wrap">
-										<span class="font-bold text-sm text-zinc-100 {item.status === 'done' ? 'line-through text-zinc-500' : ''}">
-											{item.title}
-										</span>
-										{#if item.event_type === 'ds'}
-											<Badge variant="ds">Contrôle / DS</Badge>
-										{:else if item.event_type === 'tp'}
-											<Badge variant="tp">TP Noté</Badge>
-										{:else}
-											<Badge variant="secondary">Devoir Maison</Badge>
-										{/if}
-										{#if !item.is_personal}
-											<Badge variant="warning" class="text-[10px]">Moodle UM</Badge>
-										{/if}
-									</div>
-
-									<div class="text-xs font-medium text-cyan-400">
-										{item.subject}
-									</div>
-
-									{#if item.description}
-										<p class="text-xs text-zinc-400 mt-2 max-w-2xl bg-app-surface p-2.5 rounded-lg border border-app-border">
-											{item.description}
-										</p>
-									{/if}
-								</div>
-							</div>
-
-							<!-- Right side: Countdown & Delete -->
-							<div class="flex flex-col items-end shrink-0 gap-2">
-								<span class="text-xs font-medium px-3 py-0.5 rounded-full {item.days_left <= 2 ? 'bg-rose-600 text-white' : item.days_left <= 5 ? 'bg-amber-600 text-white' : 'bg-zinc-800 text-zinc-200'}">
-									{#if item.status === 'done'}
-										Terminé
-									{:else if item.days_left <= 0}
-										Aujourd'hui
-									{:else if item.days_left === 1}
-										Demain
-									{:else}
-										Dans {item.days_left} jours
-									{/if}
-								</span>
-
-								<div class="text-xs text-zinc-500 flex items-center gap-1">
-									<Calendar class="w-3 h-3" />
-									<span>{formatDateFr(item.due_date)}</span>
-								</div>
-
-								{#if item.is_personal}
-									<button
-										onclick={() => deleteTask(item.id)}
-										class="p-1 text-zinc-500 hover:text-red-400 hover:bg-white/[0.04] rounded transition-colors cursor-pointer mt-1"
-										title="Supprimer"
-									>
-										<Trash2 class="w-4 h-4" />
-									</button>
-								{/if}
-							</div>
+				{#if isTodoOpen}
+					{#if todoItems().length === 0}
+						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+							Aucun devoir à faire dans les 30 prochains jours.
 						</div>
-					</Card>
-				{/each}
-			{/if}
+					{:else}
+						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+							{#each todoItems() as item}
+								<!-- Ligne du tableau -->
+								<div
+									role="button"
+									tabindex="0"
+									onclick={() => (selectedTask = item)}
+									onkeydown={(e) => { if (e.key === 'Enter') selectedTask = item; }}
+									class="flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer gap-3 text-left"
+								>
+									<!-- Checkbox + Matière & Titre -->
+									<div class="flex items-center gap-3.5 min-w-0 flex-1">
+										<button
+											type="button"
+											onclick={(e) => {
+												e.stopPropagation();
+												toggleTask(item);
+											}}
+											class="text-zinc-500 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
+											title="Marquer comme fait"
+										>
+											<Circle class="w-5 h-5" />
+										</button>
+
+										<div class="min-w-0 flex-1">
+											<!-- Nom du module / matière mis en évidence -->
+											<div class="flex items-center gap-2">
+												<span class="font-bold text-xs text-white truncate">
+													{item.subject}
+												</span>
+												{#if item.source === "moodle"}
+													<span class="text-[10px] text-cyan-400 font-medium">Moodle</span>
+												{:else if item.source === "timetable"}
+													<span class="text-[10px] text-rose-400 font-medium">Calendrier</span>
+												{/if}
+											</div>
+											<!-- Titre du devoir -->
+											<p class="text-xs text-zinc-300 truncate mt-0.5">
+												{item.title}
+											</p>
+										</div>
+									</div>
+
+									<!-- Catégorie (au milieu) : badge rond en couleur pleine -->
+									<div class="shrink-0 hidden sm:flex items-center justify-center">
+										{#if item.category === 'DS'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-600 text-white">
+												DS
+											</span>
+										{:else if item.category === 'DM'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-cyan-600 text-white">
+												DM
+											</span>
+										{:else if item.category === 'TP'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-600 text-white">
+												TP
+											</span>
+										{:else}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-100">
+												Autres
+											</span>
+										{/if}
+									</div>
+
+									<!-- Date et délai (à droite) -->
+									<div class="flex flex-col items-end shrink-0 text-right">
+										<div class="text-xs font-semibold">
+											{#if item.days_left < 0}
+												<span class="text-rose-400">En retard ({Math.abs(item.days_left)} j)</span>
+											{:else if item.days_left === 0}
+												<span class="text-amber-300">Aujourd'hui</span>
+											{:else if item.days_left === 1}
+												<span class="text-amber-200">Demain</span>
+											{:else if item.days_left <= 5}
+												<span class="text-zinc-200">Dans <span class="text-white font-bold">{item.days_left}</span> jours</span>
+											{:else}
+												<span class="text-zinc-400">Dans <span class="text-white font-bold">{item.days_left}</span> jours</span>
+											{/if}
+										</div>
+										<span class="text-[11px] text-zinc-500 mt-0.5">
+											{formatDateFr(item.due_date)}
+										</span>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				{/if}
+			</div>
+
+			<!-- Section 2 : Dans longtemps (> 1 mois) -->
+			<div class="space-y-2">
+				<button
+					type="button"
+					onclick={() => (isLongTermOpen = !isLongTermOpen)}
+					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.02] text-left transition-colors cursor-pointer"
+				>
+					<div class="flex items-center gap-2">
+						{#if isLongTermOpen}
+							<ChevronDown class="w-4 h-4 text-zinc-400" />
+						{:else}
+							<ChevronRight class="w-4 h-4 text-zinc-400" />
+						{/if}
+						<span class="text-sm font-bold text-white">Dans longtemps</span>
+						<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-zinc-700 text-white">
+							{longTermItems().length}
+						</span>
+					</div>
+					<span class="text-xs text-zinc-500">Échéance à plus d'1 mois</span>
+				</button>
+
+				{#if isLongTermOpen}
+					{#if longTermItems().length === 0}
+						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+							Aucun devoir prévu à plus d'un mois.
+						</div>
+					{:else}
+						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+							{#each longTermItems() as item}
+								<!-- Ligne du tableau -->
+								<div
+									role="button"
+									tabindex="0"
+									onclick={() => (selectedTask = item)}
+									onkeydown={(e) => { if (e.key === 'Enter') selectedTask = item; }}
+									class="flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer gap-3 text-left"
+								>
+									<!-- Checkbox + Matière & Titre -->
+									<div class="flex items-center gap-3.5 min-w-0 flex-1">
+										<button
+											type="button"
+											onclick={(e) => {
+												e.stopPropagation();
+												toggleTask(item);
+											}}
+											class="text-zinc-500 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
+											title="Marquer comme fait"
+										>
+											<Circle class="w-5 h-5" />
+										</button>
+
+										<div class="min-w-0 flex-1">
+											<div class="flex items-center gap-2">
+												<span class="font-bold text-xs text-white truncate">
+													{item.subject}
+												</span>
+												{#if item.source === "moodle"}
+													<span class="text-[10px] text-cyan-400 font-medium">Moodle</span>
+												{:else if item.source === "timetable"}
+													<span class="text-[10px] text-rose-400 font-medium">Calendrier</span>
+												{/if}
+											</div>
+											<p class="text-xs text-zinc-300 truncate mt-0.5">
+												{item.title}
+											</p>
+										</div>
+									</div>
+
+									<!-- Catégorie (au milieu) -->
+									<div class="shrink-0 hidden sm:flex items-center justify-center">
+										{#if item.category === 'DS'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-600 text-white">
+												DS
+											</span>
+										{:else if item.category === 'DM'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-cyan-600 text-white">
+												DM
+											</span>
+										{:else if item.category === 'TP'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-600 text-white">
+												TP
+											</span>
+										{:else}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-100">
+												Autres
+											</span>
+										{/if}
+									</div>
+
+									<!-- Date et délai (à droite) -->
+									<div class="flex flex-col items-end shrink-0 text-right">
+										<div class="text-xs font-semibold text-zinc-400">
+											Dans <span class="text-white font-bold">{item.days_left}</span> jours
+										</div>
+										<span class="text-[11px] text-zinc-500 mt-0.5">
+											{formatDateFr(item.due_date)}
+										</span>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				{/if}
+			</div>
+
+			<!-- Section 3 : Fait / Terminés -->
+			<div class="space-y-2">
+				<button
+					type="button"
+					onclick={() => (isDoneOpen = !isDoneOpen)}
+					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.02] text-left transition-colors cursor-pointer"
+				>
+					<div class="flex items-center gap-2">
+						{#if isDoneOpen}
+							<ChevronDown class="w-4 h-4 text-zinc-400" />
+						{:else}
+							<ChevronRight class="w-4 h-4 text-zinc-400" />
+						{/if}
+						<span class="text-sm font-bold text-white">Fait</span>
+						<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-zinc-700 text-white">
+							{doneItems().length}
+						</span>
+					</div>
+					<span class="text-xs text-zinc-500">Devoirs et épreuves validés</span>
+				</button>
+
+				{#if isDoneOpen}
+					{#if doneItems().length === 0}
+						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+							Aucun devoir marqué comme fait.
+						</div>
+					{:else}
+						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5 opacity-70">
+							{#each doneItems() as item}
+								<!-- Ligne du tableau -->
+								<div
+									role="button"
+									tabindex="0"
+									onclick={() => (selectedTask = item)}
+									onkeydown={(e) => { if (e.key === 'Enter') selectedTask = item; }}
+									class="flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer gap-3 text-left"
+								>
+									<!-- Checkbox + Matière & Titre -->
+									<div class="flex items-center gap-3.5 min-w-0 flex-1">
+										<button
+											type="button"
+											onclick={(e) => {
+												e.stopPropagation();
+												toggleTask(item);
+											}}
+											class="text-emerald-400 hover:text-zinc-400 transition-colors cursor-pointer shrink-0"
+											title="Marquer comme non fait"
+										>
+											<CheckCircle2 class="w-5 h-5" />
+										</button>
+
+										<div class="min-w-0 flex-1">
+											<div class="flex items-center gap-2">
+												<span class="font-bold text-xs text-zinc-400 line-through truncate">
+													{item.subject}
+												</span>
+												{#if item.source === "moodle"}
+													<span class="text-[10px] text-zinc-500 font-medium">Moodle</span>
+												{:else if item.source === "timetable"}
+													<span class="text-[10px] text-zinc-500 font-medium">Calendrier</span>
+												{/if}
+											</div>
+											<p class="text-xs text-zinc-500 line-through truncate mt-0.5">
+												{item.title}
+											</p>
+										</div>
+									</div>
+
+									<!-- Catégorie (au milieu) -->
+									<div class="shrink-0 hidden sm:flex items-center justify-center">
+										{#if item.category === 'DS'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-800 text-zinc-400">
+												DS
+											</span>
+										{:else if item.category === 'DM'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-800 text-zinc-400">
+												DM
+											</span>
+										{:else if item.category === 'TP'}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-800 text-zinc-400">
+												TP
+											</span>
+										{:else}
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-800 text-zinc-400">
+												Autres
+											</span>
+										{/if}
+									</div>
+
+									<!-- Date et délai (à droite) -->
+									<div class="flex flex-col items-end shrink-0 text-right">
+										<span class="text-xs font-semibold text-emerald-400">
+											Terminé
+										</span>
+										<span class="text-[11px] text-zinc-500 mt-0.5">
+											{formatDateFr(item.due_date)}
+										</span>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				{/if}
+			</div>
 		</div>
 	{/if}
+
+	<!-- Sidebar latérale à droite (Détail du devoir) -->
+	{#if selectedTask}
+		<div class="fixed inset-0 z-50 flex justify-end">
+			<!-- Fond sombre cliquable pour fermer -->
+			<button
+				type="button"
+				aria-label="Fermer"
+				onclick={() => (selectedTask = null)}
+				class="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer border-none"
+			></button>
+
+			<!-- Panneau latéral coulissant -->
+			<div
+				class="relative w-full max-w-md h-full bg-app-card border-l border-app-border shadow-2xl flex flex-col z-10 overflow-y-auto"
+			>
+				<!-- En-tête du volet -->
+				<div class="flex items-center justify-between p-5 border-b border-app-border">
+					<div>
+						<h2 class="text-base font-bold text-white">Détail du devoir</h2>
+						<p class="text-xs text-zinc-400 mt-0.5">{selectedTask.subject}</p>
+					</div>
+					<button
+						type="button"
+						onclick={() => (selectedTask = null)}
+						class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
+						aria-label="Fermer"
+					>
+						<X class="w-5 h-5" />
+					</button>
+				</div>
+
+				<!-- Corps du volet -->
+				<div class="p-6 space-y-6 flex-1">
+					<!-- Badge catégorie et titre -->
+					<div class="space-y-3">
+						<div class="flex items-center gap-2">
+							{#if selectedTask.category === 'DS'}
+								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-rose-600 text-white">
+									DS
+								</span>
+							{:else if selectedTask.category === 'DM'}
+								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-cyan-600 text-white">
+									DM
+								</span>
+							{:else if selectedTask.category === 'TP'}
+								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-purple-600 text-white">
+									TP
+								</span>
+							{:else}
+								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-zinc-700 text-zinc-100">
+									Autres
+								</span>
+							{/if}
+
+							{#if selectedTask.source === "moodle"}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-800 text-cyan-400">
+									Moodle
+								</span>
+							{:else if selectedTask.source === "timetable"}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-800 text-rose-400">
+									Calendrier
+								</span>
+							{/if}
+						</div>
+
+						<h3 class="text-lg font-bold text-white leading-snug">
+							{selectedTask.title}
+						</h3>
+					</div>
+
+					<!-- Statut actuel et bouton de bascule -->
+					<div class="p-4 rounded-xl bg-app-surface border border-app-border flex items-center justify-between">
+						<div>
+							<div class="text-[11px] text-zinc-400 uppercase font-semibold">Statut actuel</div>
+							<div class="text-xs font-bold mt-0.5 {selectedTask.status === 'done' ? 'text-emerald-400' : 'text-amber-400'}">
+								{selectedTask.status === 'done' ? 'Terminé' : 'À faire'}
+							</div>
+						</div>
+						<button
+							type="button"
+							onclick={() => toggleTask(selectedTask)}
+							class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer {selectedTask.status === 'done' ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}"
+						>
+							{#if selectedTask.status === 'done'}
+								Marquer à faire
+							{:else}
+								Marquer comme fait
+							{/if}
+						</button>
+					</div>
+
+					<!-- Carte Date et Délai -->
+					<div class="p-4 rounded-xl bg-app-surface border border-app-border space-y-3">
+						<div class="flex items-center justify-between text-xs">
+							<span class="text-zinc-400 flex items-center gap-1.5">
+								<Calendar class="w-4 h-4 text-cyan-400" />
+								<span>Date limite</span>
+							</span>
+							<span class="font-bold text-white capitalize">
+								{formatFullDate(selectedTask.due_date)}
+							</span>
+						</div>
+
+						{#if formatTime(selectedTask.due_date)}
+							<div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
+								<span class="text-zinc-400 flex items-center gap-1.5">
+									<Clock class="w-4 h-4 text-cyan-400" />
+									<span>Heure d'échéance</span>
+								</span>
+								<span class="font-bold text-white">
+									{formatTime(selectedTask.due_date)}
+								</span>
+							</div>
+						{/if}
+
+						<div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
+							<span class="text-zinc-400">Temps restant</span>
+							<span class="font-bold text-white">
+								{#if selectedTask.status === 'done'}
+									<span class="text-emerald-400">Validé</span>
+								{:else if selectedTask.days_left < 0}
+									<span class="text-rose-400">En retard de {Math.abs(selectedTask.days_left)} jours</span>
+								{:else if selectedTask.days_left === 0}
+									<span class="text-amber-300">Aujourd'hui</span>
+								{:else if selectedTask.days_left === 1}
+									<span class="text-amber-200">Demain</span>
+								{:else}
+									Dans {selectedTask.days_left} jours
+								{/if}
+							</span>
+						</div>
+					</div>
+
+					<!-- Consignes / Description -->
+					{#if selectedTask.description}
+						<div class="space-y-1.5">
+							<h4 class="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+								Consignes / Détails
+							</h4>
+							<div class="p-4 rounded-xl bg-app-surface border border-app-border text-xs text-zinc-300 whitespace-pre-line leading-relaxed max-h-60 overflow-y-auto">
+								{selectedTask.description}
+							</div>
+						</div>
+					{/if}
+
+					<!-- Lien direct Moodle -->
+					{#if selectedTask.source === "moodle"}
+						<div class="space-y-2 pt-2">
+							<a
+								href={selectedTask.url || "https://moodle.umontpellier.fr"}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition-all shadow-xs cursor-pointer"
+							>
+								<ExternalLink class="w-4 h-4" />
+								<span>Ouvrir sur Moodle</span>
+							</a>
+							<p class="text-[11px] text-zinc-500 text-center">
+								Ouvre directement la page de dépôt ou le cours correspondant sur Moodle.
+							</p>
+						</div>
+					{/if}
+
+					<!-- Modification et Suppression si tâche personnelle -->
+					{#if selectedTask.is_personal}
+						<div class="pt-4 border-t border-app-border space-y-2">
+							<button
+								type="button"
+								onclick={() => {
+									taskToEdit = selectedTask;
+									isEditModalOpen = true;
+								}}
+								class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white font-semibold text-xs transition-all border border-app-border cursor-pointer"
+							>
+								<Pencil class="w-4 h-4 text-cyan-400" />
+								<span>Modifier ce devoir</span>
+							</button>
+
+							<button
+								type="button"
+								onclick={() => deleteTask(selectedTask.task_id)}
+								class="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl hover:bg-red-600/10 text-zinc-400 hover:text-red-400 font-medium text-xs transition-all cursor-pointer"
+							>
+								<Trash2 class="w-4 h-4" />
+								<span>Supprimer cette épreuve / tâche</span>
+							</button>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Modal de modification de devoir personnel -->
+	<TaskModal
+		bind:open={isEditModalOpen}
+		task={taskToEdit}
+		onTaskSaved={() => {
+			loadAllData(true);
+			selectedTask = null;
+		}}
+	/>
 </div>

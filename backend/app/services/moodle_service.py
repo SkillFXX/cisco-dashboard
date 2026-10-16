@@ -128,43 +128,101 @@ def fetch_moodle_data(
 
         course_ids = [c["id"] for c in raw_courses if "id" in c]
 
-        # 3. Assignments
+        # 3. Assignments across ALL enrolled courses
         upcoming = []
+        seen_assign_ids = set()
+
         if course_ids:
-            params = {
-                "wstoken": auth_token,
-                "wsfunction": "mod_assign_get_assignments",
-                "moodlewsrestformat": "json"
-            }
-            for i, cid in enumerate(course_ids[:20]):
-                params[f"courseids[{i}]"] = cid
+            chunk_size = 25
+            for start_idx in range(0, len(course_ids), chunk_size):
+                chunk = course_ids[start_idx:start_idx + chunk_size]
+                params = {
+                    "wstoken": auth_token,
+                    "wsfunction": "mod_assign_get_assignments",
+                    "moodlewsrestformat": "json"
+                }
+                for i, cid in enumerate(chunk):
+                    params[f"courseids[{i}]"] = cid
 
-            assign_resp = requests.get(ws_url, params=params, timeout=15)
-            assign_data = assign_resp.json()
+                try:
+                    assign_resp = requests.get(ws_url, params=params, timeout=15)
+                    assign_data = assign_resp.json()
+                    now = datetime.datetime.now()
+                    courses_assignments = assign_data.get("courses", [])
 
-            now = datetime.datetime.now()
-            courses_assignments = assign_data.get("courses", [])
+                    for ca in courses_assignments:
+                        c_name = ca.get("fullname", "Cours")
+                        for a in ca.get("assignments", []):
+                            aid = a.get("id")
+                            if aid in seen_assign_ids:
+                                continue
+                            seen_assign_ids.add(aid)
+                            due_ts = a.get("duedate")
+                            if due_ts and due_ts > 0:
+                                due_dt = datetime.datetime.fromtimestamp(due_ts)
+                                days_left = (due_dt.date() - now.date()).days
+                                if days_left >= 0:
+                                    cmid = a.get("cmid")
+                                    cid = a.get("course")
+                                    assign_url = f"{effective_base_url}/mod/assign/view.php?id={cmid}" if cmid else f"{effective_base_url}/course/view.php?id={cid}"
+                                    upcoming.append({
+                                        "id": aid,
+                                        "course_id": cid,
+                                        "course_name": c_name,
+                                        "name": a.get("name"),
+                                        "duedate": due_dt.isoformat(),
+                                        "days_left": days_left,
+                                        "status": "pending",
+                                        "submission_allowed": True,
+                                        "submitted": False,
+                                        "description": clean_html(a.get("intro", "")),
+                                        "url": assign_url
+                                    })
+                except Exception as e:
+                    logger.warning(f"Erreur chunk Moodle assignments {start_idx}: {e}")
 
-            for ca in courses_assignments:
-                c_name = ca.get("fullname", "Cours")
-                for a in ca.get("assignments", []):
-                    due_ts = a.get("duedate")
-                    if due_ts and due_ts > 0:
-                        due_dt = datetime.datetime.fromtimestamp(due_ts)
-                        days_left = (due_dt.date() - now.date()).days
-                        if days_left >= 0:
-                            upcoming.append({
-                                "id": a.get("id"),
-                                "course_id": a.get("course"),
-                                "course_name": c_name,
-                                "name": a.get("name"),
-                                "duedate": due_dt.isoformat(),
-                                "days_left": days_left,
-                                "status": "pending",
-                                "submission_allowed": True,
-                                "submitted": False,
-                                "description": clean_html(a.get("intro", ""))
-                            })
+            # Événements du calendrier Moodle (quizz, devoirs spécifiques)
+            try:
+                cal_resp = requests.get(
+                    ws_url,
+                    params={
+                        "wstoken": auth_token,
+                        "wsfunction": "core_calendar_get_action_events_by_timesort",
+                        "moodlewsrestformat": "json"
+                    },
+                    timeout=10
+                )
+                cal_data = cal_resp.json()
+                now = datetime.datetime.now()
+                for ev in cal_data.get("events", []):
+                    if ev.get("eventtype") == "due":
+                        ev_name = ev.get("name", "")
+                        clean_name = ev_name.replace(" doit être rendu", "").replace(" doit être effectué", "").strip()
+                        # Éviter doublon si déjà présent
+                        if any(clean_name.lower() in u["name"].lower() or u["name"].lower() in clean_name.lower() for u in upcoming):
+                            continue
+                        ts = ev.get("timesort")
+                        if ts and ts > 0:
+                            due_dt = datetime.datetime.fromtimestamp(ts)
+                            days_left = (due_dt.date() - now.date()).days
+                            if days_left >= 0:
+                                ev_course_id = ev.get("course", {}).get("id")
+                                ev_url = ev.get("url") or (f"{effective_base_url}/course/view.php?id={ev_course_id}" if ev_course_id else effective_base_url)
+                                upcoming.append({
+                                    "id": ev.get("id"),
+                                    "course_id": ev_course_id,
+                                    "course_name": ev.get("course", {}).get("fullname", "Moodle"),
+                                    "name": clean_name,
+                                    "duedate": due_dt.isoformat(),
+                                    "days_left": days_left,
+                                    "status": "pending",
+                                    "submission_allowed": True,
+                                    "submitted": False,
+                                    "description": clean_html(ev.get("description", "")),
+                                    "url": ev_url
+                                })
+            except Exception as e:
+                logger.debug(f"Action events calendrier Moodle: {e}")
 
         upcoming.sort(key=lambda x: (x["days_left"], x["duedate"]))
 

@@ -5,10 +5,14 @@
 
 	let {
 		open = $bindable(false),
-		onTaskCreated
+		task = null,
+		onTaskCreated,
+		onTaskSaved
 	}: {
 		open: boolean;
+		task?: any;
 		onTaskCreated?: () => void;
+		onTaskSaved?: () => void;
 	} = $props();
 
 	let title = $state("");
@@ -40,16 +44,38 @@
 		"Autre"
 	];
 
-	function initDate() {
+	function initDefaultDate() {
 		const tomorrow = new Date();
 		tomorrow.setDate(tomorrow.getDate() + 1);
 		tomorrow.setHours(8, 0, 0, 0);
-		due_date = tomorrow.toISOString().slice(0, 16);
+		due_date = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 	}
 
 	$effect(() => {
-		if (open && !due_date) {
-			initDate();
+		if (open) {
+			error = "";
+			if (task) {
+				title = task.title || "";
+				description = task.description || "";
+				subject = task.subject || "R101 Réseaux";
+				event_type = task.event_type || (task.category ? task.category.toLowerCase() : "ds");
+				if (task.due_date) {
+					try {
+						const d = new Date(task.due_date);
+						due_date = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+					} catch {
+						initDefaultDate();
+					}
+				} else {
+					initDefaultDate();
+				}
+			} else {
+				title = "";
+				description = "";
+				subject = "R101 Réseaux";
+				event_type = "ds";
+				initDefaultDate();
+			}
 		}
 	});
 
@@ -59,27 +85,43 @@
 		error = "";
 
 		try {
-			await api.createTask({
-				title,
-				subject,
-				event_type,
-				due_date: new Date(due_date).toISOString(),
-				description: description.trim() || undefined,
-				status: "todo"
-			});
+			if (task && (task.task_id || task.id)) {
+				const idToUpdate = task.task_id || (typeof task.id === "number" ? task.id : parseInt(String(task.id).replace("personal-", ""), 10));
+				await api.updateTask(idToUpdate, {
+					title,
+					subject,
+					event_type,
+					due_date: new Date(due_date).toISOString(),
+					description: description.trim() || undefined
+				});
+			} else {
+				await api.createTask({
+					title,
+					subject,
+					event_type,
+					due_date: new Date(due_date).toISOString(),
+					description: description.trim() || undefined,
+					status: "todo"
+				});
+			}
 			open = false;
 			title = "";
 			description = "";
+			if (onTaskSaved) onTaskSaved();
 			if (onTaskCreated) onTaskCreated();
 		} catch (err: any) {
-			error = err.message || "Erreur lors de la création de la tâche.";
+			error = err.message || "Erreur lors de l'enregistrement du devoir.";
 		} finally {
 			isSubmitting = false;
 		}
 	}
 </script>
 
-<Modal bind:open title="Ajouter un Événement ou un DS" description="Planifiez vos contrôles, rendus de TP ou rappels personnels.">
+<Modal
+	bind:open
+	title={task ? "Modifier le devoir" : "Ajouter un devoir"}
+	description={task ? "Modifiez les informations de ce devoir ou de cette épreuve." : "Planifiez vos contrôles, devoirs ou rappels personnels."}
+>
 	<form onsubmit={handleSubmit} class="space-y-4">
 		{#if error}
 			<div class="rounded-lg bg-red-600/20 p-3 text-xs text-red-300 font-medium">
@@ -88,13 +130,13 @@
 		{/if}
 
 		<div>
-			<label for="task-type" class="block text-xs font-medium text-zinc-400 mb-1.5">Type d'évaluation</label>
+			<label for="task-type" class="block text-xs font-medium text-zinc-400 mb-1.5">Catégorie</label>
 			<div class="grid grid-cols-4 gap-2">
 				{#each [
-					{ id: 'ds', label: 'Devoir Surveillé (DS)' },
-					{ id: 'dm', label: 'Devoir Maison (DM)' },
-					{ id: 'tp', label: 'TP Noté' },
-					{ id: 'todo', label: 'Rappel / To-Do' }
+					{ id: 'ds', label: 'DS' },
+					{ id: 'dm', label: 'DM' },
+					{ id: 'tp', label: 'TP' },
+					{ id: 'todo', label: 'Autres' }
 				] as item}
 					<button
 						type="button"
@@ -170,7 +212,7 @@
 				disabled={isSubmitting}
 				class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
 			>
-				{isSubmitting ? "Enregistrement..." : "Enregistrer le DS"}
+				{isSubmitting ? "Enregistrement..." : (task ? "Enregistrer les modifications" : "Enregistrer le devoir")}
 			</button>
 		</div>
 	</form>

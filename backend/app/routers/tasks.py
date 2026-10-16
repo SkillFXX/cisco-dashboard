@@ -2,8 +2,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models import User, PersonalTask
-from ..schemas import PersonalTaskCreate, PersonalTaskUpdate, PersonalTaskResponse
+from ..models import User, PersonalTask, CompletedExternalTask
+from ..schemas import PersonalTaskCreate, PersonalTaskUpdate, PersonalTaskResponse, ItemStatusToggle
 from ..auth import get_current_user
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -19,6 +19,53 @@ def get_tasks(
         query = query.filter(PersonalTask.status == status_filter)
     tasks = query.order_by(PersonalTask.due_date.asc()).all()
     return tasks
+
+@router.get("/completed-external", response_model=List[str])
+def get_completed_external_tasks(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    rows = db.query(CompletedExternalTask).filter(CompletedExternalTask.user_id == current_user.id).all()
+    return [r.item_id for r in rows]
+
+@router.post("/toggle-status")
+def toggle_item_status(
+    payload: ItemStatusToggle,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    item_id = payload.item_id
+    new_status = payload.status if payload.status in ["todo", "done"] else "todo"
+
+    if item_id.startswith("personal-"):
+        try:
+            task_id = int(item_id.replace("personal-", ""))
+            task = db.query(PersonalTask).filter(
+                PersonalTask.id == task_id,
+                PersonalTask.user_id == current_user.id
+            ).first()
+            if task:
+                task.status = new_status
+                db.commit()
+                return {"item_id": item_id, "status": new_status, "is_personal": True}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    else:
+        # External item (Moodle or Timetable ADE)
+        existing = db.query(CompletedExternalTask).filter(
+            CompletedExternalTask.user_id == current_user.id,
+            CompletedExternalTask.item_id == item_id
+        ).first()
+
+        if new_status == "done":
+            if not existing:
+                db.add(CompletedExternalTask(user_id=current_user.id, item_id=item_id))
+                db.commit()
+        else:
+            if existing:
+                db.delete(existing)
+                db.commit()
+        return {"item_id": item_id, "status": new_status, "is_personal": False}
 
 @router.post("", response_model=PersonalTaskResponse, status_code=status.HTTP_201_CREATED)
 def create_task(
@@ -87,4 +134,5 @@ def delete_task(
     db.delete(task)
     db.commit()
     return None
+
 
