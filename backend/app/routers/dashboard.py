@@ -143,6 +143,7 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
         "current_course": timetable_data.get("current_course"),
         "next_course": timetable_data.get("next_course"),
         "today_schedule": timetable_data.get("today_events", []),
+        "timetable_events": timetable_data.get("all_events", []),
         "recent_grades": scodoc_data.get("recent_grades", [])[:6],
         "upcoming_tasks": unified_assignments[:8],
         "services_status": {

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { auth } from "$lib/stores/auth.svelte";
-	import Navbar from "$lib/components/Navbar.svelte";
+	import Sidebar from "$lib/components/Sidebar.svelte";
+	import TopHeader from "$lib/components/TopHeader.svelte";
 	import TaskModal from "$lib/components/TaskModal.svelte";
 
 	// Tabs
@@ -21,7 +22,6 @@
 	});
 
 	function handleTaskCreated() {
-		// When a task/DS is created, switch to tasks or refresh
 		activeTab = "tasks";
 	}
 </script>
@@ -30,7 +30,7 @@
 	<title>Cisco - Panel Étudiant BUT R&T</title>
 </svelte:head>
 
-<div class="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+<div class="min-h-screen bg-[#0B0E14] text-zinc-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
 	{#if auth.isLoading}
 		<div class="min-h-screen flex items-center justify-center">
 			<div class="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin"></div>
@@ -38,29 +38,37 @@
 	{:else if !auth.isAuthenticated}
 		<AuthView />
 	{:else}
-		<Navbar
-			bind:activeTab
-			onOpenAddTask={() => (isAddTaskOpen = true)}
-		/>
+		<div class="flex min-h-screen">
+			<!-- Fixed Left Sidebar matching mockup -->
+			<Sidebar bind:activeTab />
 
-		<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			{#if activeTab === "dashboard"}
-				<DashboardTab
+			<!-- Main Area with Top Header -->
+			<div class="flex-1 flex flex-col min-w-0 bg-[#0B0E14]">
+				<TopHeader
+					{activeTab}
 					onOpenAddTask={() => (isAddTaskOpen = true)}
-					onNavigate={(tab: string) => (activeTab = tab)}
 				/>
-			{:else if activeTab === "grades"}
-				<GradesTab />
-			{:else if activeTab === "timetable"}
-				<TimetableTab />
-			{:else if activeTab === "tasks"}
-				<TasksTab onOpenAddTask={() => (isAddTaskOpen = true)} />
-			{:else if activeTab === "absences"}
-				<AbsencesTab />
-			{:else if activeTab === "settings"}
-				<SettingsTab />
-			{/if}
-		</main>
+
+				<main class="flex-1 p-6 max-w-7xl w-full mx-auto overflow-y-auto">
+					{#if activeTab === "dashboard"}
+						<DashboardTab
+							onOpenAddTask={() => (isAddTaskOpen = true)}
+							onNavigate={(tab: string) => (activeTab = tab)}
+						/>
+					{:else if activeTab === "grades"}
+						<GradesTab />
+					{:else if activeTab === "timetable"}
+						<TimetableTab />
+					{:else if activeTab === "tasks"}
+						<TasksTab onOpenAddTask={() => (isAddTaskOpen = true)} />
+					{:else if activeTab === "absences"}
+						<AbsencesTab />
+					{:else if activeTab === "settings"}
+						<SettingsTab />
+					{/if}
+				</main>
+			</div>
+		</div>
 
 		<!-- Modal d'ajout de DS & Évaluations -->
 		<TaskModal
