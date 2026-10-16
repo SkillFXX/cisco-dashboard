@@ -98,6 +98,19 @@ export const api = {
 		return await request<any>(`/scodoc/absences?force_refresh=${forceRefresh}`);
 	},
 
+	async getEvaluationDistribution(
+		evalId: number | string,
+		params?: { min_promo?: number; moy_promo?: number; max_promo?: number; total_promo?: number }
+	) {
+		const query = new URLSearchParams();
+		if (params?.min_promo !== undefined && params.min_promo !== null) query.set("min_promo", String(params.min_promo));
+		if (params?.moy_promo !== undefined && params.moy_promo !== null) query.set("moy_promo", String(params.moy_promo));
+		if (params?.max_promo !== undefined && params.max_promo !== null) query.set("max_promo", String(params.max_promo));
+		if (params?.total_promo !== undefined && params.total_promo !== null) query.set("total_promo", String(params.total_promo));
+		const qs = query.toString() ? `?${query.toString()}` : "";
+		return await request<any>(`/scodoc/evaluation/${evalId}/distribution${qs}`);
+	},
+
 	// Moodle
 	async getMoodleAssignments() {
 		return await request<any>("/moodle/assignments");

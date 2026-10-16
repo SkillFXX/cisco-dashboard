@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -76,3 +77,29 @@ def get_absences(
         force_refresh=force_refresh
     )
     return data.get("absences", {})
+
+
+@router.get("/evaluation/{evaluation_id}/distribution")
+def get_evaluation_distribution(
+    evaluation_id: int,
+    min_promo: Optional[float] = Query(None),
+    moy_promo: Optional[float] = Query(None),
+    max_promo: Optional[float] = Query(None),
+    total_promo: Optional[int] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    creds = current_user.credentials
+    from ..services.scodoc_service import fetch_evaluation_distribution
+    return fetch_evaluation_distribution(
+        user_id=current_user.id,
+        url=creds.scodoc_url if creds else None,
+        username=creds.scodoc_username if creds else None,
+        password=creds.scodoc_password if creds else None,
+        evaluation_id=evaluation_id,
+        min_promo=min_promo,
+        moy_promo=moy_promo,
+        max_promo=max_promo,
+        total_promo=total_promo
+    )
+
