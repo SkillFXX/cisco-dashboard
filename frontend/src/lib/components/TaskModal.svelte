@@ -12,46 +12,49 @@
 	} = $props();
 
 	let title = $state("");
-	let subject = $state("R101 - Initiation aux Réseaux");
+	let description = $state("");
+	let subject = $state("R101 Réseaux");
 	let event_type = $state("ds");
 	let due_date = $state("");
-	let description = $state("");
 	let isSubmitting = $state(false);
 	let error = $state("");
 
-	// Set default date to 3 days ahead at 10:00
+	const subjectsList = [
+		"R101 Réseaux",
+		"R102 Principes architecture",
+		"R103 Réseaux locaux",
+		"R104 Électronique",
+		"R105 Support transmission",
+		"R106 Archi des systèmes",
+		"R107 Programmation",
+		"R108 Systèmes exploitation",
+		"R109 Technologies Web",
+		"R110 Anglais",
+		"R111 Expression-Communication",
+		"R112 Projet Personnel Pro (PPP)",
+		"R113 Maths du signal",
+		"R114 Maths des transmissions",
+		"R115 Gestion de projet",
+		"SAÉ S1.01",
+		"SAÉ S1.02",
+		"Autre"
+	];
+
+	function initDate() {
+		const tomorrow = new Date();
+		tomorrow.setDate(tomorrow.getDate() + 1);
+		tomorrow.setHours(8, 0, 0, 0);
+		due_date = tomorrow.toISOString().slice(0, 16);
+	}
+
 	$effect(() => {
 		if (open && !due_date) {
-			const d = new Date();
-			d.setDate(d.getDate() + 3);
-			d.setHours(10, 0, 0, 0);
-			due_date = d.toISOString().slice(0, 16);
+			initDate();
 		}
 	});
 
-	const subjectsList = [
-		"R101 - Initiation aux Réseaux Informatiques",
-		"R102 - Principes des Télécoms & Signal",
-		"R103 - Bases de l'Électronique Numérique",
-		"R107 - Administration Système sous Linux",
-		"R108 - Algorithmique et Programmation Réseau",
-		"SAÉ 1.1 - Déploiement Réseau PME",
-		"Mathématiques du Signal",
-		"Anglais Technique & Réseaux",
-		"Autre Matière"
-	];
-
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
-		if (!title.trim()) {
-			error = "Veuillez entrer un titre.";
-			return;
-		}
-		if (!due_date) {
-			error = "Veuillez choisir une date d'échéance.";
-			return;
-		}
-
 		isSubmitting = true;
 		error = "";
 
@@ -79,7 +82,7 @@
 <Modal bind:open title="Ajouter un Événement ou un DS" description="Planifiez vos contrôles, rendus de TP ou rappels personnels.">
 	<form onsubmit={handleSubmit} class="space-y-4">
 		{#if error}
-			<div class="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+			<div class="rounded-lg bg-red-600/20 p-3 text-xs text-red-300 font-medium">
 				{error}
 			</div>
 		{/if}
@@ -96,7 +99,7 @@
 					<button
 						type="button"
 						onclick={() => (event_type = item.id)}
-						class="rounded-lg border px-2 py-2 text-xs font-medium text-center transition-all cursor-pointer {event_type === item.id ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400 font-semibold' : 'border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-zinc-700'}"
+						class="rounded-lg px-2 py-2 text-xs font-medium text-center transition-all cursor-pointer {event_type === item.id ? 'bg-white/[0.08] text-white font-semibold shadow-xs' : 'border border-app-border bg-app-surface text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
 					>
 						{item.label}
 					</button>
@@ -112,7 +115,7 @@
 				bind:value={title}
 				placeholder="Ex: DS 2 - Routage OSPF & Adressage VLSM"
 				required
-				class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+				class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
 			/>
 		</div>
 
@@ -122,7 +125,7 @@
 				<select
 					id="task-subject"
 					bind:value={subject}
-					class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none"
+					class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 				>
 					{#each subjectsList as sub}
 						<option value={sub}>{sub}</option>
@@ -137,7 +140,7 @@
 					type="datetime-local"
 					bind:value={due_date}
 					required
-					class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none"
+					class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 				/>
 			</div>
 		</div>
@@ -149,18 +152,26 @@
 				bind:value={description}
 				rows="3"
 				placeholder="Chapitres à réviser, calculatrice autorisée, salle de l'examen..."
-				class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none resize-none"
+				class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none resize-none"
 			></textarea>
 		</div>
 
-		<div class="flex justify-end gap-2 pt-2 border-t border-zinc-800">
-			<Button variant="outline" onclick={() => (open = false)} disabled={isSubmitting}>
+		<div class="flex justify-end gap-2 pt-2 border-t border-app-border">
+			<button
+				type="button"
+				onclick={() => (open = false)}
+				disabled={isSubmitting}
+				class="px-3.5 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-white/[0.04] text-xs font-medium text-zinc-300 transition-colors cursor-pointer"
+			>
 				Annuler
-			</Button>
-			<Button variant="cisco" type="submit" disabled={isSubmitting}>
+			</button>
+			<button
+				type="submit"
+				disabled={isSubmitting}
+				class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
+			>
 				{isSubmitting ? "Enregistrement..." : "Enregistrer le DS"}
-			</Button>
+			</button>
 		</div>
 	</form>
 </Modal>
-

@@ -15,23 +15,22 @@
 	} = $props();
 
 	const variantClasses: Record<Variant, string> = {
-		default: "bg-primary text-primary-foreground hover:bg-primary/80",
-		secondary: "bg-zinc-800 text-zinc-100 border border-zinc-700/60",
-		destructive: "bg-red-500/15 text-red-400 border border-red-500/30",
-		outline: "text-zinc-300 border border-zinc-700",
-		success: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
-		warning: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
-		cisco: "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30",
-		cm: "bg-purple-500/15 text-purple-400 border border-purple-500/30",
-		td: "bg-blue-500/15 text-blue-400 border border-blue-500/30",
-		tp: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
-		ds: "bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold"
+		default: "bg-cyan-600 text-white font-medium",
+		secondary: "bg-zinc-800 text-zinc-100 font-medium",
+		destructive: "bg-red-600 text-white font-medium",
+		outline: "bg-zinc-800 text-zinc-200 font-medium",
+		success: "bg-emerald-600 text-white font-medium",
+		warning: "bg-amber-600 text-white font-medium",
+		cisco: "bg-cyan-600 text-white font-medium",
+		cm: "bg-purple-600 text-white font-medium",
+		td: "bg-blue-600 text-white font-medium",
+		tp: "bg-emerald-600 text-white font-medium",
+		ds: "bg-rose-600 text-white font-semibold"
 	};
 </script>
 
-<span class={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors", variantClasses[variant], className)}>
+<span class={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors shadow-xs", variantClasses[variant], className)}>
 	{#if children}
 		{@render children()}
 	{/if}
 </span>
-

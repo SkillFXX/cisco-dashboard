@@ -4,7 +4,7 @@
 	import Badge from "../Badge.svelte";
 	import Button from "../Button.svelte";
 	import { api } from "$lib/api";
-	import { Clock, AlertTriangle, CheckCircle, HelpCircle, RefreshCw, User as UserIcon } from "lucide-svelte";
+	import { Clock, AlertTriangle, CheckCircle, RefreshCw } from "lucide-svelte";
 
 	let absencesData = $state<any>(null);
 	let isLoading = $state(true);
@@ -29,48 +29,52 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
 		<div>
-			<h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-				<Clock class="w-6 h-6 text-cyan-400" />
-				Bilan d'Assiduité & Absences
+			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+				<Clock class="w-5 h-5 text-cyan-400" />
+				<span>Bilan d'Assiduité & Absences</span>
 			</h1>
-			<p class="text-sm text-zinc-400 mt-1">
+			<p class="text-xs text-zinc-400 mt-0.5">
 				Données extraites en temps réel de votre compte ScoDoc. Suivi des justificatifs et des heures manquées.
 			</p>
 		</div>
 
-		<Button variant="outline" size="sm" onclick={() => loadAbsences(true)} disabled={isLoading}>
-			<RefreshCw class="w-4 h-4 {isLoading ? 'animate-spin' : ''}" />
+		<button
+			onclick={() => loadAbsences(true)}
+			disabled={isLoading}
+			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-white/[0.04] border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+		>
+			<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 			<span>Actualiser ScoDoc</span>
-		</Button>
+		</button>
 	</div>
 
 	{#if isLoading}
 		<div class="flex flex-col items-center justify-center p-12 text-zinc-400">
-			<RefreshCw class="w-8 h-8 animate-spin text-cyan-400 mb-3" />
-			<p class="text-sm">Synchronisation des absences avec ScoDoc...</p>
+			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
+			<p class="text-xs">Synchronisation des absences avec ScoDoc...</p>
 		</div>
 	{:else if error}
-		<div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+		<div class="p-4 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">
 			{error}
 		</div>
 	{:else if absencesData}
 		<!-- 3 Summary KPI Cards -->
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 			<!-- Absences Injustifiées -->
-			<Card class="relative overflow-hidden border-zinc-800">
+			<Card class="relative overflow-hidden">
 				<div class="flex items-center justify-between mb-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Absences Injustifiées</span>
-					<div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+					<div class="w-8 h-8 rounded-lg bg-red-600/20 text-red-400 flex items-center justify-center">
 						<AlertTriangle class="w-4 h-4" />
 					</div>
 				</div>
 				<div class="flex items-baseline gap-2">
-					<span class="text-3xl font-black {absencesData.injustifiees_nb > 0 ? 'text-red-400' : 'text-emerald-400'}">
+					<span class="text-3xl font-black {absencesData.injustifiees_nb > 0 ? 'text-rose-400' : 'text-emerald-400'}">
 						{absencesData.injustifiees_nb}
 					</span>
-					<span class="text-sm text-zinc-400">
+					<span class="text-xs text-zinc-400">
 						créneau{absencesData.injustifiees_nb > 1 ? 'x' : ''} ({absencesData.injustifiees_heures}h)
 					</span>
 				</div>
@@ -80,10 +84,10 @@
 			</Card>
 
 			<!-- Absences Justifiées -->
-			<Card class="relative overflow-hidden border-zinc-800">
+			<Card class="relative overflow-hidden">
 				<div class="flex items-center justify-between mb-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Absences Justifiées</span>
-					<div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+					<div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
 						<CheckCircle class="w-4 h-4" />
 					</div>
 				</div>
@@ -91,7 +95,7 @@
 					<span class="text-3xl font-black text-emerald-400">
 						{absencesData.justifiees_nb}
 					</span>
-					<span class="text-sm text-zinc-400">
+					<span class="text-xs text-zinc-400">
 						créneau{absencesData.justifiees_nb > 1 ? 'x' : ''} ({absencesData.justifiees_heures}h)
 					</span>
 				</div>
@@ -101,10 +105,10 @@
 			</Card>
 
 			<!-- Retards & Total -->
-			<Card class="relative overflow-hidden border-zinc-800">
+			<Card class="relative overflow-hidden">
 				<div class="flex items-center justify-between mb-2">
 					<span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Retards & Cumul</span>
-					<div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+					<div class="w-8 h-8 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center">
 						<Clock class="w-4 h-4" />
 					</div>
 				</div>
@@ -112,7 +116,7 @@
 					<span class="text-3xl font-black text-white">
 						{absencesData.retards_nb}
 					</span>
-					<span class="text-sm text-zinc-400">retard{absencesData.retards_nb > 1 ? 's' : ''}</span>
+					<span class="text-xs text-zinc-400">retard{absencesData.retards_nb > 1 ? 's' : ''}</span>
 				</div>
 				<p class="text-xs text-zinc-500 mt-2">
 					Total cumulé de la scolarité : {absencesData.total_heures} heures ({absencesData.total_nb} créneaux)
@@ -122,16 +126,16 @@
 
 		<!-- Créneaux détaillés -->
 		<Card>
-			<h2 class="text-base font-semibold text-white mb-4">Historique Chronologique des Créneaux</h2>
+			<h2 class="text-sm font-bold text-white mb-4">Historique Chronologique des Créneaux</h2>
 
 			<div class="space-y-3">
 				{#if !absencesData.creneaux || absencesData.creneaux.length === 0}
-					<p class="text-sm text-zinc-500 text-center py-8">
+					<p class="text-xs text-zinc-500 text-center py-8">
 						Félicitations ! Aucune absence enregistrée sur ScoDoc ce semestre.
 					</p>
 				{:else}
 					{#each absencesData.creneaux as c}
-						<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-zinc-800/80 bg-zinc-950/40 hover:bg-zinc-800/30 transition-colors gap-3">
+						<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-lg border border-app-border bg-app-surface hover:border-zinc-700 transition-colors gap-3">
 							<div class="space-y-1">
 								<div class="flex items-center gap-2">
 									<Badge variant={c.justifie ? 'success' : 'destructive'}>
@@ -163,4 +167,3 @@
 		</Card>
 	{/if}
 </div>
-

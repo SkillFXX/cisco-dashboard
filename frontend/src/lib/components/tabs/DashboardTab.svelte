@@ -2,6 +2,7 @@
 	import { onMount } from "svelte";
 	import { api } from "$lib/api";
 	import { formatGrade, formatDateFr } from "$lib/utils";
+	import Card from "../Card.svelte";
 	import {
 		Plus,
 		Check,
@@ -213,14 +214,14 @@
 	<!-- Ligne 1 : 3 KPI Cards -->
 	<div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
 		<!-- KPI 1 : Moyenne generale -->
-		<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-5 flex items-center justify-between relative shadow-sm">
+		<Card class="flex items-center justify-between relative">
 			<div class="space-y-2">
 				<div class="space-y-0.5">
 					<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Moyenne générale</h3>
 					<p class="text-xs text-zinc-500">Relevé officiel ScoDoc</p>
 				</div>
 				<div class="flex items-baseline gap-1">
-					<span class="text-3xl font-extrabold text-white tracking-tight font-mono">
+					<span class="text-3xl font-extrabold text-white tracking-tight">
 						{gpaValue() > 0 ? gpaValue().toFixed(2) : "--"}
 					</span>
 					<span class="text-sm font-semibold text-zinc-500">/20</span>
@@ -242,7 +243,7 @@
 						cy="36"
 						r={radius}
 						fill="transparent"
-						stroke="#151B28"
+						stroke="var(--color-app-border)"
 						stroke-width="5"
 					/>
 					<circle
@@ -259,10 +260,10 @@
 					/>
 				</svg>
 			</div>
-		</div>
+		</Card>
 
 		<!-- KPI 2 : Absences non justifiees -->
-		<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-5 flex flex-col justify-between shadow-sm">
+		<Card class="flex flex-col justify-between">
 			<div class="space-y-0.5">
 				<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Absences non justifiées</h3>
 				<p class="text-xs text-zinc-500">
@@ -271,26 +272,26 @@
 			</div>
 
 			<div class="my-2">
-				<span class="text-3xl font-extrabold text-white tracking-tight font-mono">
+				<span class="text-3xl font-extrabold text-white tracking-tight">
 					{unjustifiedCount()}
 				</span>
 			</div>
 
 			<div>
 				{#if unjustifiedCount() > 0}
-					<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#2E1610] text-[#F97316] border border-[#7C2D12]">
+					<span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-rose-600 text-white">
 						Justification requise
 					</span>
 				{:else}
-					<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#0D241C] text-[#34D399] border border-[#065F46]">
+					<span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-emerald-600 text-white">
 						Toutes justifiées
 					</span>
 				{/if}
 			</div>
-		</div>
+		</Card>
 
 		<!-- KPI 3 : Prochain cours -->
-		<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-5 flex flex-col justify-between shadow-sm">
+		<Card class="flex flex-col justify-between">
 			<div class="space-y-0.5">
 				<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Prochain cours</h3>
 				<p class="text-xs text-zinc-500">Emploi du temps ADE</p>
@@ -306,22 +307,22 @@
 					</div>
 				</div>
 
-				<div class="flex items-center justify-between text-xs text-zinc-400 border-t border-[#182030] pt-2.5">
+				<div class="flex items-center justify-between text-xs text-zinc-400 border-t border-app-border pt-2.5">
 					<span class="font-medium text-cyan-400">{nextClassInfo()?.statusText}</span>
-					<span class="font-mono text-zinc-500">{nextClassInfo()?.time}</span>
+					<span class="text-zinc-500">{nextClassInfo()?.time}</span>
 				</div>
 			{:else}
 				<div class="my-auto py-2">
 					<p class="text-xs text-zinc-500">Aucun cours imminent programmé</p>
 				</div>
 			{/if}
-		</div>
+		</Card>
 	</div>
 
 	<!-- Ligne 2 : Emploi du temps et Devoirs (sans empilement de boites) -->
 	<div class="grid grid-cols-1 md:grid-cols-12 gap-5">
 		<!-- Colonne Gauche : Emploi du temps de la semaine (8 cols) -->
-		<div class="md:col-span-8 bg-[#0E121B] border border-[#182030] rounded-2xl p-5 space-y-4 shadow-sm">
+		<Card class="md:col-span-8 space-y-4">
 			<div class="flex items-center justify-between">
 				<div>
 					<h2 class="text-sm font-bold text-white">Emploi du temps de la semaine</h2>
@@ -341,7 +342,7 @@
 
 			{#if weekEvents().length === 0}
 				<!-- Message clair sans faux template -->
-				<div class="py-16 text-center border border-dashed border-[#182030] rounded-xl text-zinc-500 text-xs space-y-1">
+				<div class="py-16 text-center border border-dashed border-app-border bg-app-surface/50 rounded-lg text-zinc-500 text-xs space-y-1">
 					<p class="font-medium text-zinc-400">Aucun cours programmé pour cette semaine.</p>
 					<p class="text-[11px]">Si l'emploi du temps devrait s'afficher, vérifiez votre lien iCal dans les Paramètres.</p>
 				</div>
@@ -349,20 +350,20 @@
 				<!-- Grille directe sur le fond de la carte -->
 				<div>
 					<!-- En-tetes des jours -->
-					<div class="grid grid-cols-6 border-b border-[#182030] pb-2 text-center text-xs font-medium text-zinc-400">
+					<div class="grid grid-cols-6 border-b border-app-border pb-2 text-center text-xs font-medium text-zinc-400">
 						<div class="text-left pl-1 text-zinc-500">Heure</div>
 						{#each weekDays as day, i}
 							<div class="{currentWeekday === i ? 'text-cyan-400 font-bold' : ''}">
 								<span>{day.name}</span>
-								<span class="block text-[10px] text-zinc-500 font-mono">{day.formattedDate}</span>
+								<span class="block text-[10px] text-zinc-500">{day.formattedDate}</span>
 							</div>
 						{/each}
 					</div>
 
 					<!-- Corps du calendrier : 5 colonnes de jours avec separateurs fins -->
-					<div class="relative h-88 grid grid-cols-6 divide-x divide-[#182030]">
+					<div class="relative h-88 grid grid-cols-6 divide-x divide-app-border">
 						<!-- Axe des heures a gauche -->
-						<div class="flex flex-col justify-between py-1 text-[10px] font-mono text-zinc-500 pr-2">
+						<div class="flex flex-col justify-between py-1 text-[10px] text-zinc-500 pr-2">
 							<span>08:00</span>
 							<span>09:30</span>
 							<span>11:00</span>
@@ -395,7 +396,7 @@
 									>
 										<div class="w-1.5 h-1.5 rounded-full bg-red-500 -ml-1"></div>
 										<div class="h-0.5 w-full bg-red-500"></div>
-										<span class="text-[9px] font-mono font-bold text-white bg-red-700 px-1 py-0.5 rounded ml-0.5 whitespace-nowrap shadow-sm">
+										<span class="text-[9px] font-bold text-white bg-red-600 px-1 py-0.5 rounded ml-0.5 whitespace-nowrap shadow-xs">
 											{currentTimeIndicator()?.timeLabel}
 										</span>
 									</div>
@@ -405,7 +406,7 @@
 								{#each weekEvents().filter((e: any) => e.dayIdx === dayIdx) as ev}
 									<div
 										style="top: {ev.topPercent}%; height: {ev.heightPercent}%;"
-										class="absolute left-1 right-1 rounded-lg p-2 text-xs font-sans border overflow-hidden transition-all hover:brightness-125 cursor-pointer z-10 {ev.colorStyle}"
+										class="absolute left-1 right-1 rounded-md p-2 text-xs font-sans border overflow-hidden transition-all hover:brightness-125 cursor-pointer z-10 {ev.colorStyle}"
 										title="{ev.title} ({ev.start_time} - {ev.end_time}) - {ev.location}"
 									>
 										<div class="font-semibold truncate text-[11px] leading-tight">
@@ -414,7 +415,7 @@
 										<div class="text-[10px] opacity-80 truncate mt-0.5">
 											{ev.location}
 										</div>
-										<div class="text-[9px] opacity-75 font-mono mt-0.5">
+										<div class="text-[9px] opacity-75 mt-0.5">
 											{ev.start_time} - {ev.end_time}
 										</div>
 									</div>
@@ -424,10 +425,10 @@
 					</div>
 				</div>
 			{/if}
-		</div>
+		</Card>
 
 		<!-- Colonne Droite : Devoirs et evaluations a venir (4 cols) -->
-		<div class="md:col-span-4 bg-[#0E121B] border border-[#182030] rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-sm">
+		<Card class="md:col-span-4 flex flex-col justify-between space-y-4">
 			<div>
 				<div class="space-y-0.5 mb-3">
 					<h2 class="text-sm font-bold text-white">Devoirs & Contrôles à venir</h2>
@@ -441,7 +442,7 @@
 						</div>
 					{:else}
 						{#each upcomingTasks() as item}
-							<div class="flex items-start gap-3 p-3 rounded-xl bg-[#080A0F] border border-[#151B26] hover:border-zinc-700 transition-colors">
+							<div class="flex items-start gap-3 p-3 rounded-lg bg-app-surface border border-app-border hover:border-zinc-700 transition-colors">
 								<!-- Bouton case a cocher -->
 								<button
 									onclick={() => toggleTaskStatus(item)}
@@ -461,12 +462,12 @@
 											{item.title}
 										</span>
 										{#if item.days_left <= 2}
-											<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#3D1422] text-[#FDA4AF] border border-[#BE123C]">
+											<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-600 text-white">
 												Urgent
 											</span>
 										{/if}
 										{#if !item.is_personal}
-											<span class="px-1.5 py-0.2 rounded text-[10px] font-medium bg-zinc-900 text-zinc-400 border border-zinc-800">
+											<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-600 text-white">
 												Moodle
 											</span>
 										{/if}
@@ -485,17 +486,17 @@
 			{#if onOpenAddTask}
 				<button
 					onclick={onOpenAddTask}
-					class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-dashed border-[#1E2536] hover:border-cyan-500/50 bg-[#080A0F] hover:bg-[#111724] text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
+					class="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-dashed border-app-border hover:border-cyan-500/50 bg-app-surface hover:bg-white/[0.04] text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
 				>
 					<Plus class="w-4 h-4 text-cyan-400" />
 					<span>+ Ajouter un DS ou devoir</span>
 				</button>
 			{/if}
-		</div>
+		</Card>
 	</div>
 
 	<!-- Ligne 3 : Dernieres notes de ScoDoc -->
-	<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-5 space-y-4 shadow-sm">
+	<Card class="space-y-4">
 		<div class="flex items-center justify-between">
 			<div>
 				<h2 class="text-sm font-bold text-white">Dernières notes</h2>
@@ -516,9 +517,9 @@
 				Aucune note récente enregistrée sur votre compte ScoDoc.
 			</div>
 		{:else}
-			<div class="overflow-x-auto rounded-xl border border-[#182030]">
+			<div class="overflow-x-auto rounded-lg border border-app-border">
 				<table class="w-full text-left text-xs">
-					<thead class="bg-[#080A0F] text-zinc-400 border-b border-[#182030] font-medium">
+					<thead class="bg-app-surface text-zinc-400 border-b border-app-border font-medium">
 						<tr>
 							<th class="py-3 px-4">Matière</th>
 							<th class="py-3 px-4">Type</th>
@@ -526,13 +527,13 @@
 							<th class="py-3 px-4 text-right">Note</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-[#182030] bg-[#0E121B]">
+					<tbody class="divide-y divide-app-border bg-app-card">
 						{#each recentGrades() as grade}
-							<tr class="hover:bg-[#121723] transition-colors">
+							<tr class="hover:bg-app-hover transition-colors">
 								<td class="py-3 px-4 font-semibold text-zinc-200">
 									<div class="flex items-center gap-2">
 										{#if grade.code_matiere}
-											<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+											<span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 font-semibold">
 												{grade.code_matiere}
 											</span>
 										{/if}
@@ -540,15 +541,15 @@
 									</div>
 								</td>
 								<td class="py-3 px-4 text-zinc-400">
-									<span class="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 font-mono text-[11px]">
+									<span class="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[11px] font-medium">
 										{grade.description || grade.type || "Note"}
 									</span>
 								</td>
-								<td class="py-3 px-4 text-zinc-400 font-mono text-[11px]">
+								<td class="py-3 px-4 text-zinc-400 text-[11px]">
 									{grade.date ? formatDateFr(grade.date) : "Récent"}
 								</td>
 								<td class="py-3 px-4 text-right">
-									<span class="inline-block px-2.5 py-0.5 rounded font-mono font-bold text-xs bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
+									<span class="inline-block px-2.5 py-0.5 rounded-full font-bold text-xs bg-cyan-600 text-white">
 										{formatGrade(grade.note)}
 									</span>
 								</td>
@@ -558,5 +559,5 @@
 				</table>
 			</div>
 		{/if}
-	</div>
+	</Card>
 </div>

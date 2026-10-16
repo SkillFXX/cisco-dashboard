@@ -1,42 +1,14 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { api } from "$lib/api";
-	import {
-		CalendarDays,
-		MapPin,
-		User as UserIcon,
-		Clock,
-		RefreshCw,
-		ChevronLeft,
-		ChevronRight
-	} from "lucide-svelte";
+	import { Calendar as CalendarIcon, MapPin, RefreshCw, ChevronLeft, ChevronRight } from "lucide-svelte";
+	import Card from "../Card.svelte";
 
 	let timetableData = $state<any>(null);
 	let isLoading = $state(true);
 	let error = $state("");
 	let selectedDayIndex = $state<number | "ALL">("ALL");
-	let weekOffset = $state(0); // 0 = semaine courante, -1 = precedente, +1 = suivante
-
-	// Calcul des jours de la semaine selectionnee (Lundi a Vendredi)
-	let selectedWeekDays = $derived(() => {
-		const baseNow = new Date();
-		const currentWeekday = (baseNow.getDay() + 6) % 7; // 0 = Lundi, ..., 4 = Vendredi
-		const monday = new Date(baseNow);
-		monday.setDate(baseNow.getDate() - currentWeekday + (weekOffset * 7));
-
-		const names = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
-		return [0, 1, 2, 3, 4].map((i) => {
-			const d = new Date(monday);
-			d.setDate(monday.getDate() + i);
-			return {
-				name: names[i],
-				index: i,
-				isoDate: d.toISOString().slice(0, 10),
-				formatted: `${d.getDate()} / ${(d.getMonth() + 1).toString().padStart(2, "0")}`,
-				fullLabel: `${names[i]} ${d.getDate()}/${(d.getMonth() + 1).toString().padStart(2, "0")}`
-			};
-		});
-	});
+	let weekOffset = $state<number>(0);
 
 	async function loadTimetable(forceRefresh = false) {
 		isLoading = true;
@@ -44,7 +16,7 @@
 		try {
 			timetableData = await api.getTimetableWeek(forceRefresh);
 		} catch (err: any) {
-			error = err.message || "Erreur lors de la récupération de l'emploi du temps.";
+			error = err.message || "Erreur de chargement de l'emploi du temps";
 		} finally {
 			isLoading = false;
 		}
@@ -54,22 +26,56 @@
 		loadTimetable();
 	});
 
-	// Filtrage strict par date ISO reelle de la semaine selectionnee
-	let eventsForDate = $derived((isoDate: string) => {
-		if (!timetableData?.all_events) return [];
-		return timetableData.all_events
-			.filter((e: any) => e.date === isoDate)
-			.sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
+	function getMonday(d: Date): Date {
+		const date = new Date(d);
+		const day = date.getDay();
+		const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+		date.setDate(diff);
+		date.setHours(0, 0, 0, 0);
+		return date;
+	}
+
+	let activeMonday = $derived(() => {
+		const now = new Date();
+		const monday = getMonday(now);
+		monday.setDate(monday.getDate() + weekOffset * 7);
+		return monday;
 	});
+
+	let selectedWeekDays = $derived(() => {
+		const days = [];
+		const mon = activeMonday();
+		const dayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+		for (let i = 0; i < 5; i++) {
+			const d = new Date(mon);
+			d.setDate(mon.getDate() + i);
+			const dayNum = d.getDate();
+			const monthNum = d.getMonth() + 1;
+			const isoDate = d.toISOString().split("T")[0];
+			days.push({
+				index: i,
+				name: dayNames[i],
+				formatted: `${dayNum} / ${monthNum}`,
+				isoDate,
+				fullLabel: `${dayNames[i]} ${dayNum}/${monthNum}`
+			});
+		}
+		return days;
+	});
+
+	function eventsForDate(isoDate: string) {
+		if (!timetableData?.all_events) return [];
+		return timetableData.all_events.filter((e: any) => e.date === isoDate);
+	}
 </script>
 
 <div class="space-y-6">
-	<!-- En-tete avec commandes de semaine -->
-	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+	<!-- En-tete avec selecteur de semaine -->
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-app-border">
 		<div>
-			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-				<CalendarDays class="w-5 h-5 text-cyan-400" />
-				Emploi du temps ADE Campus
+			<h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+				<CalendarIcon class="w-5 h-5 text-cyan-400" />
+				<span>Emploi du temps ADE Campus</span>
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
 				Flux officiel synchronisé avec détection en direct des salles, cours et enseignants.
@@ -78,23 +84,23 @@
 
 		<div class="flex items-center gap-2">
 			<!-- Selecteur de semaine -->
-			<div class="flex items-center bg-[#0E121B] border border-[#182030] rounded-xl p-1 text-xs">
+			<div class="flex items-center bg-app-card border border-app-border rounded-lg p-1 text-xs">
 				<button
 					onclick={() => (weekOffset -= 1)}
-					class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#151C2A] transition-colors cursor-pointer"
+					class="p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
 					title="Semaine précédente"
 				>
 					<ChevronLeft class="w-4 h-4" />
 				</button>
 				<button
 					onclick={() => (weekOffset = 0)}
-					class="px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-colors {weekOffset === 0 ? 'text-cyan-400 font-bold' : 'text-zinc-300 hover:text-white'}"
+					class="px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors {weekOffset === 0 ? 'text-white font-bold bg-white/[0.08]' : 'text-zinc-300 hover:text-white'}"
 				>
 					{weekOffset === 0 ? "Cette semaine" : `Semaine ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
 				</button>
 				<button
 					onclick={() => (weekOffset += 1)}
-					class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#151C2A] transition-colors cursor-pointer"
+					class="p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
 					title="Semaine suivante"
 				>
 					<ChevronRight class="w-4 h-4" />
@@ -104,7 +110,7 @@
 			<button
 				onclick={() => loadTimetable(true)}
 				disabled={isLoading}
-				class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0E121B] hover:bg-[#151C2A] border border-[#182030] text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+				class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-white/[0.04] border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
 			>
 				<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 				<span>Actualiser</span>
@@ -113,12 +119,12 @@
 	</div>
 
 	<!-- Barre de selection jour / semaine complete -->
-	<div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-[#182030]">
+	<div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-app-border">
 		<button
 			onclick={() => (selectedDayIndex = "ALL")}
-			class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer {selectedDayIndex === 'ALL'
-				? 'bg-cyan-950/60 text-cyan-400 border border-cyan-800/40'
-				: 'text-zinc-400 hover:text-zinc-200 hover:bg-[#0E121B]'}"
+			class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer {selectedDayIndex === 'ALL'
+				? 'bg-white/[0.08] text-white shadow-xs'
+				: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
 		>
 			Semaine complète
 		</button>
@@ -126,13 +132,13 @@
 			{@const count = eventsForDate(day.isoDate).length}
 			<button
 				onclick={() => (selectedDayIndex = day.index)}
-				class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer {selectedDayIndex === day.index
-					? 'bg-cyan-950/60 text-cyan-400 border border-cyan-800/40 font-semibold'
-					: 'text-zinc-400 hover:text-zinc-200 hover:bg-[#0E121B]'}"
+				class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer {selectedDayIndex === day.index
+					? 'bg-white/[0.08] text-white font-semibold shadow-xs'
+					: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
 			>
 				<span>{day.name} ({day.formatted})</span>
 				{#if count > 0}
-					<span class="text-[10px] px-1.5 py-0.2 rounded-full bg-[#151C2A] text-zinc-300 font-mono">
+					<span class="text-[10px] px-2 py-0.2 rounded-full bg-zinc-800 text-zinc-200 font-semibold">
 						{count}
 					</span>
 				{/if}
@@ -146,7 +152,7 @@
 			<p class="text-xs">Chargement instantané de l'emploi du temps...</p>
 		</div>
 	{:else if error}
-		<div class="p-4 rounded-xl bg-red-950/30 border border-red-800/40 text-red-400 text-xs">
+		<div class="p-4 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">
 			{error}
 		</div>
 	{:else if timetableData}
@@ -155,13 +161,13 @@
 			<div class="grid grid-cols-1 md:grid-cols-5 gap-4">
 				{#each selectedWeekDays() as day}
 					{@const dayEvents = eventsForDate(day.isoDate)}
-					<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-4 space-y-3">
-						<div class="flex items-center justify-between pb-2 border-b border-[#182030]">
+					<Card class="p-4 space-y-3">
+						<div class="flex items-center justify-between pb-2 border-b border-app-border">
 							<div>
 								<span class="font-bold text-xs text-zinc-200">{day.name}</span>
-								<span class="block text-[10px] text-zinc-500 font-mono">{day.formatted}</span>
+								<span class="block text-[10px] text-zinc-500">{day.formatted}</span>
 							</div>
-							<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#151C2A] text-zinc-400 font-mono">
+							<span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 font-medium">
 								{dayEvents.length} cours
 							</span>
 						</div>
@@ -173,18 +179,18 @@
 								</div>
 							{:else}
 								{#each dayEvents as evt}
-									<div class="p-3 rounded-xl border text-xs space-y-1.5 transition-all {evt.is_current
-										? 'border-cyan-500 bg-[#0E2A38] text-white shadow-sm'
-										: 'border-[#182030] bg-[#080A0F] hover:border-zinc-700'}">
+									<div class="p-3 rounded-lg border text-xs space-y-1.5 transition-all {evt.is_current
+										? 'border-cyan-500 bg-white/[0.06] text-white shadow-xs'
+										: 'border-app-border bg-app-surface hover:border-zinc-700'}">
 										<div class="flex items-center justify-between">
-											<span class="font-mono font-semibold text-[11px] text-zinc-200">{evt.start_time} - {evt.end_time}</span>
-											<span class="px-1.5 py-0.2 rounded font-mono text-[9px] font-bold {evt.type === 'TP'
-												? 'bg-cyan-950/60 text-cyan-400 border border-cyan-800/40'
+											<span class="font-semibold text-[11px] text-zinc-200">{evt.start_time} - {evt.end_time}</span>
+											<span class="px-2 py-0.5 rounded-full text-[9px] font-bold {evt.type === 'TP'
+												? 'bg-cyan-600 text-white'
 												: evt.type === 'TD'
-												? 'bg-blue-950/60 text-blue-400 border border-blue-800/40'
+												? 'bg-blue-600 text-white'
 												: evt.type === 'CM'
-												? 'bg-indigo-950/60 text-indigo-400 border border-indigo-800/40'
-												: 'bg-rose-950/60 text-rose-400 border border-rose-800/40'}">
+												? 'bg-purple-600 text-white'
+												: 'bg-rose-600 text-white'}">
 												{evt.type}
 											</span>
 										</div>
@@ -193,7 +199,7 @@
 											{evt.title}
 										</div>
 
-										<div class="pt-1.5 border-t border-[#182030] flex items-center justify-between text-[11px] text-zinc-400">
+										<div class="pt-1.5 border-t border-app-border flex items-center justify-between text-[11px] text-zinc-400">
 											<div class="flex items-center gap-1">
 												<MapPin class="w-3 h-3 text-cyan-400 shrink-0" />
 												<span class="font-medium text-zinc-300 truncate">{evt.location}</span>
@@ -206,7 +212,7 @@
 								{/each}
 							{/if}
 						</div>
-					</div>
+					</Card>
 				{/each}
 			</div>
 		{:else}
@@ -218,35 +224,35 @@
 					<h2 class="text-sm font-bold text-white">
 						Programme détaillé du {activeDay.fullLabel}
 					</h2>
-					<span class="text-xs font-mono text-zinc-400 bg-[#0E121B] border border-[#182030] px-2.5 py-1 rounded-xl">
+					<span class="text-xs text-zinc-400 bg-app-card border border-app-border px-2.5 py-1 rounded-full">
 						{dayEvents.length} cours
 					</span>
 				</div>
 
 				{#if dayEvents.length === 0}
-					<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-10 text-center text-zinc-500 text-xs">
+					<Card class="p-10 text-center text-zinc-500 text-xs">
 						Aucun cours programmé pour ce jour.
-					</div>
+					</Card>
 				{:else}
 					<div class="space-y-3">
 						{#each dayEvents as evt}
-							<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-4 transition-all hover:border-zinc-700">
+							<Card class="p-4 hover:border-zinc-700">
 								<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 									<div class="space-y-1">
 										<div class="flex items-center gap-2 flex-wrap">
-											<span class="font-mono font-bold text-sm text-cyan-400">{evt.start_time} - {evt.end_time}</span>
+											<span class="font-bold text-sm text-cyan-400">{evt.start_time} - {evt.end_time}</span>
 											<span class="text-xs text-zinc-500">({evt.duration_minutes} min)</span>
-											<span class="px-2 py-0.5 rounded font-mono text-xs font-semibold {evt.type === 'TP'
-												? 'bg-cyan-950/60 text-cyan-400 border border-cyan-800/40'
+											<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {evt.type === 'TP'
+												? 'bg-cyan-600 text-white'
 												: evt.type === 'TD'
-												? 'bg-blue-950/60 text-blue-400 border border-blue-800/40'
+												? 'bg-blue-600 text-white'
 												: evt.type === 'CM'
-												? 'bg-indigo-950/60 text-indigo-400 border border-indigo-800/40'
-												: 'bg-rose-950/60 text-rose-400 border border-rose-800/40'}">
+												? 'bg-purple-600 text-white'
+												: 'bg-rose-600 text-white'}">
 												{evt.type === 'TP' ? 'Travaux Pratiques (TP)' : evt.type === 'TD' ? 'Travaux Dirigés (TD)' : evt.type === 'CM' ? 'Cours Magistral (CM)' : 'Contrôle (DS)'}
 											</span>
 											{#if evt.is_current}
-												<span class="px-2 py-0.5 rounded text-xs font-bold bg-cyan-950 text-cyan-300 border border-cyan-500">
+												<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-600 text-white">
 													En cours actuellement
 												</span>
 											{/if}
@@ -269,7 +275,7 @@
 										{/if}
 									</div>
 								</div>
-							</div>
+							</Card>
 						{/each}
 					</div>
 				{/if}

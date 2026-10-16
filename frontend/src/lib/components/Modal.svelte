@@ -42,7 +42,7 @@
 	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
 		<div
 			class={cn(
-				"relative w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 shadow-2xl animate-in zoom-in-95 duration-200",
+				"relative w-full max-w-lg rounded-xl border border-app-border bg-app-card p-6 text-zinc-100 shadow-2xl animate-in zoom-in-95 duration-200",
 				className
 			)}
 			role="dialog"

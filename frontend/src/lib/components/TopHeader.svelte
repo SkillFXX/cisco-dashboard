@@ -39,7 +39,7 @@
 	});
 </script>
 
-<header class="h-16 px-6 border-b border-[#151B26] bg-[#080A0F] flex items-center justify-between sticky top-0 z-20">
+<header class="h-16 px-6 border-b border-app-border bg-app-bg flex items-center justify-between sticky top-0 z-20">
 	<!-- Fil d'Ariane -->
 	<div class="flex items-center gap-2 text-xs">
 		<span class="text-zinc-500 font-medium">{breadcrumb.category}</span>
@@ -55,7 +55,7 @@
 			<input
 				type="text"
 				placeholder="Rechercher..."
-				class="w-48 md:w-56 bg-[#0E121B] border border-[#1A2230] rounded-xl pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500/50 transition-colors"
+				class="w-48 md:w-56 bg-app-card border border-app-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500/50 transition-colors"
 			/>
 		</div>
 
@@ -63,7 +63,7 @@
 		{#if onOpenAddTask}
 			<button
 				onclick={onOpenAddTask}
-				class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/40 text-cyan-400 border border-cyan-800/40 text-xs font-semibold transition-all cursor-pointer"
+				class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
 			>
 				<Plus class="w-3.5 h-3.5" />
 				<span>Nouveau DS / Devoir</span>
@@ -72,7 +72,7 @@
 
 		<!-- Notifications -->
 		<button
-			class="relative w-8 h-8 rounded-xl bg-[#0E121B] border border-[#1A2230] flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
+			class="relative w-8 h-8 rounded-lg bg-app-card border border-app-border flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
 			title="Notifications"
 		>
 			<Bell class="w-3.5 h-3.5" />
@@ -80,7 +80,7 @@
 		</button>
 
 		<!-- Profil etudiant -->
-		<div class="flex items-center gap-2.5 pl-2 border-l border-[#151B26]">
+		<div class="flex items-center gap-2.5 pl-2 border-l border-app-border">
 			<div class="text-right hidden sm:block">
 				<div class="text-xs font-semibold text-zinc-200 leading-none">
 					{userDisplayName()}
@@ -93,10 +93,10 @@
 				<img
 					src={auth.user.photo_base64.startsWith("data:") ? auth.user.photo_base64 : `data:image/jpeg;base64,${auth.user.photo_base64}`}
 					alt={userDisplayName()}
-					class="w-8 h-8 rounded-full object-cover border border-cyan-500/40 shadow-sm"
+					class="w-8 h-8 rounded-full object-cover border border-app-border shadow-sm"
 				/>
 			{:else}
-				<div class="w-8 h-8 rounded-full bg-[#111724] border border-[#1E273A] flex items-center justify-center text-xs font-bold text-cyan-400">
+				<div class="w-8 h-8 rounded-full bg-app-card border border-app-border flex items-center justify-center text-xs font-bold text-cyan-400">
 					{userInitials()}
 				</div>
 			{/if}

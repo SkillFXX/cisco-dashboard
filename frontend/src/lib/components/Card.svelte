@@ -11,9 +11,8 @@
 	} = $props();
 </script>
 
-<div class={cn("rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-5 shadow-sm backdrop-blur-sm transition-all hover:border-zinc-700/70", className)}>
+<div class={cn("rounded-xl border border-app-border bg-app-card p-5 shadow-xs transition-all", className)}>
 	{#if children}
 		{@render children()}
 	{/if}
 </div>
-

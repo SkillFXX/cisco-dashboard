@@ -1,9 +1,31 @@
 @import 'tailwindcss';
 
+@theme {
+	--font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+	/* Palette sémantique globale Cisco Dashboard */
+	--color-app-bg: #0A0A10;
+	--color-app-card: #121318;
+	--color-app-surface: #0A0A10;
+	--color-app-border: #1E202B;
+	--color-app-hover: #161820;
+}
+
 @layer base {
+	:root {
+		--app-bg: #0A0A10;
+		--app-card: #121318;
+		--app-surface: #0A0A10;
+		--app-border: #1E202B;
+		--app-hover: #161820;
+	}
+
+	*, *::before, *::after, input, button, select, textarea {
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
 	html, body {
-		font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		background-color: #080A0F;
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		background-color: var(--app-bg);
 		color: #E2E8F0;
 	}
 }

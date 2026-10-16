@@ -12,8 +12,6 @@
 		Circle,
 		Trash2,
 		Calendar,
-		BookOpen,
-		Filter,
 		RefreshCw
 	} from "lucide-svelte";
 
@@ -118,33 +116,40 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
 		<div>
-			<h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-				<ListTodo class="w-6 h-6 text-cyan-400" />
-				Devoirs, DM Moodle & Dates de DS
+			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+				<ListTodo class="w-5 h-5 text-cyan-400" />
+				<span>Devoirs, DM Moodle & Dates de DS</span>
 			</h1>
-			<p class="text-sm text-zinc-400 mt-1">
+			<p class="text-xs text-zinc-400 mt-0.5">
 				Gérez l'ensemble de vos échéances : devoirs Moodle synchronisés et contrôles / DS ajoutés manuellement.
 			</p>
 		</div>
 
-		<div class="flex items-center gap-3">
-			<Button variant="outline" size="sm" onclick={loadAllData} disabled={isLoading}>
-				<RefreshCw class="w-4 h-4 {isLoading ? 'animate-spin' : ''}" />
+		<div class="flex items-center gap-2">
+			<button
+				onclick={loadAllData}
+				disabled={isLoading}
+				class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-white/[0.04] border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+			>
+				<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 				<span>Actualiser</span>
-			</Button>
+			</button>
 			{#if onOpenAddTask}
-				<Button variant="cisco" size="sm" onclick={onOpenAddTask}>
-					<PlusCircle class="w-4 h-4" />
+				<button
+					onclick={onOpenAddTask}
+					class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
+				>
+					<PlusCircle class="w-3.5 h-3.5" />
 					<span>Ajouter un DS / Devoir</span>
-				</Button>
+				</button>
 			{/if}
 		</div>
 	</div>
 
 	<!-- Filters -->
-	<div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-zinc-800">
+	<div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-app-border">
 		{#each [
 			{ id: 'ALL', label: 'Toutes les échéances' },
 			{ id: 'TODO', label: 'À faire' },
@@ -154,7 +159,9 @@
 		] as f}
 			<button
 				onclick={() => (filterType = f.id)}
-				class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer {filterType === f.id ? 'bg-cyan-500 text-zinc-950 shadow-md shadow-cyan-500/20' : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'}"
+				class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer {filterType === f.id
+					? 'bg-white/[0.08] text-white shadow-xs'
+					: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
 			>
 				{f.label}
 			</button>
@@ -163,22 +170,22 @@
 
 	{#if isLoading}
 		<div class="flex flex-col items-center justify-center p-12 text-zinc-400">
-			<RefreshCw class="w-8 h-8 animate-spin text-cyan-400 mb-3" />
-			<p class="text-sm">Chargement des devoirs et contrôles programmés...</p>
+			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
+			<p class="text-xs">Chargement des devoirs et contrôles programmés...</p>
 		</div>
 	{:else if error}
-		<div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+		<div class="p-4 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">
 			{error}
 		</div>
 	{:else}
 		<div class="space-y-3">
 			{#if displayedItems().length === 0}
-				<Card class="text-center py-12 text-zinc-500 text-sm">
+				<Card class="text-center py-12 text-zinc-500 text-xs">
 					Aucun devoir ou contrôle correspondant à ce filtre.
 				</Card>
 			{:else}
 				{#each displayedItems() as item}
-					<div class="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/60 hover:bg-zinc-800/40 transition-all {item.status === 'done' ? 'opacity-60' : ''}">
+					<Card class="p-4 hover:border-zinc-700 {item.status === 'done' ? 'opacity-60' : ''}">
 						<div class="flex items-start justify-between gap-4">
 							<div class="flex items-start gap-3">
 								{#if item.is_personal}
@@ -194,18 +201,18 @@
 										{/if}
 									</button>
 								{:else}
-									<div class="mt-1 w-5 h-5 rounded-full border border-amber-500/40 bg-amber-500/10 flex items-center justify-center shrink-0" title="Synchronisé depuis Moodle">
+									<div class="mt-1 w-5 h-5 rounded-full bg-amber-600/30 flex items-center justify-center shrink-0" title="Synchronisé depuis Moodle">
 										<span class="w-2 h-2 rounded-full bg-amber-400"></span>
 									</div>
 								{/if}
 
 								<div class="space-y-1">
 									<div class="flex items-center gap-2 flex-wrap">
-										<span class="font-bold text-base text-zinc-100 {item.status === 'done' ? 'line-through text-zinc-400' : ''}">
+										<span class="font-bold text-sm text-zinc-100 {item.status === 'done' ? 'line-through text-zinc-500' : ''}">
 											{item.title}
 										</span>
 										{#if item.event_type === 'ds'}
-											<Badge variant="ds">DS / Examen</Badge>
+											<Badge variant="ds">Contrôle / DS</Badge>
 										{:else if item.event_type === 'tp'}
 											<Badge variant="tp">TP Noté</Badge>
 										{:else}
@@ -221,7 +228,7 @@
 									</div>
 
 									{#if item.description}
-										<p class="text-xs text-zinc-400 mt-2 max-w-2xl bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-800/60">
+										<p class="text-xs text-zinc-400 mt-2 max-w-2xl bg-app-surface p-2.5 rounded-lg border border-app-border">
 											{item.description}
 										</p>
 									{/if}
@@ -230,11 +237,11 @@
 
 							<!-- Right side: Countdown & Delete -->
 							<div class="flex flex-col items-end shrink-0 gap-2">
-								<span class="text-xs font-semibold px-2.5 py-1 rounded-md {item.days_left <= 2 ? 'bg-red-500/10 text-red-400 border border-red-500/30' : item.days_left <= 5 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-zinc-800 text-zinc-300'}">
+								<span class="text-xs font-medium px-3 py-0.5 rounded-full {item.days_left <= 2 ? 'bg-rose-600 text-white' : item.days_left <= 5 ? 'bg-amber-600 text-white' : 'bg-zinc-800 text-zinc-200'}">
 									{#if item.status === 'done'}
-										Terminé ✓
+										Terminé
 									{:else if item.days_left <= 0}
-										Aujourd'hui !
+										Aujourd'hui
 									{:else if item.days_left === 1}
 										Demain
 									{:else}
@@ -250,7 +257,7 @@
 								{#if item.is_personal}
 									<button
 										onclick={() => deleteTask(item.id)}
-										class="p-1 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded transition-colors cursor-pointer mt-1"
+										class="p-1 text-zinc-500 hover:text-red-400 hover:bg-white/[0.04] rounded transition-colors cursor-pointer mt-1"
 										title="Supprimer"
 									>
 										<Trash2 class="w-4 h-4" />
@@ -258,10 +265,9 @@
 								{/if}
 							</div>
 						</div>
-					</div>
+					</Card>
 				{/each}
 			{/if}
 		</div>
 	{/if}
 </div>
-

@@ -4,7 +4,7 @@
 	import Badge from "../Badge.svelte";
 	import Button from "../Button.svelte";
 	import { api } from "$lib/api";
-	import { Settings, Shield, Link2, Key, Check, RefreshCw, AlertCircle } from "lucide-svelte";
+	import { Settings, Link2, Check, RefreshCw, AlertCircle, FileText, BookOpen, Calendar } from "lucide-svelte";
 
 	let scodoc_url = $state("https://wscodoc.iutbeziers.fr");
 	let scodoc_username = $state("");
@@ -77,32 +77,32 @@
 
 <div class="max-w-4xl space-y-6">
 	<!-- Header -->
-	<div>
-		<h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-			<Settings class="w-6 h-6 text-cyan-400" />
-			Gestion des Services & Connexions
+	<div class="pb-2 border-b border-app-border">
+		<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+			<Settings class="w-5 h-5 text-cyan-400" />
+			<span>Gestion des Services & Connexions</span>
 		</h1>
-		<p class="text-sm text-zinc-400 mt-1">
+		<p class="text-xs text-zinc-400 mt-0.5">
 			Renseignez vos accès à ScoDoc, Moodle et votre lien de calendrier ADE Campus pour synchroniser automatiquement vos notes, devoirs et cours réels.
 		</p>
 	</div>
 
 	{#if isLoading}
-		<div class="flex items-center justify-center p-12 text-zinc-400">
-			<RefreshCw class="w-6 h-6 animate-spin text-cyan-400 mr-2" />
+		<div class="flex items-center justify-center p-12 text-zinc-400 text-xs">
+			<RefreshCw class="w-5 h-5 animate-spin text-cyan-400 mr-2" />
 			Chargement des configurations...
 		</div>
 	{:else}
 		<form onsubmit={saveSettings} class="space-y-6">
 			{#if successMsg}
-				<div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
+				<div class="p-3.5 rounded-lg bg-emerald-600/20 text-emerald-300 text-xs font-medium flex items-center gap-2">
 					<Check class="w-4 h-4 shrink-0" />
 					<span>{successMsg}</span>
 				</div>
 			{/if}
 
 			{#if errorMsg}
-				<div class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
+				<div class="p-3.5 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
 					<AlertCircle class="w-4 h-4 shrink-0" />
 					<span>{errorMsg}</span>
 				</div>
@@ -110,13 +110,13 @@
 
 			<!-- Card 1 : ScoDoc -->
 			<Card class="space-y-4">
-				<div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+				<div class="flex items-center justify-between border-b border-app-border pb-3">
 					<div class="flex items-center gap-2.5">
-						<div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
-							📊
+						<div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
+							<FileText class="w-4 h-4" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-base">ScoDoc (Notes, Moyennes & Absences)</h3>
+							<h3 class="font-bold text-white text-sm">ScoDoc (Notes, Moyennes & Absences)</h3>
 							<p class="text-xs text-zinc-400">Authentification automatique avec le serveur CAS universitaire.</p>
 						</div>
 					</div>
@@ -133,7 +133,7 @@
 							type="text"
 							bind:value={scodoc_url}
 							placeholder="https://wscodoc.iutbeziers.fr"
-							class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+							class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -143,7 +143,7 @@
 							type="text"
 							bind:value={scodoc_username}
 							placeholder="prenom.nom"
-							class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+							class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -153,7 +153,7 @@
 							type="password"
 							bind:value={scodoc_password}
 							placeholder="••••••••••••"
-							class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+							class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 						/>
 					</div>
 				</div>
@@ -161,13 +161,13 @@
 
 			<!-- Card 2 : Moodle -->
 			<Card class="space-y-4">
-				<div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+				<div class="flex items-center justify-between border-b border-app-border pb-3">
 					<div class="flex items-center gap-2.5">
-						<div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
-							📚
+						<div class="w-8 h-8 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center">
+							<BookOpen class="w-4 h-4" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-base">Moodle (Devoirs à rendre & Cours)</h3>
+							<h3 class="font-bold text-white text-sm">Moodle (Devoirs à rendre & Cours)</h3>
 							<p class="text-xs text-zinc-400">Récupération des échéances de devoirs et travaux pratiques.</p>
 						</div>
 					</div>
@@ -184,7 +184,7 @@
 							type="text"
 							bind:value={moodle_url}
 							placeholder="https://moodle.umontpellier.fr"
-							class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+							class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -194,7 +194,7 @@
 							type="text"
 							bind:value={moodle_username}
 							placeholder="prenom.nom"
-							class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+							class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -204,7 +204,7 @@
 							type="password"
 							bind:value={moodle_password}
 							placeholder="••••••••••••"
-							class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+							class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 						/>
 					</div>
 				</div>
@@ -218,20 +218,20 @@
 						type="text"
 						bind:value={moodle_token}
 						placeholder="Ex: 8f9b4c2e1a3d5e7f9a0b1c2d3e4f5a6b"
-						class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none font-mono"
+						class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 					/>
 				</div>
 			</Card>
 
 			<!-- Card 3 : ADE Campus / UM Net iCal -->
 			<Card class="space-y-4">
-				<div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+				<div class="flex items-center justify-between border-b border-app-border pb-3">
 					<div class="flex items-center gap-2.5">
-						<div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
-							📅
+						<div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
+							<Calendar class="w-4 h-4" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-base">Emploi du Temps UM Montpellier (Flux iCal)</h3>
+							<h3 class="font-bold text-white text-sm">Emploi du Temps UM Montpellier (Flux iCal)</h3>
 							<p class="text-xs text-zinc-400">Collez le lien iCal exporté depuis ADE Campus / UM Net.</p>
 						</div>
 					</div>
@@ -249,7 +249,7 @@
 							type="url"
 							bind:value={ical_url}
 							placeholder="https://edt.umontpellier.fr/ade/custom/modules/Views/fetch.jsp?data=... ou fichier .ics"
-							class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none font-mono"
+							class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 						/>
 					</div>
 				</div>

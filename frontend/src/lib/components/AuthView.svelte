@@ -3,7 +3,7 @@
 	import Card from "./Card.svelte";
 	import Button from "./Button.svelte";
 	import Badge from "./Badge.svelte";
-	import { GraduationCap, ArrowRight, User, Lock, Mail, Link2, BookOpen } from "lucide-svelte";
+	import { ArrowRight, User, Lock } from "lucide-svelte";
 
 	let mode = $state<"login" | "register">("login");
 
@@ -70,12 +70,12 @@
 	}
 </script>
 
-<div class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-zinc-950 text-zinc-100">
+<div class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-app-bg text-zinc-100 font-sans">
 	<div class="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-		<div class="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-600 via-cyan-500 to-blue-600 items-center justify-center shadow-xl shadow-cyan-500/20 text-white font-black text-3xl font-mono">
-			C
+		<div class="inline-flex items-center justify-center">
+			<img src="/icon.png" alt="Cisco" class="w-16 h-16 rounded-xl object-contain shadow-2xl" />
 		</div>
-		<h1 class="text-3xl font-extrabold tracking-tight text-white font-mono">
+		<h1 class="text-3xl font-extrabold tracking-tight text-white">
 			CISCO STUDENT
 		</h1>
 		<p class="text-sm text-zinc-400">
@@ -89,27 +89,27 @@
 	</div>
 
 	<div class="mt-8 sm:mx-auto sm:w-full {mode === 'register' ? 'sm:max-w-2xl' : 'sm:max-w-md'}">
-		<Card class="p-6 sm:p-8 border-zinc-800 bg-zinc-900/90 shadow-2xl backdrop-blur-xl">
+		<Card class="p-6 sm:p-8 border-app-border bg-app-card shadow-2xl rounded-xl">
 			<!-- Tab Switcher -->
-			<div class="grid grid-cols-2 p-1 bg-zinc-950 rounded-xl mb-6 border border-zinc-800/80">
+			<div class="grid grid-cols-2 p-1 bg-app-surface rounded-lg mb-6 border border-app-border">
 				<button
 					type="button"
 					onclick={() => (mode = "login")}
-					class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer {mode === 'login' ? 'bg-cyan-600 text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
+					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'login' ? 'bg-white/[0.08] text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
 				>
 					Se Connecter
 				</button>
 				<button
 					type="button"
 					onclick={() => (mode = "register")}
-					class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer {mode === 'register' ? 'bg-cyan-600 text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
+					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'register' ? 'bg-white/[0.08] text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
 				>
 					Créer un Compte
 				</button>
 			</div>
 
 			{#if error}
-				<div class="p-3 mb-5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+				<div class="p-3 mb-5 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">
 					{error}
 				</div>
 			{/if}
@@ -126,7 +126,7 @@
 								type="text"
 								bind:value={loginUsername}
 								required
-								class="w-full rounded-lg border border-zinc-800 bg-zinc-950 pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
 								placeholder="ex: prenom.nom"
 							/>
 						</div>
@@ -141,7 +141,7 @@
 								type="password"
 								bind:value={loginPassword}
 								required
-								class="w-full rounded-lg border border-zinc-800 bg-zinc-950 pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
 								placeholder="••••••••••••"
 							/>
 						</div>
@@ -155,7 +155,7 @@
 			{:else}
 				<!-- Formulaire Inscription avec services tiers intégrés -->
 				<form onsubmit={handleRegister} class="space-y-4">
-					<div class="border-b border-zinc-800 pb-3">
+					<div class="border-b border-app-border pb-3">
 						<h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-2">1. Compte Dashboard Cisco</h3>
 						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
@@ -166,7 +166,7 @@
 									bind:value={regFullName}
 									required
 									placeholder="ex: Jean Dupont"
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -177,7 +177,7 @@
 									bind:value={regUsername}
 									required
 									placeholder="ex: jean.dupont"
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -188,7 +188,7 @@
 									bind:value={regEmail}
 									required
 									placeholder="prenom.nom@etu.umontpellier.fr"
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -199,14 +199,14 @@
 									bind:value={regPassword}
 									required
 									placeholder="••••••••••••"
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 						</div>
 					</div>
 
 					<!-- Section ScoDoc -->
-					<div class="border-b border-zinc-800 pb-3">
+					<div class="border-b border-app-border pb-3">
 						<h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">2. Identifiants ScoDoc (Notes & Absences)</h3>
 						<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
 							<div>
@@ -215,7 +215,7 @@
 									id="r-sco-url"
 									type="text"
 									bind:value={scodocUrl}
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -225,7 +225,7 @@
 									type="text"
 									bind:value={scodocUser}
 									placeholder="prenom.nom"
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -235,14 +235,14 @@
 									type="password"
 									bind:value={scodocPass}
 									placeholder="••••••••"
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 						</div>
 					</div>
 
 					<!-- Section Moodle -->
-					<div class="border-b border-zinc-800 pb-3">
+					<div class="border-b border-app-border pb-3">
 						<h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">3. Accès Moodle (Devoirs & DM)</h3>
 						<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
 							<div>
@@ -251,7 +251,7 @@
 									id="r-mdl-url"
 									type="text"
 									bind:value={moodleUrl}
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -261,7 +261,7 @@
 									type="text"
 									bind:value={moodleUser}
 									placeholder="ex: jdupont"
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -271,7 +271,7 @@
 									type="password"
 									bind:value={moodlePass}
 									placeholder="••••••••"
-									class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 						</div>
@@ -287,7 +287,7 @@
 								type="url"
 								bind:value={icalUrl}
 								placeholder="https://edt.umontpellier.fr/.../export.ics"
-								class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none font-mono"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 					</div>
