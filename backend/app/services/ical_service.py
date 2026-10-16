@@ -33,11 +33,14 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
         if isinstance(dt_end, datetime.date) and not isinstance(dt_end, datetime.datetime):
             dt_end = datetime.datetime.combine(dt_end, datetime.time(9, 30))
 
-        # Convert timezone to naive local if needed
+        # Convertir correctement le fuseau horaire vers Europe/Paris (heure locale française)
+        from zoneinfo import ZoneInfo
+        paris_tz = ZoneInfo("Europe/Paris")
+
         if dt_start.tzinfo is not None:
-            dt_start = dt_start.replace(tzinfo=None)
+            dt_start = dt_start.astimezone(paris_tz).replace(tzinfo=None)
         if dt_end.tzinfo is not None:
-            dt_end = dt_end.replace(tzinfo=None)
+            dt_end = dt_end.astimezone(paris_tz).replace(tzinfo=None)
 
         # Déterminer le type (CM, TD, TP, DS)
         upper_sum = summary.upper()
