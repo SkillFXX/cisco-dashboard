@@ -28,6 +28,9 @@ def get_empty_scodoc_data(error_msg: Optional[str] = None) -> Dict[str, Any]:
         "recent_grades": [],
         "matieres": [],
         "absences": {
+            "injustifiees_demi_journees": 0,
+            "justifiees_demi_journees": 0,
+            "total_demi_journees": 0,
             "total_nb": 0,
             "total_heures": 0.0,
             "injustifiees_nb": 0,
@@ -35,6 +38,7 @@ def get_empty_scodoc_data(error_msg: Optional[str] = None) -> Dict[str, Any]:
             "justifiees_nb": 0,
             "justifiees_heures": 0.0,
             "retards_nb": 0,
+            "retards_heures": 0.0,
             "creneaux": []
         }
     }
@@ -142,9 +146,13 @@ def fetch_scodoc_data(
                 "max_promo": ev.max_promo
             })
 
-        # Absences detaillees
+        # Absences réelles et retards détaillés (exclure impérativement les présences)
         creneaux_abs = []
-        for c in releve.absences.creneaux:
+        raw_abs_slots = getattr(releve.absences, "creneaux_absents", None)
+        if raw_abs_slots is None:
+            raw_abs_slots = [c for c in releve.absences.creneaux if getattr(c, "statut", "").lower() != "present"]
+
+        for c in raw_abs_slots:
             creneaux_abs.append({
                 "id": c.id,
                 "date": c.date,
@@ -154,8 +162,27 @@ def fetch_scodoc_data(
                 "matiere": c.matiere,
                 "enseignant": c.enseignant,
                 "justifie": c.justifie,
-                "statut": "Justifiée" if c.justifie else "Injustifiée"
+                "statut": "Justifiée" if c.justifie else "Injustifiée",
+                "type": "absence"
             })
+
+        # Ajouter les retards s'il y en a
+        for r in getattr(releve.absences, "creneaux_retards", []):
+            creneaux_abs.append({
+                "id": r.id,
+                "date": r.date,
+                "heure_debut": r.heure_debut,
+                "heure_fin": r.heure_fin,
+                "duree_heures": getattr(r, "duree_heures", 0.0),
+                "matiere": r.matiere,
+                "enseignant": r.enseignant,
+                "justifie": getattr(r, "justifie", False),
+                "statut": "Retard",
+                "type": "retard"
+            })
+
+        # Trier chronologiquement (le plus récent en premier)
+        creneaux_abs.sort(key=lambda x: (x.get("date", ""), x.get("heure_debut", "")), reverse=True)
 
         result = {
             "configured": True,
@@ -184,13 +211,17 @@ def fetch_scodoc_data(
             "recent_grades": recent_grades,
             "matieres": matieres_list,
             "absences": {
-                "total_nb": releve.absences.total_nb,
-                "total_heures": releve.absences.total_heures,
-                "injustifiees_nb": releve.absences.injustifiees_nb,
-                "injustifiees_heures": releve.absences.injustifiees_heures,
-                "justifiees_nb": releve.absences.justifiees_nb,
-                "justifiees_heures": releve.absences.justifiees_heures,
-                "retards_nb": releve.absences.retards_nb,
+                "injustifiees_demi_journees": getattr(releve.absences, "injustifiees_demi_journees", 0),
+                "justifiees_demi_journees": getattr(releve.absences, "justifiees_demi_journees", 0),
+                "total_demi_journees": getattr(releve.absences, "total_demi_journees", 0),
+                "total_nb": getattr(releve.absences, "total_nb", len(creneaux_abs)),
+                "total_heures": getattr(releve.absences, "total_heures", 0.0),
+                "injustifiees_nb": getattr(releve.absences, "injustifiees_nb", 0),
+                "injustifiees_heures": getattr(releve.absences, "injustifiees_heures", 0.0),
+                "justifiees_nb": getattr(releve.absences, "justifiees_nb", 0),
+                "justifiees_heures": getattr(releve.absences, "justifiees_heures", 0.0),
+                "retards_nb": getattr(releve.absences, "retards_nb", 0),
+                "retards_heures": getattr(releve.absences, "retards_heures", 0.0),
                 "creneaux": creneaux_abs
             }
         }

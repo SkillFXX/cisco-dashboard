@@ -175,8 +175,13 @@ def get_dashboard_overview(
             "moy_promo": scodoc_data.get("stats", {}).get("moy_promo"),
         },
         "absences": {
+            "injustifiees_demi_journees": scodoc_data.get("absences", {}).get("injustifiees_demi_journees", 0),
+            "justifiees_demi_journees": scodoc_data.get("absences", {}).get("justifiees_demi_journees", 0),
+            "total_demi_journees": scodoc_data.get("absences", {}).get("total_demi_journees", 0),
             "injustifiees_nb": scodoc_data.get("absences", {}).get("injustifiees_nb", 0),
             "injustifiees_heures": scodoc_data.get("absences", {}).get("injustifiees_heures", 0.0),
+            "justifiees_nb": scodoc_data.get("absences", {}).get("justifiees_nb", 0),
+            "justifiees_heures": scodoc_data.get("absences", {}).get("justifiees_heures", 0.0),
             "total_nb": scodoc_data.get("absences", {}).get("total_nb", 0),
             "total_heures": scodoc_data.get("absences", {}).get("total_heures", 0.0),
             "retards_nb": scodoc_data.get("absences", {}).get("retards_nb", 0)

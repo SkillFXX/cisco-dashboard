@@ -94,7 +94,7 @@
 	});
 
 	let unjustifiedCount = $derived(() => {
-		return overview?.absences?.injustifiees_nb ?? 0;
+		return overview?.absences?.injustifiees_demi_journees ?? overview?.absences?.injustifiees_nb ?? 0;
 	});
 
 	// Prochain cours reel
@@ -263,7 +263,10 @@
 		</Card>
 
 		<!-- KPI 2 : Absences non justifiees -->
-		<Card class="flex flex-col justify-between">
+		<Card
+			class="flex flex-col justify-between {onNavigate ? 'cursor-pointer hover:border-zinc-700 transition-colors' : ''}"
+			onclick={() => onNavigate && onNavigate("absences")}
+		>
 			<div class="space-y-0.5">
 				<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Absences non justifiées</h3>
 				<p class="text-xs text-zinc-500">
@@ -271,10 +274,11 @@
 				</p>
 			</div>
 
-			<div class="my-2">
+			<div class="my-2 flex items-baseline gap-1.5">
 				<span class="text-3xl font-extrabold text-white tracking-tight">
 					{unjustifiedCount()}
 				</span>
+				<span class="text-xs text-zinc-400">demi-journée{unjustifiedCount() > 1 ? 's' : ''}</span>
 			</div>
 
 			<div>

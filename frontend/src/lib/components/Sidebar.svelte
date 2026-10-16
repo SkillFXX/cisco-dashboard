@@ -5,6 +5,7 @@
 		Calendar,
 		FileText,
 		GraduationCap,
+		Clock,
 		Settings,
 		LogOut
 	} from "lucide-svelte";
@@ -22,6 +23,7 @@
 		{ id: "timetable", label: "Emploi du temps", icon: Calendar },
 		{ id: "grades", label: "Notes & UEs", icon: FileText },
 		{ id: "tasks", label: "Devoirs & DS", icon: GraduationCap },
+		{ id: "absences", label: "Absences", icon: Clock },
 		{ id: "settings", label: "Paramètres", icon: Settings }
 	];
 </script>
