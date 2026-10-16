@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { api } from "$lib/api";
-	import { formatGrade, formatDateFr } from "$lib/utils";
+	import { formatGrade, formatDateFr, toLocalIsoDate, getMondayOfDate, getCourseColorStyle } from "$lib/utils";
 	import Card from "../Card.svelte";
 	import {
 		Plus,
@@ -113,9 +113,8 @@
 
 	// Calcul des 5 jours de la semaine courante (Lundi a Vendredi)
 	const now = new Date();
-	const currentWeekday = (now.getDay() + 6) % 7; // 0 = Lundi, 4 = Vendredi, 5/6 = Weekend
-	const mondayDate = new Date(now);
-	mondayDate.setDate(now.getDate() - currentWeekday);
+	const currentWeekday = (now.getDay() + 6) % 7;
+	const mondayDate = getMondayOfDate(now, 0);
 
 	const weekDays = [0, 1, 2, 3, 4].map((offset) => {
 		const d = new Date(mondayDate);
@@ -124,7 +123,7 @@
 		return {
 			name: dayNames[offset],
 			offset,
-			isoDate: d.toISOString().slice(0, 10),
+			isoDate: toLocalIsoDate(d),
 			formattedDate: `${d.getDate()} / ${(d.getMonth() + 1).toString().padStart(2, "0")}`
 		};
 	});
@@ -156,21 +155,12 @@
 				const duration = Math.max(endMins - startMins, 45);
 
 				// Jour (0 a 4)
-				const d = new Date(e.date);
-				const dayIdx = (d.getDay() + 6) % 7;
+				const dayIdx = weekDays.findIndex((d) => d.isoDate === e.date);
 
 				const topPercent = Math.min(Math.max(((startMins - dayStartMinutes) / totalDayMinutes) * 100, 0), 90);
 				const heightPercent = Math.min(Math.max((duration / totalDayMinutes) * 100, 6), 50);
 
-				// Couleurs profondes selon le type de cours
-				let colorStyle = "bg-[#0E3242] border-[#155E75] text-[#67E8F9]"; // TP
-				if (e.type === "TD") {
-					colorStyle = "bg-[#1E294B] border-[#2563EB] text-[#93C5FD]";
-				} else if (e.type === "CM") {
-					colorStyle = "bg-[#281B45] border-[#6366F1] text-[#C7D2FE]";
-				} else if (e.type === "DS") {
-					colorStyle = "bg-[#3D1422] border-[#BE123C] text-[#FDA4AF]";
-				}
+				const colorStyle = getCourseColorStyle(e.type);
 
 				return {
 					...e,
@@ -184,6 +174,7 @@
 
 	// Calcul indicateur horizontal heure actuelle
 	let currentTimeIndicator = $derived(() => {
+		const currentWeekday = (now.getDay() + 6) % 7;
 		if (currentWeekday > 4) return null; // Pas d'indicateur le week-end
 		const currentMins = now.getHours() * 60 + now.getMinutes();
 		if (currentMins < dayStartMinutes || currentMins > dayEndMinutes) return null;

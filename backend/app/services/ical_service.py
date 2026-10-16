@@ -1,5 +1,6 @@
 import logging
 import datetime
+import re
 from typing import Dict, Any, Optional, List
 import requests
 import icalendar
@@ -8,13 +9,29 @@ import recurring_ical_events
 logger = logging.getLogger(__name__)
 
 
+def detect_course_type(summary: str, description: str = "", location: str = "") -> str:
+    """Détecte simplement le type de cours à partir des lettres DS, TP, TD, CM ou SAE."""
+    text = f"{summary} {description}".upper()
+    if "DS" in text:
+        return "DS"
+    if "TP" in text:
+        return "TP"
+    if "TD" in text:
+        return "TD"
+    if "CM" in text:
+        return "CM"
+    if "SAE" in text or "SAÉ" in text:
+        return "SAE"
+    return "COURS"
+
+
 def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
     """Parse un flux iCal (.ics) ADE Campus / UM Net."""
     cal = icalendar.Calendar.from_ical(ical_content)
     now = datetime.datetime.now()
     today = datetime.date.today()
-    start_search = today - datetime.timedelta(days=7)
-    end_search = today + datetime.timedelta(days=21)
+    start_search = today - datetime.timedelta(days=60)
+    end_search = today + datetime.timedelta(days=120)
 
     recurring_events = recurring_ical_events.of(cal).between(start_search, end_search)
 
@@ -42,18 +59,7 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
         if dt_end.tzinfo is not None:
             dt_end = dt_end.astimezone(paris_tz).replace(tzinfo=None)
 
-        # Déterminer le type (CM, TD, TP, DS)
-        upper_sum = summary.upper()
-        if "DS" in upper_sum or "EXAMEN" in upper_sum or "EVALUATION" in upper_sum or "PARTIEL" in upper_sum:
-            evt_type = "DS"
-        elif " TP" in upper_sum or upper_sum.startswith("TP") or "/TP" in upper_sum:
-            evt_type = "TP"
-        elif " TD" in upper_sum or upper_sum.startswith("TD") or "/TD" in upper_sum:
-            evt_type = "TD"
-        elif " CM" in upper_sum or upper_sum.startswith("CM") or "AMPHI" in location.upper():
-            evt_type = "CM"
-        else:
-            evt_type = "COURS"
+        evt_type = detect_course_type(summary, description, location)
 
         is_current = (dt_start <= now <= dt_end)
         is_passed = (now > dt_end)

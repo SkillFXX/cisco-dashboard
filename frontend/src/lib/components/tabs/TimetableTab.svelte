@@ -1,14 +1,39 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { api } from "$lib/api";
-	import { Calendar as CalendarIcon, MapPin, RefreshCw, ChevronLeft, ChevronRight } from "lucide-svelte";
+	import {
+		ChevronLeft,
+		ChevronRight,
+		RefreshCw,
+		Clock,
+		MapPin,
+		User as UserIcon,
+		Users
+	} from "lucide-svelte";
+	import {
+		toLocalIsoDate,
+		getMondayOfDate,
+		getCourseColorStyle,
+		getCourseBadgeStyle,
+		getCourseTypeLabel
+	} from "$lib/utils";
 	import Card from "../Card.svelte";
+	import Modal from "../Modal.svelte";
 
 	let timetableData = $state<any>(null);
 	let isLoading = $state(true);
 	let error = $state("");
-	let selectedDayIndex = $state<number | "ALL">("ALL");
+
+	// Mode d'affichage : "week" (semaine) ou "month" (mois)
+	let viewMode = $state<"week" | "month">("week");
+
+	// Décalage temporel
 	let weekOffset = $state<number>(0);
+	let monthOffset = $state<number>(0);
+
+	// Modal de détail d'un cours
+	let selectedCourse = $state<any>(null);
+	let isModalOpen = $state<boolean>(false);
 
 	async function loadTimetable(forceRefresh = false) {
 		isLoading = true;
@@ -26,91 +51,330 @@
 		loadTimetable();
 	});
 
-	function getMonday(d: Date): Date {
-		const date = new Date(d);
-		const day = date.getDay();
-		const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-		date.setDate(diff);
-		date.setHours(0, 0, 0, 0);
-		return date;
+	function openCourseDetail(course: any) {
+		selectedCourse = course;
+		isModalOpen = true;
 	}
 
+	function parseTimeToMinutes(timeStr: string): number {
+		if (!timeStr) return 0;
+		const [h, m] = timeStr.split(":").map((v) => parseInt(v, 10));
+		return h * 60 + (m || 0);
+	}
+
+	const now = new Date();
+	const todayIso = toLocalIsoDate(now);
+
+	// ----------------------------------------------------
+	// CALCULS DE LA VUE SEMAINE (Même logique robuste que le tableau de bord)
+	// ----------------------------------------------------
 	let activeMonday = $derived(() => {
-		const now = new Date();
-		const monday = getMonday(now);
-		monday.setDate(monday.getDate() + weekOffset * 7);
-		return monday;
+		return getMondayOfDate(now, weekOffset);
 	});
 
-	let selectedWeekDays = $derived(() => {
-		const days = [];
+	let weekDays = $derived(() => {
 		const mon = activeMonday();
-		const dayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
-		for (let i = 0; i < 5; i++) {
+		const dayNames = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+		const fullDayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+		const days = [];
+		const all = timetableData?.all_events || [];
+
+		// Détecter si le samedi comporte des cours dans cette semaine
+		const sat = new Date(mon);
+		sat.setDate(mon.getDate() + 5);
+		const satIso = toLocalIsoDate(sat);
+		const hasSaturdayEvents = all.some((e: any) => e.date === satIso);
+		const countDays = hasSaturdayEvents ? 6 : 5;
+
+		for (let offset = 0; offset < countDays; offset++) {
 			const d = new Date(mon);
-			d.setDate(mon.getDate() + i);
-			const dayNum = d.getDate();
-			const monthNum = d.getMonth() + 1;
-			const isoDate = d.toISOString().split("T")[0];
+			d.setDate(mon.getDate() + offset);
+			const isoDate = toLocalIsoDate(d);
 			days.push({
-				index: i,
-				name: dayNames[i],
-				formatted: `${dayNum} / ${monthNum}`,
+				name: dayNames[offset],
+				fullName: fullDayNames[offset],
+				offset,
 				isoDate,
-				fullLabel: `${dayNames[i]} ${dayNum}/${monthNum}`
+				dayNumber: d.getDate(),
+				formattedDate: `${d.getDate()} / ${(d.getMonth() + 1).toString().padStart(2, "0")}`,
+				isToday: isoDate === todayIso
 			});
 		}
 		return days;
 	});
 
-	function eventsForDate(isoDate: string) {
-		if (!timetableData?.all_events) return [];
-		return timetableData.all_events.filter((e: any) => e.date === isoDate);
+	// Échelle horaire de 08:00 à 18:30 (total 630 minutes)
+	const dayStartMinutes = 8 * 60; // 480
+	const dayEndMinutes = 18 * 60 + 30; // 1110
+	const totalDayMinutes = dayEndMinutes - dayStartMinutes; // 630
+
+	// Cours positionnés pour la semaine sélectionnée
+	let weekEvents = $derived(() => {
+		const raw = timetableData?.all_events || [];
+		if (!raw || raw.length === 0) return [];
+
+		const days = weekDays();
+		if (days.length === 0) return [];
+
+		const startIso = days[0].isoDate;
+		const endIso = days[days.length - 1].isoDate;
+
+		return raw
+			.filter((e: any) => e.date >= startIso && e.date <= endIso)
+			.map((e: any) => {
+				const startMins = parseTimeToMinutes(e.start_time);
+				const endMins = parseTimeToMinutes(e.end_time);
+				const duration = Math.max(endMins - startMins, 45);
+
+				// Index du jour dans la grille (0 = Lundi, 4 = Vendredi, 5 = Samedi)
+				const dayIdx = days.findIndex((d) => d.isoDate === e.date);
+
+				const topPercent = Math.min(Math.max(((startMins - dayStartMinutes) / totalDayMinutes) * 100, 0), 91);
+				const heightPercent = Math.min(Math.max((duration / totalDayMinutes) * 100, 7), 50);
+
+				// Style unifié identique au tableau de bord
+				const colorStyle = getCourseColorStyle(e.type);
+
+				return {
+					...e,
+					dayIdx,
+					topPercent,
+					heightPercent,
+					colorStyle
+				};
+			});
+	});
+
+	// Indicateur horizontal heure courante (semaine actuelle uniquement)
+	let currentTimeIndicator = $derived(() => {
+		if (weekOffset !== 0) return null;
+		const currentWeekday = (now.getDay() + 6) % 7;
+		const days = weekDays();
+		if (currentWeekday >= days.length) return null;
+
+		const currentMins = now.getHours() * 60 + now.getMinutes();
+		if (currentMins < dayStartMinutes || currentMins > dayEndMinutes) return null;
+
+		const topPercent = ((currentMins - dayStartMinutes) / totalDayMinutes) * 100;
+		const hoursStr = now.getHours().toString().padStart(2, "0");
+		const minsStr = now.getMinutes().toString().padStart(2, "0");
+
+		return {
+			topPercent,
+			dayIdx: currentWeekday,
+			timeLabel: `${hoursStr}:${minsStr}`
+		};
+	});
+
+	let weekRangeLabel = $derived(() => {
+		const days = weekDays();
+		if (days.length === 0) return "";
+		const first = days[0];
+		const last = days[days.length - 1];
+		return `Du ${first.formattedDate} au ${last.formattedDate}`;
+	});
+
+	// ----------------------------------------------------
+	// CALCULS DE LA VUE MOIS
+	// ----------------------------------------------------
+	let activeMonthDate = $derived(() => {
+		return new Date(now.getFullYear(), now.getMonth() + monthOffset, 1, 12, 0, 0);
+	});
+
+	let monthLabel = $derived(() => {
+		const d = activeMonthDate();
+		const monthNames = [
+			"Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+			"Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+		];
+		return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+	});
+
+	let monthMatrix = $derived(() => {
+		const target = activeMonthDate();
+		const year = target.getFullYear();
+		const month = target.getMonth();
+
+		// Premier jour du mois
+		const firstDay = new Date(year, month, 1, 12, 0, 0);
+		// Jour de la semaine (0 = Lundi, 6 = Dimanche)
+		const startDayOfWeek = (firstDay.getDay() + 6) % 7;
+
+		// Nombre de jours dans le mois
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+		// Nombre de jours dans le mois précédent
+		const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+		const matrix: any[] = [];
+		const allEvents = timetableData?.all_events || [];
+
+		// Jours du mois précédent pour combler la première semaine
+		for (let i = startDayOfWeek - 1; i >= 0; i--) {
+			const dayNum = daysInPrevMonth - i;
+			const d = new Date(year, month - 1, dayNum, 12, 0, 0);
+			const iso = toLocalIsoDate(d);
+			const events = allEvents.filter((e: any) => e.date === iso);
+			matrix.push({
+				dayNumber: dayNum,
+				isoDate: iso,
+				isCurrentMonth: false,
+				isToday: iso === todayIso,
+				events
+			});
+		}
+
+		// Jours du mois courant
+		for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+			const d = new Date(year, month, dayNum, 12, 0, 0);
+			const iso = toLocalIsoDate(d);
+			const events = allEvents.filter((e: any) => e.date === iso);
+			matrix.push({
+				dayNumber: dayNum,
+				isoDate: iso,
+				isCurrentMonth: true,
+				isToday: iso === todayIso,
+				events
+			});
+		}
+
+		// Jours du mois suivant pour terminer la grille (jusqu'à multiple de 7)
+		const remaining = (7 - (matrix.length % 7)) % 7;
+		for (let dayNum = 1; dayNum <= remaining; dayNum++) {
+			const d = new Date(year, month + 1, dayNum, 12, 0, 0);
+			const iso = toLocalIsoDate(d);
+			const events = allEvents.filter((e: any) => e.date === iso);
+			matrix.push({
+				dayNumber: dayNum,
+				isoDate: iso,
+				isCurrentMonth: false,
+				isToday: iso === todayIso,
+				events
+			});
+		}
+
+		return matrix;
+	});
+
+	function formatDateFullFr(isoDate: string): string {
+		if (!isoDate) return "";
+		try {
+			const [y, m, d] = isoDate.split("-").map(Number);
+			const date = new Date(y, m - 1, d, 12, 0, 0);
+			return date.toLocaleDateString("fr-FR", {
+				weekday: "long",
+				day: "numeric",
+				month: "long",
+				year: "numeric"
+			});
+		} catch {
+			return isoDate;
+		}
 	}
 </script>
 
 <div class="space-y-6">
-	<!-- En-tete avec selecteur de semaine -->
-	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-app-border">
+	<!-- En-tête : Titre, switcher de vue, et commandes de navigation temporelle -->
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
 		<div>
-			<h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-				<CalendarIcon class="w-5 h-5 text-cyan-400" />
-				<span>Emploi du temps ADE Campus</span>
+			<h1 class="text-xl font-bold text-white tracking-tight">
+				Emploi du temps
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
-				Flux officiel synchronisé avec détection en direct des salles, cours et enseignants.
+				Planning ADE Campus synchronisé avec détection en direct des cours, salles et enseignants.
 			</p>
 		</div>
 
-		<div class="flex items-center gap-2">
-			<!-- Selecteur de semaine -->
+		<div class="flex flex-wrap items-center gap-3">
+			<!-- Légende discrète des types de cours -->
+			<div class="hidden lg:flex items-center gap-2 text-[11px] text-zinc-400 mr-2">
+				<span class="inline-flex items-center gap-1">
+					<span class="w-2 h-2 rounded-full bg-[#155E75]"></span>
+					<span>TP</span>
+				</span>
+				<span class="inline-flex items-center gap-1">
+					<span class="w-2 h-2 rounded-full bg-[#2563EB]"></span>
+					<span>TD</span>
+				</span>
+				<span class="inline-flex items-center gap-1">
+					<span class="w-2 h-2 rounded-full bg-[#6366F1]"></span>
+					<span>CM</span>
+				</span>
+				<span class="inline-flex items-center gap-1">
+					<span class="w-2 h-2 rounded-full bg-[#BE123C]"></span>
+					<span>DS</span>
+				</span>
+				<span class="inline-flex items-center gap-1">
+					<span class="w-2 h-2 rounded-full bg-[#059669]"></span>
+					<span>SAÉ</span>
+				</span>
+			</div>
+
+			<!-- Sélecteur de vue : Semaine / Mois -->
 			<div class="flex items-center bg-app-card border border-app-border rounded-lg p-1 text-xs">
 				<button
-					onclick={() => (weekOffset -= 1)}
-					class="p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
-					title="Semaine précédente"
+					type="button"
+					onclick={() => (viewMode = "week")}
+					class="px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer {viewMode === 'week' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'}"
+				>
+					Semaine
+				</button>
+				<button
+					type="button"
+					onclick={() => (viewMode = "month")}
+					class="px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer {viewMode === 'month' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'}"
+				>
+					Mois
+				</button>
+			</div>
+
+			<!-- Commandes de navigation temporelle (Semaine ou Mois) -->
+			<div class="flex items-center bg-app-card border border-app-border rounded-lg p-1 text-xs">
+				<button
+					type="button"
+					onclick={() => {
+						if (viewMode === "week") weekOffset -= 1;
+						else monthOffset -= 1;
+					}}
+					class="p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+					title="Période précédente"
 				>
 					<ChevronLeft class="w-4 h-4" />
 				</button>
+
 				<button
-					onclick={() => (weekOffset = 0)}
-					class="px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors {weekOffset === 0 ? 'text-white font-bold bg-white/[0.08]' : 'text-zinc-300 hover:text-white'}"
+					type="button"
+					onclick={() => {
+						if (viewMode === "week") weekOffset = 0;
+						else monthOffset = 0;
+					}}
+					class="px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors {(viewMode === 'week' && weekOffset === 0) || (viewMode === 'month' && monthOffset === 0) ? 'text-white bg-zinc-800' : 'text-zinc-300 hover:text-white'}"
 				>
-					{weekOffset === 0 ? "Cette semaine" : `Semaine ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
+					{#if viewMode === "week"}
+						{weekOffset === 0 ? "Cette semaine" : `Semaine ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
+					{:else}
+						{monthOffset === 0 ? "Ce mois" : monthLabel()}
+					{/if}
 				</button>
+
 				<button
-					onclick={() => (weekOffset += 1)}
-					class="p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
-					title="Semaine suivante"
+					type="button"
+					onclick={() => {
+						if (viewMode === "week") weekOffset += 1;
+						else monthOffset += 1;
+					}}
+					class="p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+					title="Période suivante"
 				>
 					<ChevronRight class="w-4 h-4" />
 				</button>
 			</div>
 
+			<!-- Bouton Actualiser -->
 			<button
+				type="button"
 				onclick={() => loadTimetable(true)}
 				disabled={isLoading}
-				class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-white/[0.04] border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+				class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-zinc-800 border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
 			>
 				<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 				<span>Actualiser</span>
@@ -118,168 +382,316 @@
 		</div>
 	</div>
 
-	<!-- Barre de selection jour / semaine complete -->
-	<div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-app-border">
-		<button
-			onclick={() => (selectedDayIndex = "ALL")}
-			class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer {selectedDayIndex === 'ALL'
-				? 'bg-white/[0.08] text-white shadow-xs'
-				: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
-		>
-			Semaine complète
-		</button>
-		{#each selectedWeekDays() as day}
-			{@const count = eventsForDate(day.isoDate).length}
-			<button
-				onclick={() => (selectedDayIndex = day.index)}
-				class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer {selectedDayIndex === day.index
-					? 'bg-white/[0.08] text-white font-semibold shadow-xs'
-					: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
-			>
-				<span>{day.name} ({day.formatted})</span>
-				{#if count > 0}
-					<span class="text-[10px] px-2 py-0.2 rounded-full bg-zinc-800 text-zinc-200 font-semibold">
-						{count}
-					</span>
-				{/if}
-			</button>
-		{/each}
-	</div>
-
 	{#if isLoading && !timetableData}
 		<div class="flex flex-col items-center justify-center p-16 text-zinc-400">
 			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
-			<p class="text-xs">Chargement instantané de l'emploi du temps...</p>
+			<p class="text-xs">Chargement instantané de l'emploi du temps ADE...</p>
 		</div>
 	{:else if error}
-		<div class="p-4 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">
+		<div class="p-4 rounded-lg bg-rose-900/40 text-rose-300 text-xs font-medium">
 			{error}
 		</div>
 	{:else if timetableData}
-		{#if selectedDayIndex === "ALL"}
-			<!-- Vue 5 colonnes semaine complete -->
-			<div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-				{#each selectedWeekDays() as day}
-					{@const dayEvents = eventsForDate(day.isoDate)}
-					<Card class="p-4 space-y-3">
-						<div class="flex items-center justify-between pb-2 border-b border-app-border">
-							<div>
-								<span class="font-bold text-xs text-zinc-200">{day.name}</span>
-								<span class="block text-[10px] text-zinc-500">{day.formatted}</span>
-							</div>
-							<span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 font-medium">
-								{dayEvents.length} cours
-							</span>
+		<!-- ==================================================== -->
+		<!-- VUE SEMAINE : MÊME STYLE QUE LE TABLEAU DE BORD      -->
+		<!-- ==================================================== -->
+		{#if viewMode === "week"}
+			<Card class="space-y-4">
+				<div class="flex items-center justify-between">
+					<div>
+						<h2 class="text-sm font-bold text-white">
+							Emploi du temps de la semaine
+						</h2>
+						<p class="text-xs text-zinc-400">
+							{weekRangeLabel()}
+						</p>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<span class="text-xs text-zinc-400 font-medium">
+							<strong class="text-white font-bold">{weekEvents().length}</strong> cours programmés
+						</span>
+					</div>
+				</div>
+
+				{#if weekEvents().length === 0}
+					<div class="py-16 text-center border border-dashed border-app-border bg-app-surface rounded-lg text-zinc-400 text-xs space-y-1">
+						<p class="font-medium text-white">Aucun cours programmé pour cette semaine.</p>
+						<p class="text-zinc-500 text-[11px]">Utilisez les flèches en haut pour naviguer vers d'autres semaines.</p>
+					</div>
+				{:else}
+					<!-- Grille de la semaine avec axe des heures à gauche -->
+					<div>
+						<!-- En-têtes des jours de la semaine -->
+						<div
+							class="grid border-b border-app-border pb-2 text-center text-xs font-medium text-zinc-400"
+							style="grid-template-columns: 56px repeat({weekDays().length}, minmax(0, 1fr));"
+						>
+							<div class="text-left pl-1 text-zinc-500">Heure</div>
+							{#each weekDays() as day}
+								<div class="{day.isToday ? 'text-cyan-400 font-bold' : ''}">
+									<span>{day.name}</span>
+									<span class="block text-[10px] text-zinc-400 font-medium">{day.formattedDate}</span>
+								</div>
+							{/each}
 						</div>
 
-						<div class="space-y-2.5">
-							{#if dayEvents.length === 0}
-								<div class="py-8 text-center text-zinc-600 text-xs">
-									Aucun cours
-								</div>
-							{:else}
-								{#each dayEvents as evt}
-									<div class="p-3 rounded-lg border text-xs space-y-1.5 transition-all {evt.is_current
-										? 'border-cyan-500 bg-white/[0.06] text-white shadow-xs'
-										: 'border-app-border bg-app-surface hover:border-zinc-700'}">
-										<div class="flex items-center justify-between">
-											<span class="font-semibold text-[11px] text-zinc-200">{evt.start_time} - {evt.end_time}</span>
-											<span class="px-2 py-0.5 rounded-full text-[9px] font-bold {evt.type === 'TP'
-												? 'bg-cyan-600 text-white'
-												: evt.type === 'TD'
-												? 'bg-blue-600 text-white'
-												: evt.type === 'CM'
-												? 'bg-purple-600 text-white'
-												: 'bg-rose-600 text-white'}">
-												{evt.type}
+						<!-- Corps du calendrier : colonnes avec séparateurs fins -->
+						<div
+							class="relative h-[540px] grid divide-x divide-app-border"
+							style="grid-template-columns: 56px repeat({weekDays().length}, minmax(0, 1fr));"
+						>
+							<!-- Axe des heures à gauche -->
+							<div class="flex flex-col justify-between py-1 text-[10px] text-zinc-400 pr-2">
+								<span>08:00</span>
+								<span>09:30</span>
+								<span>11:00</span>
+								<span>12:30</span>
+								<span>14:00</span>
+								<span>15:30</span>
+								<span>17:00</span>
+								<span>18:30</span>
+							</div>
+
+							<!-- Colonnes des jours -->
+							{#each weekDays() as day, dayIdx}
+								<div class="relative h-full">
+									<!-- Lignes de repère horizontales discrètes -->
+									<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+										<div class="border-b border-zinc-700 w-full"></div>
+										<div class="border-b border-zinc-700 w-full"></div>
+										<div class="border-b border-zinc-700 w-full"></div>
+										<div class="border-b border-zinc-700 w-full"></div>
+										<div class="border-b border-zinc-700 w-full"></div>
+										<div class="border-b border-zinc-700 w-full"></div>
+										<div class="border-b border-zinc-700 w-full"></div>
+									</div>
+
+									<!-- Ligne rouge de l'heure courante (jour actuel uniquement) -->
+									{#if currentTimeIndicator() && currentTimeIndicator()?.dayIdx === dayIdx}
+										<div
+											class="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
+											style="top: {currentTimeIndicator()?.topPercent}%;"
+										>
+											<div class="w-1.5 h-1.5 rounded-full bg-rose-500 -ml-1"></div>
+											<div class="h-0.5 w-full bg-rose-500"></div>
+											<span class="text-[9px] font-bold text-white bg-rose-600 px-1 py-0.5 rounded ml-0.5 whitespace-nowrap shadow-xs">
+												{currentTimeIndicator()?.timeLabel}
 											</span>
 										</div>
+									{/if}
 
-										<div class="font-semibold text-zinc-100 line-clamp-2" title={evt.title}>
-											{evt.title}
-										</div>
-
-										<div class="pt-1.5 border-t border-app-border flex items-center justify-between text-[11px] text-zinc-400">
-											<div class="flex items-center gap-1">
-												<MapPin class="w-3 h-3 text-cyan-400 shrink-0" />
-												<span class="font-medium text-zinc-300 truncate">{evt.location}</span>
+									<!-- Cours de la journée -->
+									{#each weekEvents().filter((e: any) => e.dayIdx === dayIdx) as ev}
+										<button
+											type="button"
+											onclick={() => openCourseDetail(ev)}
+											style="top: {ev.topPercent}%; height: {ev.heightPercent}%;"
+											class="absolute left-1 right-1 rounded-lg p-2 text-xs text-left border overflow-hidden transition-all hover:brightness-125 cursor-pointer z-10 {ev.colorStyle}"
+										>
+											<div class="flex items-center justify-between gap-1 mb-0.5">
+												<span class="font-bold text-[10px] uppercase tracking-wider opacity-90">
+													{ev.type}
+												</span>
+												<span class="text-[9px] text-white font-medium">
+													{ev.start_time} - {ev.end_time}
+												</span>
 											</div>
-											{#if evt.is_current}
-												<span class="text-[9px] font-bold text-cyan-400">En direct</span>
+
+											<div class="font-semibold truncate text-[11px] leading-tight text-white">
+												{ev.title}
+											</div>
+
+											{#if ev.location}
+												<div class="text-[10px] opacity-80 truncate mt-0.5">
+													{ev.location}
+												</div>
 											{/if}
-										</div>
-									</div>
-								{/each}
-							{/if}
+										</button>
+									{/each}
+								</div>
+							{/each}
 						</div>
-					</Card>
-				{/each}
-			</div>
+					</div>
+				{/if}
+			</Card>
+
+		<!-- ==================================================== -->
+		<!-- VUE MOIS : CALENDRIER MENSUEL ÉPURÉ                 -->
+		<!-- ==================================================== -->
 		{:else}
-			<!-- Vue detaillee d'un seul jour -->
-			{@const activeDay = selectedWeekDays()[selectedDayIndex]}
-			{@const dayEvents = eventsForDate(activeDay.isoDate)}
-			<div class="max-w-3xl space-y-4">
+			<Card class="space-y-4">
 				<div class="flex items-center justify-between">
-					<h2 class="text-sm font-bold text-white">
-						Programme détaillé du {activeDay.fullLabel}
-					</h2>
-					<span class="text-xs text-zinc-400 bg-app-card border border-app-border px-2.5 py-1 rounded-full">
-						{dayEvents.length} cours
+					<div>
+						<h2 class="text-sm font-bold text-white">
+							Vue Mensuelle
+						</h2>
+						<p class="text-xs text-zinc-400">
+							{monthLabel()}
+						</p>
+					</div>
+
+					<span class="text-xs text-zinc-400 font-medium">
+						Cliquez sur un cours pour voir son détail
 					</span>
 				</div>
 
-				{#if dayEvents.length === 0}
-					<Card class="p-10 text-center text-zinc-500 text-xs">
-						Aucun cours programmé pour ce jour.
-					</Card>
-				{:else}
-					<div class="space-y-3">
-						{#each dayEvents as evt}
-							<Card class="p-4 hover:border-zinc-700">
-								<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-									<div class="space-y-1">
-										<div class="flex items-center gap-2 flex-wrap">
-											<span class="font-bold text-sm text-cyan-400">{evt.start_time} - {evt.end_time}</span>
-											<span class="text-xs text-zinc-500">({evt.duration_minutes} min)</span>
-											<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {evt.type === 'TP'
-												? 'bg-cyan-600 text-white'
-												: evt.type === 'TD'
-												? 'bg-blue-600 text-white'
-												: evt.type === 'CM'
-												? 'bg-purple-600 text-white'
-												: 'bg-rose-600 text-white'}">
-												{evt.type === 'TP' ? 'Travaux Pratiques (TP)' : evt.type === 'TD' ? 'Travaux Dirigés (TD)' : evt.type === 'CM' ? 'Cours Magistral (CM)' : 'Contrôle (DS)'}
-											</span>
-											{#if evt.is_current}
-												<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-600 text-white">
-													En cours actuellement
-												</span>
-											{/if}
-										</div>
+				<!-- Grille du calendrier mensuel -->
+				<div class="border border-app-border rounded-xl overflow-hidden bg-app-surface">
+					<!-- En-têtes des jours (Lundi à Dimanche) -->
+					<div class="grid grid-cols-7 border-b border-app-border bg-app-card text-center text-xs font-semibold text-zinc-400 py-2.5">
+						<span>Lundi</span>
+						<span>Mardi</span>
+						<span>Mercredi</span>
+						<span>Jeudi</span>
+						<span>Vendredi</span>
+						<span>Samedi</span>
+						<span>Dimanche</span>
+					</div>
 
-										<h3 class="text-sm font-bold text-white mt-1">
-											{evt.title}
-										</h3>
-									</div>
+					<!-- Grille des cellules de jours -->
+					<div class="grid grid-cols-7 divide-x divide-y divide-app-border">
+						{#each monthMatrix() as cell}
+							<div class="min-h-[110px] p-2 flex flex-col justify-between transition-colors {cell.isCurrentMonth ? 'bg-app-surface' : 'bg-zinc-950/40 text-zinc-600'} {cell.isToday ? 'ring-1 ring-inset ring-cyan-500' : ''}">
+								<div class="flex items-center justify-between mb-1.5">
+									<span class="text-xs font-bold {cell.isToday ? 'bg-cyan-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]' : cell.isCurrentMonth ? 'text-white' : 'text-zinc-600'}">
+										{cell.dayNumber}
+									</span>
 
-									<div class="text-left sm:text-right shrink-0 space-y-1 text-xs">
-										<div class="flex items-center sm:justify-end gap-1.5 font-semibold text-zinc-200">
-											<MapPin class="w-3.5 h-3.5 text-cyan-400" />
-											<span>{evt.location}</span>
-										</div>
-										{#if evt.teacher}
-											<div class="text-zinc-400 text-[11px]">
-												{evt.teacher}
-											</div>
-										{/if}
-									</div>
+									{#if cell.events.length > 0}
+										<span class="text-[10px] font-medium text-zinc-400">
+											<strong class="text-white">{cell.events.length}</strong> cours
+										</span>
+									{/if}
 								</div>
-							</Card>
+
+								<!-- Liste miniature des cours du jour -->
+								<div class="space-y-1 flex-1 overflow-hidden">
+									{#each cell.events.slice(0, 3) as ev}
+										<button
+											type="button"
+											onclick={() => openCourseDetail(ev)}
+											class="w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium truncate block transition-all hover:brightness-125 cursor-pointer {getCourseColorStyle(ev.type)}"
+											title="{ev.start_time} - {ev.title} ({ev.location})"
+										>
+											<span class="font-bold text-white mr-1">{ev.start_time}</span>
+											<span>{ev.title}</span>
+										</button>
+									{/each}
+
+									{#if cell.events.length > 3}
+										<span class="block text-[9px] text-zinc-400 text-center font-medium pt-0.5">
+											+ {cell.events.length - 3} autres
+										</span>
+									{/if}
+								</div>
+							</div>
 						{/each}
 					</div>
-				{/if}
-			</div>
+				</div>
+			</Card>
 		{/if}
 	{/if}
 </div>
+
+<!-- ==================================================== -->
+<!-- MODALE DE DÉTAIL D'UN COURS SÉLECTIONNÉ              -->
+<!-- ==================================================== -->
+<Modal bind:open={isModalOpen} title="" class="max-w-md">
+	{#if selectedCourse}
+		<div class="space-y-5">
+			<!-- En-tête de la modale -->
+			<div class="space-y-2 pb-4 border-b border-app-border">
+				<div class="flex items-center gap-2 flex-wrap">
+					<span class="text-xs font-bold px-2.5 py-0.5 rounded-full {getCourseBadgeStyle(selectedCourse.type)}">
+						{getCourseTypeLabel(selectedCourse.type)}
+					</span>
+
+					{#if selectedCourse.is_current}
+						<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cyan-600 text-white">
+							En cours actuellement
+						</span>
+					{/if}
+				</div>
+
+				<h2 class="text-base font-bold text-white">
+					{selectedCourse.title}
+				</h2>
+
+				<p class="text-xs text-zinc-400">
+					{formatDateFullFr(selectedCourse.date)}
+				</p>
+			</div>
+
+			<!-- Informations clés sous forme de grille sobre -->
+			<div class="grid grid-cols-2 gap-3 text-xs">
+				<!-- Horaires -->
+				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
+					<div class="flex items-center gap-1.5 text-zinc-400">
+						<Clock class="w-3.5 h-3.5 text-cyan-400" />
+						<span class="text-[11px] font-medium uppercase tracking-wider">Horaires</span>
+					</div>
+					<div class="text-sm font-bold text-white">
+						{selectedCourse.start_time} - {selectedCourse.end_time}
+					</div>
+					<div class="text-[10px] text-zinc-400">
+						Durée : <span class="text-white font-medium">{selectedCourse.duration_minutes} min</span>
+					</div>
+				</div>
+
+				<!-- Salle / Lieu -->
+				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
+					<div class="flex items-center gap-1.5 text-zinc-400">
+						<MapPin class="w-3.5 h-3.5 text-cyan-400" />
+						<span class="text-[11px] font-medium uppercase tracking-wider">Lieu / Salle</span>
+					</div>
+					<div class="text-sm font-bold text-white truncate" title={selectedCourse.location}>
+						{selectedCourse.location || "Non précisé"}
+					</div>
+					<div class="text-[10px] text-zinc-400">
+						Campus universitaire
+					</div>
+				</div>
+
+				<!-- Enseignant -->
+				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
+					<div class="flex items-center gap-1.5 text-zinc-400">
+						<UserIcon class="w-3.5 h-3.5 text-cyan-400" />
+						<span class="text-[11px] font-medium uppercase tracking-wider">Enseignant</span>
+					</div>
+					<div class="text-sm font-bold text-white truncate" title={selectedCourse.teacher}>
+						{selectedCourse.teacher || "Non spécifié"}
+					</div>
+					<div class="text-[10px] text-zinc-400">
+						Intervenant
+					</div>
+				</div>
+
+				<!-- Groupe / Promo -->
+				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
+					<div class="flex items-center gap-1.5 text-zinc-400">
+						<Users class="w-3.5 h-3.5 text-cyan-400" />
+						<span class="text-[11px] font-medium uppercase tracking-wider">Groupe</span>
+					</div>
+					<div class="text-sm font-bold text-white truncate" title={selectedCourse.group}>
+						{selectedCourse.group || "Promotion"}
+					</div>
+					<div class="text-[10px] text-zinc-400">
+						Effectif concerné
+					</div>
+				</div>
+			</div>
+
+			<!-- Bouton de fermeture -->
+			<div class="flex justify-end pt-2 border-t border-app-border">
+				<button
+					type="button"
+					onclick={() => (isModalOpen = false)}
+					class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-all cursor-pointer"
+				>
+					Fermer
+				</button>
+			</div>
+		</div>
+	{/if}
+</Modal>
