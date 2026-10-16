@@ -123,7 +123,8 @@ def get_dashboard_overview(current_user: User = Depends(get_current_user), db: S
         "user": {
             "id": current_user.id,
             "username": current_user.username,
-            "full_name": student_name or current_user.username
+            "full_name": student_name or current_user.username,
+            "photo_base64": scodoc_data.get("etudiant", {}).get("photo_base64") if scodoc_data.get("etudiant") else None
         },
         "stats": {
             "moyenne_generale": scodoc_data.get("stats", {}).get("moyenne_generale"),

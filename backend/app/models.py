@@ -61,3 +61,12 @@ class PersonalTask(Base):
 
     user = relationship("User", back_populates="tasks")
 
+
+class KVCache(Base):
+    __tablename__ = "kv_cache"
+
+    key = Column(String(100), primary_key=True, index=True)
+    value = Column(Text, nullable=False) # JSON encoded data
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    ttl_seconds = Column(Integer, default=900) # 15 minutes par defaut
+

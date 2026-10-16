@@ -5,6 +5,7 @@ export interface UserProfile {
 	username: string;
 	email: string;
 	full_name?: string;
+	photo_base64?: string | null;
 	has_scodoc?: boolean;
 	has_moodle?: boolean;
 	has_ical?: boolean;

@@ -108,12 +108,12 @@ export const api = {
 	},
 
 	// Timetable (ADE / UM Net iCal)
-	async getTimetableWeek() {
-		return await request<any>("/timetable/week");
+	async getTimetableWeek(forceRefresh = false) {
+		return await request<any>(`/timetable/week?force_refresh=${forceRefresh}`);
 	},
 
-	async getTimetableToday() {
-		return await request<any>("/timetable/today");
+	async getTimetableToday(forceRefresh = false) {
+		return await request<any>(`/timetable/today?force_refresh=${forceRefresh}`);
 	},
 
 	// Tasks & DS

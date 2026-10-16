@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import Card from "../Card.svelte";
-	import Badge from "../Badge.svelte";
-	import Button from "../Button.svelte";
 	import { api } from "$lib/api";
 	import { formatGrade, formatDateFr } from "$lib/utils";
-	import { GraduationCap, Award, BookOpen, Layers, RefreshCw, Filter } from "lucide-svelte";
+	import {
+		GraduationCap,
+		Award,
+		BookOpen,
+		RefreshCw,
+		Filter,
+		CheckCircle2
+	} from "lucide-svelte";
 
 	let gradesData = $state<any>(null);
 	let isLoading = $state(true);
@@ -28,110 +32,159 @@
 		loadGrades();
 	});
 
+	// Liste aplatie de toutes les evaluations
+	let allEvaluations = $derived(() => {
+		if (!gradesData?.matieres) return [];
+		const list: any[] = [];
+		for (const mat of gradesData.matieres) {
+			for (const ev of mat.evaluations || []) {
+				list.push({
+					...ev,
+					code_matiere: mat.code,
+					titre_matiere: mat.titre
+				});
+			}
+		}
+		// Tri par date decroissante
+		return list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+	});
+
 	let filteredEvaluations = $derived(() => {
-		if (!gradesData?.grades) return [];
-		if (selectedMatiere === "ALL") return gradesData.grades;
-		return gradesData.grades.filter((g: any) => g.code_matiere === selectedMatiere);
+		const all = allEvaluations();
+		if (selectedMatiere === "ALL") return all;
+		return all.filter((ev) => ev.code_matiere === selectedMatiere);
 	});
 </script>
 
 <div class="space-y-6">
-	<!-- Header -->
+	<!-- En-tete -->
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 		<div>
-			<h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-				<GraduationCap class="w-6 h-6 text-cyan-400" />
+			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+				<GraduationCap class="w-5 h-5 text-cyan-400" />
 				Notes & Relevé ScoDoc
 			</h1>
-			<p class="text-sm text-zinc-400 mt-1">
-				Consultez vos moyennes par Unité d'Enseignement (UE), coefficients, rangs et détail des évaluations.
+			<p class="text-xs text-zinc-400 mt-0.5">
+				Moyennes par Unité d'Enseignement (UE), matières (Ressources & SAÉ) et détail des notes saisies.
 			</p>
 		</div>
 
-		<Button variant="outline" size="sm" onclick={() => loadGrades(true)} disabled={isLoading}>
-			<RefreshCw class="w-4 h-4 {isLoading ? 'animate-spin' : ''}" />
+		<button
+			onclick={() => loadGrades(true)}
+			disabled={isLoading}
+			class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0E121B] hover:bg-[#151C2A] border border-[#182030] text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+		>
+			<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 			<span>Rafraîchir ScoDoc</span>
-		</Button>
+		</button>
 	</div>
 
-	{#if isLoading}
-		<div class="flex flex-col items-center justify-center p-12 text-zinc-400">
-			<RefreshCw class="w-8 h-8 animate-spin text-cyan-400 mb-3" />
-			<p class="text-sm">Chargement des données de scolarité ScoDoc...</p>
+	{#if isLoading && !gradesData}
+		<div class="flex flex-col items-center justify-center p-16 text-zinc-400">
+			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
+			<p class="text-xs">Chargement instantané des notes ScoDoc...</p>
 		</div>
 	{:else if error}
-		<div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+		<div class="p-4 rounded-xl bg-red-950/30 border border-red-800/40 text-red-400 text-xs">
 			{error}
 		</div>
 	{:else if gradesData}
-		<!-- UEs Cards Grid -->
+		<!-- Grille des UEs -->
 		<div>
-			<h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-2">
-				<Award class="w-4 h-4 text-cyan-400" />
-				Unités d'Enseignement (UE) du Semestre
-			</h2>
+			<div class="flex items-center justify-between mb-3">
+				<h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+					<Award class="w-4 h-4 text-cyan-400" />
+					<span>Unités d'Enseignement (UE) du Semestre</span>
+				</h2>
+				{#if gradesData.stats?.moyenne_generale}
+					<span class="text-xs text-zinc-400 font-mono">
+						Moyenne générale : <strong class="text-cyan-400 font-bold">{formatGrade(gradesData.stats.moyenne_generale)}</strong>
+					</span>
+				{/if}
+			</div>
+
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 				{#each gradesData.ues || [] as ue}
-					<Card class="space-y-3 relative overflow-hidden border-zinc-800">
+					<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-5 space-y-3">
 						<div class="flex items-start justify-between">
-							<div>
+							<div class="space-y-1">
 								<div class="flex items-center gap-2">
-									<Badge variant="cisco" class="font-mono">{ue.code}</Badge>
-									<span class="text-xs text-zinc-400">{ue.ects} ECTS</span>
+									<span class="font-mono text-xs font-bold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
+										{ue.code}
+									</span>
+									<span class="text-[11px] text-zinc-500 font-mono">{ue.ects} ECTS</span>
 								</div>
-								<h3 class="font-semibold text-sm text-white mt-1.5 line-clamp-1" title={ue.titre}>
+								<h3 class="font-semibold text-xs text-white line-clamp-1" title={ue.titre}>
 									{ue.titre}
 								</h3>
 							</div>
-							<Badge variant={ue.moyenne >= 10 ? 'success' : 'destructive'}>
+
+							<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold {ue.moyenne && ue.moyenne >= 10
+								? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
+								: 'bg-zinc-900 text-zinc-500 border border-zinc-800'}">
 								{ue.status}
-							</Badge>
+							</span>
 						</div>
 
-						<div class="flex items-baseline justify-between pt-2">
-							<div class="flex items-baseline gap-1.5">
-								<span class="text-2xl font-bold {ue.moyenne >= 10 ? 'text-emerald-400' : 'text-red-400'}">
+						<div class="flex items-baseline justify-between pt-1">
+							<div class="flex items-baseline gap-1">
+								<span class="text-2xl font-bold font-mono {ue.moyenne && ue.moyenne >= 10 ? 'text-emerald-400' : 'text-zinc-400'}">
 									{formatGrade(ue.moyenne)}
 								</span>
 								<span class="text-xs text-zinc-500">/ 20</span>
 							</div>
 							<div class="text-xs text-zinc-400">
-								Rang : <strong class="text-cyan-400">{ue.rang || "--"}</strong> / {ue.total_promo || "--"}
+								Rang : <strong class="text-cyan-400 font-mono font-semibold">{ue.rang || "--"}</strong> / {ue.total_promo || "--"}
 							</div>
 						</div>
 
-						<!-- Progress bar towards 10/20 -->
-						<div class="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+						<!-- Jauge d'avancement vers la validation -->
+						<div class="w-full bg-[#151C2A] rounded-full h-1 overflow-hidden">
 							<div
-								class="h-full rounded-full transition-all duration-500 {ue.moyenne >= 10 ? 'bg-emerald-500' : 'bg-red-500'}"
-								style="width: {Math.min(100, Math.max(0, (ue.moyenne / 20) * 100))}%"
+								class="h-full rounded-full transition-all duration-500 {ue.moyenne && ue.moyenne >= 10 ? 'bg-emerald-500' : 'bg-zinc-700'}"
+								style="width: {Math.min(100, Math.max(0, ((ue.moyenne || 0) / 20) * 100))}%"
 							></div>
 						</div>
-					</Card>
+					</div>
 				{/each}
 			</div>
 		</div>
 
-		<!-- Matières R&T (Ressources & SAÉ) -->
+		<!-- Moyennes par Matiere (Ressources & SAEs) avec calcul precis -->
 		<div>
-			<h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-2">
-				<BookOpen class="w-4 h-4 text-cyan-400" />
-				Moyennes par Matière (Ressources & SAÉ)
-			</h2>
+			<div class="flex items-center justify-between mb-3">
+				<h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+					<BookOpen class="w-4 h-4 text-cyan-400" />
+					<span>Moyennes par Matière (Ressources & SAÉ)</span>
+				</h2>
+				<span class="text-[11px] text-zinc-500">
+					Cliquez sur une matière pour filtrer ses notes
+				</span>
+			</div>
+
 			<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
 				{#each gradesData.matieres || [] as mat}
+					{@const isSelected = selectedMatiere === mat.code}
 					<button
-						onclick={() => (selectedMatiere = selectedMatiere === mat.code ? "ALL" : mat.code)}
-						class="text-left p-3 rounded-xl border transition-all cursor-pointer {selectedMatiere === mat.code ? 'border-cyan-500 bg-cyan-950/30' : 'border-zinc-800/80 bg-zinc-900/60 hover:border-zinc-700'}"
+						onclick={() => (selectedMatiere = isSelected ? "ALL" : mat.code)}
+						class="text-left p-3.5 rounded-2xl border transition-all cursor-pointer {isSelected
+							? 'border-cyan-500 bg-[#0E2A38] text-white shadow-sm'
+							: 'border-[#182030] bg-[#0E121B] hover:border-zinc-700'}"
 					>
 						<div class="flex items-center justify-between mb-1">
-							<span class="font-mono font-bold text-xs text-zinc-200">{mat.code}</span>
-							<span class="text-[10px] text-zinc-500">{mat.evaluations_count} éval.</span>
+							<span class="font-mono font-bold text-xs {isSelected ? 'text-cyan-300' : 'text-zinc-200'}">
+								{mat.code}
+							</span>
+							<span class="text-[10px] text-zinc-500 font-mono">
+								{mat.evaluations_count} éval.
+							</span>
 						</div>
-						<div class="text-lg font-extrabold {mat.moyenne && mat.moyenne >= 10 ? 'text-emerald-400' : 'text-zinc-400'}">
-							{formatGrade(mat.moyenne)}
+
+						<div class="text-lg font-bold font-mono {mat.moyenne && mat.moyenne >= 10 ? 'text-emerald-400' : mat.moyenne ? 'text-amber-400' : 'text-zinc-500'}">
+							{mat.moyenne !== null && mat.moyenne !== undefined ? formatGrade(mat.moyenne) : "En attente"}
 						</div>
-						<div class="text-[11px] text-zinc-400 truncate mt-1" title={mat.titre}>
+
+						<div class="text-[10px] text-zinc-400 truncate mt-1" title={mat.titre}>
 							{mat.titre}
 						</div>
 					</button>
@@ -139,29 +192,29 @@
 			</div>
 		</div>
 
-		<!-- Detailed Evaluations List -->
-		<Card>
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-zinc-800">
+		<!-- Detail des evaluations saisies -->
+		<div class="bg-[#0E121B] border border-[#182030] rounded-2xl p-5 space-y-4">
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#182030]">
 				<div>
-					<h2 class="text-base font-semibold text-white">Détail des Évaluations Saisies</h2>
-					<p class="text-xs text-zinc-400 mt-0.5">
+					<h2 class="text-sm font-bold text-white">Détail des Évaluations Saisies</h2>
+					<p class="text-xs text-zinc-500 mt-0.5">
 						{#if selectedMatiere !== "ALL"}
-							Filtré pour la matière <strong>{selectedMatiere}</strong>
+							Filtré pour la matière <strong class="text-cyan-400">{selectedMatiere}</strong>
 						{:else}
-							Toutes les évaluations du semestre
+							Toutes les notes du semestre
 						{/if}
 					</p>
 				</div>
 
 				<div class="flex items-center gap-2">
-					<Filter class="w-4 h-4 text-zinc-400" />
+					<Filter class="w-3.5 h-3.5 text-zinc-500" />
 					<select
 						bind:value={selectedMatiere}
-						class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-xs text-zinc-200 focus:border-cyan-500 focus:outline-none"
+						class="rounded-xl border border-[#182030] bg-[#080A0F] px-3 py-1.5 text-xs text-zinc-200 focus:border-cyan-500 focus:outline-none"
 					>
-						<option value="ALL">Toutes les matières</option>
+						<option value="ALL">Toutes les matières ({allEvaluations().length} notes)</option>
 						{#each gradesData.matieres || [] as mat}
-							<option value={mat.code}>{mat.code} - {mat.titre}</option>
+							<option value={mat.code}>{mat.code} - {mat.titre} ({mat.evaluations_count})</option>
 						{/each}
 					</select>
 				</div>
@@ -169,41 +222,43 @@
 
 			<div class="space-y-2.5">
 				{#if filteredEvaluations().length === 0}
-					<p class="text-sm text-zinc-500 text-center py-8">Aucune note enregistrée pour cette sélection.</p>
+					<div class="py-12 text-center text-zinc-600 text-xs">
+						Aucune note enregistrée pour cette sélection.
+					</div>
 				{:else}
 					{#each filteredEvaluations() as ev}
-						<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl border border-zinc-800/80 bg-zinc-950/40 hover:bg-zinc-800/30 transition-colors gap-3">
+						<div class="p-3.5 rounded-xl border border-[#182030] bg-[#080A0F] hover:border-zinc-700 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
 							<div class="space-y-1">
 								<div class="flex items-center gap-2 flex-wrap">
-									<Badge variant="secondary" class="font-mono text-xs">{ev.code_matiere}</Badge>
-									<span class="font-medium text-sm text-zinc-100">{ev.description}</span>
-									<span class="text-xs text-zinc-500">Coef {ev.coefficient}</span>
+									<span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-cyan-400">
+										{ev.code_matiere}
+									</span>
+									<span class="font-semibold text-zinc-200">{ev.description || "Évaluation"}</span>
+									<span class="text-[11px] text-zinc-500 font-mono">Coef {ev.coefficient}</span>
 								</div>
-								<div class="text-xs text-zinc-400 flex items-center gap-3">
-									<span>{ev.titre_matiere}</span>
-									<span>•</span>
-									<span class="text-zinc-500">{formatDateFr(ev.date)}</span>
+								<div class="text-[11px] text-zinc-400">
+									{ev.titre_matiere}
 								</div>
 							</div>
 
-							<div class="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-zinc-800/60 pt-2 sm:pt-0">
-								<div class="text-left sm:text-right text-[11px] text-zinc-500">
-									<div>Moy. promo : <span class="text-zinc-400 font-medium">{formatGrade(ev.moy_promo)}</span></div>
-									<div>Min : {formatGrade(ev.min_promo)} / Max : {formatGrade(ev.max_promo)}</div>
-								</div>
+							<div class="flex items-center sm:text-right gap-4 justify-between sm:justify-end">
+								{#if ev.date}
+									<span class="text-[11px] text-zinc-500 font-mono">
+										{formatDateFr(ev.date)}
+									</span>
+								{/if}
 
-								<div class="text-right shrink-0">
-									<span class="text-xl font-black {ev.note !== null && ev.note >= 10 ? 'text-emerald-400' : 'text-red-400'}">
+								<div class="flex items-baseline gap-1 bg-[#0E121B] px-3 py-1 rounded-xl border border-[#182030]">
+									<span class="font-bold text-sm font-mono text-cyan-400">
 										{formatGrade(ev.note)}
 									</span>
-									<span class="text-xs text-zinc-500 font-medium">/ 20</span>
+									<span class="text-[10px] text-zinc-500">/ 20</span>
 								</div>
 							</div>
 						</div>
 					{/each}
 				{/if}
 			</div>
-		</Card>
+		</div>
 	{/if}
 </div>
-

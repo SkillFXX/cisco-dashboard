@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User
@@ -8,17 +8,27 @@ from ..services.ical_service import fetch_timetable
 router = APIRouter(prefix="/api/timetable", tags=["timetable"])
 
 @router.get("/week")
-def get_week_timetable(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_week_timetable(
+    force_refresh: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     creds = current_user.credentials
     return fetch_timetable(
-        ical_url=creds.ical_url if creds else None
+        ical_url=creds.ical_url if creds else None,
+        force_refresh=force_refresh
     )
 
 @router.get("/today")
-def get_today_timetable(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_today_timetable(
+    force_refresh: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     creds = current_user.credentials
     data = fetch_timetable(
-        ical_url=creds.ical_url if creds else None
+        ical_url=creds.ical_url if creds else None,
+        force_refresh=force_refresh
     )
     return {
         "configured": data.get("configured", False),

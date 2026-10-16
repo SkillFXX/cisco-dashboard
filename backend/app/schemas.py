@@ -32,6 +32,7 @@ class UserResponse(BaseModel):
     username: str
     email: str
     full_name: Optional[str]
+    photo_base64: Optional[str] = None
     has_scodoc: bool
     has_moodle: bool
     has_ical: bool

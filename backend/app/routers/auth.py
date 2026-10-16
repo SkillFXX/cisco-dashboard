@@ -68,6 +68,15 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
         )
 
     token = create_access_token(data={"sub": str(user.id)})
+    photo = None
+    try:
+        from ..services.cache_service import get_cached_data
+        cached_scodoc = get_cached_data(f"scodoc:{user.id}")
+        if cached_scodoc and cached_scodoc.get("etudiant"):
+            photo = cached_scodoc["etudiant"].get("photo_base64")
+    except Exception:
+        pass
+
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -75,18 +84,29 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
             "id": user.id,
             "username": user.username,
             "email": user.email,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "photo_base64": photo
         }
     }
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     creds = current_user.credentials
+    photo = None
+    try:
+        from ..services.cache_service import get_cached_data
+        cached_scodoc = get_cached_data(f"scodoc:{current_user.id}")
+        if cached_scodoc and cached_scodoc.get("etudiant"):
+            photo = cached_scodoc["etudiant"].get("photo_base64")
+    except Exception:
+        pass
+
     return {
         "id": current_user.id,
         "username": current_user.username,
         "email": current_user.email,
         "full_name": current_user.full_name,
+        "photo_base64": photo,
         "has_scodoc": bool(creds and creds.scodoc_username and creds.scodoc_password),
         "has_moodle": bool(creds and (creds.moodle_token or (creds.moodle_username and creds.moodle_password))),
         "has_ical": bool(creds and creds.ical_url),

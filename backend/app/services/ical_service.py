@@ -83,31 +83,70 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
     return parsed
 
 
-_ICAL_CACHE: Dict[str, Dict[str, Any]] = {}
-ICAL_CACHE_TTL = 900  # 15 minutes
+import hashlib
+from .cache_service import get_cached_data, set_cached_data
 
 
-def fetch_timetable(ical_url: Optional[str] = None) -> Dict[str, Any]:
-    """Récupère l'emploi du temps depuis l'URL iCal réelle avec cache."""
+def fetch_timetable(ical_url: Optional[str] = None, force_refresh: bool = False) -> Dict[str, Any]:
+    """Recupere l'emploi du temps depuis l'URL iCal avec cache SQLite persistant."""
     if not ical_url or ical_url.strip() == "":
         return _format_timetable_response([], configured=False)
 
-    import time
-    now_ts = time.time()
-    cached = _ICAL_CACHE.get(ical_url)
-    if cached and (now_ts - cached.get("timestamp", 0) < ICAL_CACHE_TTL):
-        return cached["data"]
+    clean_url = ical_url.strip()
+    url_hash = hashlib.md5(clean_url.encode("utf-8")).hexdigest()
+    cache_key = f"ical:{url_hash}"
+
+    if not force_refresh:
+        cached = get_cached_data(cache_key)
+        if cached:
+            # Re-calculer dynamiquement is_current et is_passed pour les cours selon l'heure courante
+            return _refresh_event_statuses(cached)
 
     try:
-        resp = requests.get(ical_url.strip(), timeout=25)
+        resp = requests.get(clean_url, timeout=20)
         resp.raise_for_status()
         events = parse_ical_stream(resp.text)
         res = _format_timetable_response(events, configured=True)
-        _ICAL_CACHE[ical_url] = {"timestamp": now_ts, "data": res}
+        set_cached_data(cache_key, res, ttl_seconds=900)
         return res
     except Exception as e:
-        logger.warning(f"Erreur lors de la récupération iCal: {e}")
+        logger.warning(f"Erreur lors de la recuperation iCal: {e}")
+        stale = get_cached_data(cache_key, allow_stale=True)
+        if stale:
+            stale["connection_error"] = f"Avertissement actualisation ({e}). Affichage de la version enregistree."
+            return _refresh_event_statuses(stale)
         return _format_timetable_response([], configured=True, connection_error=str(e))
+
+
+def _refresh_event_statuses(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Met a jour en direct is_current, is_passed et le prochain cours d'apres les evenements caches."""
+    now = datetime.datetime.now()
+    events = data.get("all_events", [])
+    today_str = datetime.date.today().isoformat()
+
+    today_events = []
+    upcoming = []
+
+    for e in events:
+        try:
+            dt_start = datetime.datetime.fromisoformat(e["dt_start"])
+            dt_end = datetime.datetime.fromisoformat(e["dt_end"])
+            e["is_current"] = (dt_start <= now <= dt_end)
+            e["is_passed"] = (now > dt_end)
+            if e.get("date") == today_str:
+                today_events.append(e)
+            if dt_start > now:
+                upcoming.append(e)
+        except Exception:
+            pass
+
+    current_course = next((e for e in events if e.get("is_current")), None)
+    next_course = upcoming[0] if upcoming else None
+
+    data["current_course"] = current_course
+    data["next_course"] = next_course
+    data["today_events"] = today_events
+    return data
 
 
 def _format_timetable_response(

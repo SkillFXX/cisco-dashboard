@@ -29,11 +29,19 @@
 	let error = $state("");
 	let isRefreshing = $state(false);
 
+	import { auth } from "$lib/stores/auth.svelte";
+
 	async function loadOverview(silent = false) {
 		if (!silent) isLoading = true;
 		error = "";
 		try {
 			overview = await api.getDashboardOverview();
+			if (overview?.user?.photo_base64 && auth.user) {
+				auth.user.photo_base64 = overview.user.photo_base64;
+				if (typeof window !== "undefined") {
+					localStorage.setItem("cisco_user", JSON.stringify(auth.user));
+				}
+			}
 		} catch (err: any) {
 			error = err.message || "Erreur lors du chargement des données.";
 		} finally {
@@ -394,7 +402,7 @@
 								{/if}
 
 								<!-- Cours reels de la journee -->
-								{#each weekEvents().filter((e) => e.dayIdx === dayIdx) as ev}
+								{#each weekEvents().filter((e: any) => e.dayIdx === dayIdx) as ev}
 									<div
 										style="top: {ev.topPercent}%; height: {ev.heightPercent}%;"
 										class="absolute left-1 right-1 rounded-lg p-2 text-xs font-sans border overflow-hidden transition-all hover:brightness-125 cursor-pointer z-10 {ev.colorStyle}"

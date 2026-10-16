@@ -1,16 +1,13 @@
 import logging
 from typing import Dict, Any, Optional
-import time
+from scodoc_api import ScoDoc
+from .cache_service import get_cached_data, set_cached_data
 
 logger = logging.getLogger(__name__)
 
-# Simple in-memory cache to avoid hammering ScoDoc / CAS server
-_CACHE: Dict[int, Dict[str, Any]] = {}
-CACHE_TTL = 300  # 5 minutes
-
 
 def get_empty_scodoc_data(error_msg: Optional[str] = None) -> Dict[str, Any]:
-    """Retourne une structure vide propre lorsque ScoDoc n'est pas encore configuré ou en erreur."""
+    """Retourne une structure vide propre lorsque ScoDoc n'est pas encore configure ou en erreur."""
     return {
         "configured": False,
         "connection_error": error_msg,
@@ -48,25 +45,34 @@ def fetch_scodoc_data(
     password: Optional[str],
     force_refresh: bool = False
 ) -> Dict[str, Any]:
-    """Interroge ScoDoc via le module scodoc_api et formate les données pour le dashboard."""
-    # Vérification du cache mémoire
-    now = time.time()
-    cached = _CACHE.get(user_id)
-    if not force_refresh and cached and (now - cached.get("timestamp", 0) < CACHE_TTL):
-        return cached["data"]
+    """Interroge ScoDoc via scodoc_api 1.1.0 et utilise le cache SQLite persistant pour un chargement instantane."""
+    cache_key = f"scodoc:{user_id}"
 
-    # Si pas d'identifiants renseignés
+    # 1. Verification du cache persistant SQLite
+    if not force_refresh:
+        cached = get_cached_data(cache_key)
+        if cached:
+            return cached
+
+    # Si pas d'identifiants renseignes
     if not url or not username or not password:
         empty = get_empty_scodoc_data("Identifiants ScoDoc non configurés.")
-        _CACHE[user_id] = {"timestamp": now, "data": empty}
+        set_cached_data(cache_key, empty, ttl_seconds=300)
         return empty
 
-    # Appel réel avec le module scodoc_api
+    # 2. Appel reel ScoDoc via scodoc_api 1.1.0
     try:
-        from scodoc_api import ScoDoc
         client = ScoDoc(base_url=url, username=username, password=password, auto_login=True)
         releve = client.get_releve(force_refresh=True)
 
+        # Photo de profil etudiant (nouvelle fonctionnalite scodoc-api 1.1.0)
+        student_pic_b64 = None
+        try:
+            student_pic_b64 = client.get_student_pic_base64()
+        except Exception as pic_err:
+            logger.debug(f"Photo de profil ScoDoc non disponible: {pic_err}")
+
+        # Traitement des UEs
         ues_list = []
         for code, ue in releve.ues.items():
             ues_list.append({
@@ -79,8 +85,45 @@ def fetch_scodoc_data(
                 "status": "Validée" if (ue.moyenne and ue.moyenne >= 10) else ("Compensable" if (ue.moyenne and ue.moyenne >= 8) else "Non validée")
             })
 
+        # Traitement des matieres (Ressources & SAES) avec calcul des moyennes reelles par matieres
+        matieres_list = []
+        for code, mat in list(releve.ressources.items()) + list(releve.saes.items()):
+            # Calcul de la moyenne de la matiere a partir des evaluations si ScoDoc ne la fournit pas directement
+            evals_list = []
+            for ev in mat.evaluations:
+                evals_list.append({
+                    "id": ev.id,
+                    "description": ev.description,
+                    "note": ev.note,
+                    "coefficient": ev.coefficient,
+                    "date": ev.date,
+                    "min_promo": ev.min_promo,
+                    "moy_promo": ev.moy_promo,
+                    "max_promo": ev.max_promo
+                })
+
+            valid_evals = [e for e in mat.evaluations if e.note is not None and e.coefficient > 0]
+            if mat.moyenne is not None:
+                moyenne_matiere = mat.moyenne
+            elif valid_evals:
+                total_pts = sum(e.note * e.coefficient for e in valid_evals)
+                total_coef = sum(e.coefficient for e in valid_evals)
+                moyenne_matiere = round(total_pts / total_coef, 2) if total_coef > 0 else None
+            else:
+                moyenne_matiere = None
+
+            matieres_list.append({
+                "code": code,
+                "titre": mat.titre,
+                "type": mat.type,
+                "moyenne": moyenne_matiere,
+                "evaluations_count": len(mat.evaluations),
+                "evaluations": evals_list
+            })
+
+        # Evaluations recentes ordonnees
         recent_grades = []
-        for ev in releve.notes_avec_valeur[:15]:
+        for ev in releve.notes_avec_valeur[:20]:
             recent_grades.append({
                 "id": ev.id,
                 "code_matiere": ev.code_matiere,
@@ -94,16 +137,7 @@ def fetch_scodoc_data(
                 "max_promo": ev.max_promo
             })
 
-        matieres_list = []
-        for code, mat in list(releve.ressources.items()) + list(releve.saes.items()):
-            matieres_list.append({
-                "code": code,
-                "titre": mat.titre,
-                "type": mat.type,
-                "moyenne": mat.moyenne,
-                "evaluations_count": len(mat.evaluations)
-            })
-
+        # Absences detaillees
         creneaux_abs = []
         for c in releve.absences.creneaux:
             creneaux_abs.append({
@@ -128,7 +162,8 @@ def fetch_scodoc_data(
                 "prenom": releve.etudiant.prenom,
                 "email": releve.etudiant.email,
                 "departement": releve.etudiant.departement,
-                "code_nip": releve.etudiant.code_nip
+                "code_nip": releve.etudiant.code_nip,
+                "photo_base64": student_pic_b64
             },
             "stats": {
                 "moyenne_generale": releve.moyenne_generale,
@@ -152,11 +187,19 @@ def fetch_scodoc_data(
                 "creneaux": creneaux_abs
             }
         }
-        _CACHE[user_id] = {"timestamp": now, "data": result}
+
+        # Mise en cache persistant SQLite (15 minutes)
+        set_cached_data(cache_key, result, ttl_seconds=900)
         return result
 
     except Exception as e:
         logger.warning(f"Erreur connexion ScoDoc pour user {user_id}: {e}")
+        # Si on a un vieux cache, on peut le renvoyer en mode secours
+        stale_cached = get_cached_data(cache_key, allow_stale=True)
+        if stale_cached:
+            stale_cached["connection_error"] = f"Avertissement : actualisation échouée ({e}), affichage de la dernière version enregistrée."
+            return stale_cached
+
         err_data = get_empty_scodoc_data(f"Erreur ScoDoc : {e}")
-        _CACHE[user_id] = {"timestamp": now, "data": err_data}
+        set_cached_data(cache_key, err_data, ttl_seconds=120)
         return err_data

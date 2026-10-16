@@ -1,8 +1,10 @@
 import logging
 import datetime
+import hashlib
 from typing import Dict, Any, Optional
 import requests
 from bs4 import BeautifulSoup
+from .cache_service import get_cached_data, set_cached_data
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +24,10 @@ def fetch_moodle_data(
     url: Optional[str],
     username: Optional[str],
     password: Optional[str],
-    token: Optional[str] = None
+    token: Optional[str] = None,
+    force_refresh: bool = False
 ) -> Dict[str, Any]:
-    """Récupère les cours et devoirs réels depuis l'API Moodle WebService."""
+    """Recupere les cours et devoirs reels depuis l'API Moodle avec cache SQLite."""
     if not url or (not token and (not username or not password)):
         return {
             "configured": False,
@@ -33,6 +36,14 @@ def fetch_moodle_data(
             "upcoming_assignments": [],
             "connection_error": "Identifiants Moodle non configurés."
         }
+
+    user_ident = token or f"{username}@{url}"
+    cache_key = f"moodle:{hashlib.md5(user_ident.encode('utf-8')).hexdigest()}"
+
+    if not force_refresh:
+        cached = get_cached_data(cache_key)
+        if cached:
+            return cached
 
     raw_base_url = url.rstrip("/")
     auth_token = token
@@ -169,13 +180,15 @@ def fetch_moodle_data(
             for c in raw_courses
         ]
 
-        return {
+        result = {
             "configured": True,
             "site_name": site_info.get("sitename", "Moodle"),
             "courses": parsed_courses,
             "upcoming_assignments": upcoming,
             "connection_error": None
         }
+        set_cached_data(cache_key, result, ttl_seconds=900)
+        return result
 
     except Exception as e:
         logger.error(f"Erreur Moodle API: {e}")

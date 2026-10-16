@@ -89,9 +89,17 @@
 					IUT Béziers
 				</div>
 			</div>
-			<div class="w-8 h-8 rounded-full bg-[#111724] border border-[#1E273A] flex items-center justify-center text-xs font-bold text-cyan-400">
-				{userInitials()}
-			</div>
+			{#if auth.user?.photo_base64}
+				<img
+					src={auth.user.photo_base64.startsWith("data:") ? auth.user.photo_base64 : `data:image/jpeg;base64,${auth.user.photo_base64}`}
+					alt={userDisplayName()}
+					class="w-8 h-8 rounded-full object-cover border border-cyan-500/40 shadow-sm"
+				/>
+			{:else}
+				<div class="w-8 h-8 rounded-full bg-[#111724] border border-[#1E273A] flex items-center justify-center text-xs font-bold text-cyan-400">
+					{userInitials()}
+				</div>
+			{/if}
 		</div>
 	</div>
 </header>
