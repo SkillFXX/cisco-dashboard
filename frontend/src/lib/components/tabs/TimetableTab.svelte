@@ -18,6 +18,7 @@
 		getCourseTypeLabel
 	} from "$lib/utils";
 	import Card from "../Card.svelte";
+	import Skeleton from "../Skeleton.svelte";
 	import Modal from "../Modal.svelte";
 
 	let timetableData = $state<any>(null);
@@ -383,10 +384,29 @@
 	</div>
 
 	{#if isLoading && !timetableData}
-		<div class="flex flex-col items-center justify-center p-16 text-zinc-400">
-			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
-			<p class="text-xs">Chargement instantané de l'emploi du temps ADE...</p>
-		</div>
+		<Card class="space-y-4 p-5">
+			<div class="flex items-center justify-between">
+				<div class="space-y-1.5">
+					<Skeleton class="h-4 w-48" />
+					<Skeleton class="h-3 w-36" />
+				</div>
+				<Skeleton class="h-4 w-28 rounded-full" />
+			</div>
+
+			<!-- Grille des 5 jours Skeleton -->
+			<div class="grid grid-cols-5 gap-3 pt-2">
+				{#each Array(5) as _}
+					<div class="space-y-3">
+						<Skeleton class="h-10 w-full rounded-lg" />
+						<div class="h-[480px] rounded-lg border border-app-border bg-app-surface/40 p-2 space-y-3">
+							<Skeleton class="h-24 w-full rounded-md" />
+							<Skeleton class="h-16 w-full rounded-md" />
+							<Skeleton class="h-32 w-full rounded-md" />
+						</div>
+					</div>
+				{/each}
+			</div>
+		</Card>
 	{:else if error}
 		<div class="p-4 rounded-lg bg-rose-900/40 text-rose-300 text-xs font-medium">
 			{error}

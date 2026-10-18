@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import Card from "../Card.svelte";
+	import Skeleton from "../Skeleton.svelte";
 	import TaskModal from "../TaskModal.svelte";
 	import { api } from "$lib/api";
 	import { formatDateFr } from "$lib/utils";
@@ -345,10 +346,67 @@
 		{/each}
 	</div>
 
-	{#if isLoading}
-		<div class="flex flex-col items-center justify-center p-16 text-zinc-400">
-			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
-			<p class="text-xs">Chargement et synchronisation de vos devoirs...</p>
+	{#if isLoading && personalTasks.length === 0 && moodleAssignments.length === 0}
+		<div class="space-y-6">
+			<!-- Section À faire Skeleton -->
+			<div class="space-y-3">
+				<div class="flex items-center justify-between p-2">
+					<div class="flex items-center gap-2">
+						<Skeleton class="w-4 h-4 rounded-md" />
+						<Skeleton class="h-4 w-20" />
+						<Skeleton class="h-4 w-6 rounded-full" />
+					</div>
+					<Skeleton class="h-3 w-32" />
+				</div>
+
+				<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+					{#each Array(4) as _}
+						<div class="p-3.5 flex items-center justify-between gap-3">
+							<div class="flex items-center gap-3.5 flex-1 min-w-0">
+								<Skeleton class="w-5 h-5 rounded-full shrink-0" />
+								<div class="space-y-1.5 flex-1">
+									<Skeleton class="h-3.5 w-36" />
+									<Skeleton class="h-2.5 w-48" />
+								</div>
+							</div>
+							<div class="flex items-center gap-6 shrink-0">
+								<Skeleton class="h-5 w-12 rounded-full" />
+								<Skeleton class="h-3 w-24" />
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Section Dans longtemps Skeleton -->
+			<div class="space-y-3">
+				<div class="flex items-center justify-between p-2">
+					<div class="flex items-center gap-2">
+						<Skeleton class="w-4 h-4 rounded-md" />
+						<Skeleton class="h-4 w-28" />
+						<Skeleton class="h-4 w-6 rounded-full" />
+					</div>
+					<Skeleton class="h-3 w-32" />
+				</div>
+
+				<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+					{#each Array(2) as _}
+						<div class="p-3.5 flex items-center justify-between gap-3">
+							<div class="flex items-center gap-3.5 flex-1 min-w-0">
+								<Skeleton class="w-5 h-5 rounded-full shrink-0" />
+								<div class="space-y-1.5 flex-1">
+									<Skeleton class="h-3.5 w-32" />
+									<Skeleton class="h-2.5 w-44" />
+								</div>
+							</div>
+							<div class="flex items-center gap-6 shrink-0">
+								<Skeleton class="h-5 w-12 rounded-full" />
+								<Skeleton class="h-3 w-24" />
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
 		</div>
 	{:else if error}
 		<div class="p-4 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">

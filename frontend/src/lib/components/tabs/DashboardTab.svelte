@@ -3,6 +3,7 @@
 	import { api } from "$lib/api";
 	import { formatGrade, formatDateFr, toLocalIsoDate, getMondayOfDate, getCourseColorStyle } from "$lib/utils";
 	import Card from "../Card.svelte";
+	import Skeleton from "../Skeleton.svelte";
 	import {
 		Plus,
 		Check,
@@ -210,9 +211,133 @@
 	});
 </script>
 
-<div class="space-y-6">
-	<!-- Ligne 1 : 3 KPI Cards -->
-	<div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+{#if isLoading && !overview}
+	<div class="space-y-6">
+		<!-- Ligne 1 : 3 KPI Skeletons -->
+		<div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+			<!-- KPI 1 Skeleton -->
+			<Card class="flex items-center justify-between relative p-5">
+				<div class="space-y-3 w-full">
+					<div class="space-y-1.5">
+						<Skeleton class="h-3 w-28" />
+						<Skeleton class="h-2.5 w-36" />
+					</div>
+					<div class="flex items-baseline gap-2">
+						<Skeleton class="h-9 w-24" />
+						<Skeleton class="h-4 w-8" />
+					</div>
+					<Skeleton class="h-3 w-36" />
+				</div>
+				<Skeleton class="w-16 h-16 rounded-full shrink-0" />
+			</Card>
+
+			<!-- KPI 2 Skeleton -->
+			<Card class="flex flex-col justify-between p-5 space-y-4">
+				<div class="space-y-2">
+					<Skeleton class="h-4 w-24 rounded-full" />
+					<Skeleton class="h-5 w-44" />
+					<Skeleton class="h-3 w-32" />
+				</div>
+				<div class="pt-3 border-t border-app-border flex items-center justify-between">
+					<Skeleton class="h-3 w-28" />
+					<Skeleton class="h-3 w-20" />
+				</div>
+			</Card>
+
+			<!-- KPI 3 Skeleton -->
+			<Card class="flex flex-col justify-between p-5 space-y-4">
+				<div class="space-y-2">
+					<Skeleton class="h-3 w-28" />
+					<Skeleton class="h-2.5 w-36" />
+					<Skeleton class="h-9 w-16" />
+				</div>
+				<div class="pt-3 border-t border-app-border flex items-center justify-between">
+					<Skeleton class="h-3 w-24" />
+					<Skeleton class="h-4 w-20 rounded-full" />
+				</div>
+			</Card>
+		</div>
+
+		<!-- Ligne 2 : Timetable Skeleton -->
+		<Card class="space-y-4 p-5">
+			<div class="flex items-center justify-between">
+				<div class="space-y-1.5">
+					<Skeleton class="h-4 w-48" />
+					<Skeleton class="h-3 w-32" />
+				</div>
+				<Skeleton class="h-3 w-24" />
+			</div>
+
+			<!-- Semaine 5 jours skeleton -->
+			<div class="grid grid-cols-5 gap-3 pt-2">
+				{#each Array(5) as _}
+					<div class="space-y-3">
+						<Skeleton class="h-10 w-full rounded-lg" />
+						<div class="h-56 rounded-lg border border-app-border bg-app-surface/50 p-2 space-y-2">
+							<Skeleton class="h-16 w-full rounded-md" />
+							<Skeleton class="h-20 w-full rounded-md" />
+						</div>
+					</div>
+				{/each}
+			</div>
+		</Card>
+
+		<!-- Ligne 3 : Devoirs & Dernieres notes Skeleton -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+			<Card class="space-y-4 p-5">
+				<div class="flex items-center justify-between">
+					<div class="space-y-1.5">
+						<Skeleton class="h-4 w-36" />
+						<Skeleton class="h-3 w-28" />
+					</div>
+					<Skeleton class="h-3 w-20" />
+				</div>
+				<div class="space-y-2.5">
+					{#each Array(3) as _}
+						<div class="flex items-center justify-between p-3 rounded-lg border border-app-border bg-app-surface/40">
+							<div class="flex items-center gap-3">
+								<Skeleton class="w-5 h-5 rounded-full shrink-0" />
+								<div class="space-y-1.5">
+									<Skeleton class="h-3.5 w-36" />
+									<Skeleton class="h-2.5 w-24" />
+								</div>
+							</div>
+							<Skeleton class="h-5 w-16 rounded-full" />
+						</div>
+					{/each}
+				</div>
+			</Card>
+
+			<Card class="space-y-4 p-5">
+				<div class="flex items-center justify-between">
+					<div class="space-y-1.5">
+						<Skeleton class="h-4 w-32" />
+						<Skeleton class="h-3 w-40" />
+					</div>
+					<Skeleton class="h-3 w-24" />
+				</div>
+				<div class="space-y-2.5">
+					{#each Array(3) as _}
+						<div class="flex items-center justify-between p-3 rounded-lg border border-app-border bg-app-surface/40">
+							<div class="space-y-1.5">
+								<Skeleton class="h-3.5 w-40" />
+								<Skeleton class="h-2.5 w-20" />
+							</div>
+							<Skeleton class="h-6 w-12 rounded-full" />
+						</div>
+					{/each}
+				</div>
+			</Card>
+		</div>
+	</div>
+{:else if error}
+	<div class="p-4 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">
+		{error}
+	</div>
+{:else}
+	<div class="space-y-6">
+		<!-- Ligne 1 : 3 KPI Cards -->
+		<div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
 		<!-- KPI 1 : Moyenne generale -->
 		<Card class="flex items-center justify-between relative">
 			<div class="space-y-2">
@@ -569,3 +694,4 @@
 		{/if}
 	</Card>
 </div>
+{/if}

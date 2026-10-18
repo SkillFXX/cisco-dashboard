@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import Card from "../Card.svelte";
+	import Skeleton from "../Skeleton.svelte";
 	import Badge from "../Badge.svelte";
 	import Button from "../Button.svelte";
 	import { api } from "$lib/api";
@@ -88,9 +89,25 @@
 	</div>
 
 	{#if isLoading}
-		<div class="flex items-center justify-center p-12 text-zinc-400 text-xs">
-			<RefreshCw class="w-5 h-5 animate-spin text-cyan-400 mr-2" />
-			Chargement des configurations...
+		<div class="space-y-6">
+			{#each Array(3) as _}
+				<Card class="space-y-4 p-5">
+					<div class="flex items-center justify-between border-b border-app-border pb-3">
+						<div class="flex items-center gap-2.5">
+							<Skeleton class="w-8 h-8 rounded-lg" />
+							<div class="space-y-1">
+								<Skeleton class="h-4 w-32" />
+								<Skeleton class="h-3 w-48" />
+							</div>
+						</div>
+						<Skeleton class="h-5 w-20 rounded-full" />
+					</div>
+					<div class="space-y-3 pt-1">
+						<Skeleton class="h-9 w-full rounded-lg" />
+						<Skeleton class="h-9 w-full rounded-lg" />
+					</div>
+				</Card>
+			{/each}
 		</div>
 	{:else}
 		<form onsubmit={saveSettings} class="space-y-6">

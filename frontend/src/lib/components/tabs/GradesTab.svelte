@@ -3,6 +3,7 @@
 	import { api } from "$lib/api";
 	import { Filter, RefreshCw } from "lucide-svelte";
 	import Card from "../Card.svelte";
+	import Skeleton from "../Skeleton.svelte";
 	import EvaluationDetailModal from "../EvaluationDetailModal.svelte";
 
 	let gradesData = $state<any>(null);
@@ -141,9 +142,90 @@
 	</div>
 
 	{#if isLoading && !gradesData}
-		<div class="flex flex-col items-center justify-center p-16 text-zinc-400">
-			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
-			<p class="text-xs">Chargement instantané des notes ScoDoc...</p>
+		<div class="space-y-6">
+			<!-- 3 Top KPIs Skeletons -->
+			<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+				{#each Array(3) as _}
+					<Card class="p-4 space-y-3">
+						<Skeleton class="h-3 w-28" />
+						<div class="flex items-baseline gap-2">
+							<Skeleton class="h-8 w-24" />
+							<Skeleton class="h-4 w-8" />
+						</div>
+						<Skeleton class="h-3 w-36" />
+					</Card>
+				{/each}
+			</div>
+
+			<!-- Synthèse des UEs Skeleton -->
+			<Card class="p-5 space-y-4">
+				<div class="flex items-center justify-between">
+					<div class="space-y-1.5">
+						<Skeleton class="h-4 w-44" />
+						<Skeleton class="h-3 w-56" />
+					</div>
+					<Skeleton class="h-4 w-28 rounded-full" />
+				</div>
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+					{#each Array(6) as _}
+						<div class="p-3.5 rounded-xl border border-app-border bg-app-surface/50 space-y-3">
+							<div class="flex items-start justify-between">
+								<Skeleton class="h-4 w-32" />
+								<Skeleton class="h-5 w-12 rounded-full" />
+							</div>
+							<Skeleton class="h-2 w-full rounded-full" />
+							<div class="flex justify-between">
+								<Skeleton class="h-2.5 w-16" />
+								<Skeleton class="h-2.5 w-16" />
+							</div>
+						</div>
+					{/each}
+				</div>
+			</Card>
+
+			<!-- Grille des matières Skeleton -->
+			<Card class="p-5 space-y-4">
+				<div class="space-y-1.5">
+					<Skeleton class="h-4 w-40" />
+					<Skeleton class="h-3 w-64" />
+				</div>
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+					{#each Array(6) as _}
+						<div class="p-3 rounded-lg border border-app-border bg-app-surface/40 space-y-2">
+							<div class="flex justify-between items-center">
+								<Skeleton class="h-3.5 w-28" />
+								<Skeleton class="h-5 w-12 rounded-full" />
+							</div>
+							<Skeleton class="h-3 w-20" />
+						</div>
+					{/each}
+				</div>
+			</Card>
+
+			<!-- Tableau des évaluations Skeleton -->
+			<Card class="p-5 space-y-4">
+				<div class="space-y-1.5">
+					<Skeleton class="h-4 w-48" />
+					<Skeleton class="h-3 w-52" />
+				</div>
+				<div class="border border-app-border rounded-lg overflow-hidden divide-y divide-white/5">
+					{#each Array(5) as _}
+						<div class="p-3.5 flex items-center justify-between bg-app-surface/30">
+							<div class="flex items-center gap-3">
+								<Skeleton class="h-5 w-14 rounded-full" />
+								<div class="space-y-1.5">
+									<Skeleton class="h-3.5 w-40" />
+									<Skeleton class="h-2.5 w-24" />
+								</div>
+							</div>
+							<div class="flex items-center gap-4">
+								<Skeleton class="h-3 w-16" />
+								<Skeleton class="h-6 w-14 rounded-full" />
+							</div>
+						</div>
+					{/each}
+				</div>
+			</Card>
 		</div>
 	{:else if error}
 		<div class="p-4 rounded-lg bg-rose-900/40 text-rose-300 text-xs font-medium">

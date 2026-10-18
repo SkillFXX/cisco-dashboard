@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import Card from "../Card.svelte";
+	import Skeleton from "../Skeleton.svelte";
 	import { api } from "$lib/api";
 	import { formatDateFr } from "$lib/utils";
 	import {
@@ -106,10 +107,63 @@
 		</button>
 	</div>
 
-	{#if isLoading}
-		<div class="flex flex-col items-center justify-center p-16 text-zinc-400">
-			<RefreshCw class="w-7 h-7 animate-spin text-cyan-400 mb-3" />
-			<p class="text-xs">Synchronisation des absences avec ScoDoc...</p>
+	{#if isLoading && !absencesData}
+		<div class="space-y-6">
+			<!-- 3 KPIs Skeletons -->
+			<div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+				{#each Array(3) as _}
+					<Card class="flex flex-col justify-between py-4 px-5 space-y-4">
+						<div class="space-y-2">
+							<Skeleton class="h-3 w-32" />
+							<div class="flex items-baseline gap-2">
+								<Skeleton class="h-8 w-16" />
+								<Skeleton class="h-3 w-24" />
+							</div>
+						</div>
+						<div class="pt-3 border-t border-app-border flex items-center justify-between">
+							<Skeleton class="h-3 w-28" />
+							<Skeleton class="h-4 w-16 rounded-full" />
+						</div>
+					</Card>
+				{/each}
+			</div>
+
+			<!-- Filtres Skeleton -->
+			<div class="flex items-center gap-2 pb-1 border-b border-app-border">
+				<Skeleton class="h-8 w-24 rounded-lg" />
+				<Skeleton class="h-8 w-28 rounded-lg" />
+				<Skeleton class="h-8 w-32 rounded-lg" />
+				<Skeleton class="h-8 w-20 rounded-lg" />
+			</div>
+
+			<!-- Liste Skeleton -->
+			<Card class="space-y-4 p-5">
+				<div class="flex items-center justify-between">
+					<div class="space-y-1.5">
+						<Skeleton class="h-4 w-36" />
+						<Skeleton class="h-3 w-48" />
+					</div>
+					<Skeleton class="h-3 w-24" />
+				</div>
+
+				<div class="border border-app-border rounded-xl overflow-hidden divide-y divide-white/5">
+					{#each Array(4) as _}
+						<div class="p-3.5 flex items-center justify-between bg-app-surface/30">
+							<div class="flex items-center gap-3">
+								<Skeleton class="w-8 h-8 rounded-lg shrink-0" />
+								<div class="space-y-1.5">
+									<Skeleton class="h-3.5 w-40" />
+									<Skeleton class="h-2.5 w-28" />
+								</div>
+							</div>
+							<div class="flex items-center gap-4">
+								<Skeleton class="h-5 w-20 rounded-full" />
+								<Skeleton class="h-3 w-20" />
+							</div>
+						</div>
+					{/each}
+				</div>
+			</Card>
 		</div>
 	{:else if error}
 		<div class="p-4 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">

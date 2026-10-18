@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { auth } from "$lib/stores/auth.svelte";
-	import { Search, Bell, Plus } from "lucide-svelte";
+	import { Plus } from "lucide-svelte";
 
 	let {
 		activeTab = "dashboard",
@@ -49,16 +49,6 @@
 
 	<!-- Commandes a droite -->
 	<div class="flex items-center gap-3">
-		<!-- Barre de recherche -->
-		<div class="relative hidden sm:block">
-			<Search class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-			<input
-				type="text"
-				placeholder="Rechercher..."
-				class="w-48 md:w-56 bg-app-card border border-app-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500/50 transition-colors"
-			/>
-		</div>
-
 		<!-- Bouton ajout direct de devoir / DS -->
 		{#if onOpenAddTask}
 			<button
@@ -69,15 +59,6 @@
 				<span>Nouveau DS / Devoir</span>
 			</button>
 		{/if}
-
-		<!-- Notifications -->
-		<button
-			class="relative w-8 h-8 rounded-lg bg-app-card border border-app-border flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
-			title="Notifications"
-		>
-			<Bell class="w-3.5 h-3.5" />
-			<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-		</button>
 
 		<!-- Profil etudiant -->
 		<div class="flex items-center gap-2.5 pl-2 border-l border-app-border">
