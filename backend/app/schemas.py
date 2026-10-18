@@ -4,7 +4,6 @@ from pydantic import BaseModel, EmailStr
 
 # Auth Schemas
 class UserRegister(BaseModel):
-    username: str
     email: EmailStr
     password: str
     full_name: Optional[str] = None
@@ -19,8 +18,15 @@ class UserRegister(BaseModel):
     ical_url: Optional[str] = None
 
 class UserLogin(BaseModel):
-    username: str
+    email: Optional[str] = None
+    username: Optional[str] = None
     password: str
+
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -29,9 +35,9 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
-    username: str
     email: str
-    full_name: Optional[str]
+    username: Optional[str] = None
+    full_name: Optional[str] = None
     photo_base64: Optional[str] = None
     has_scodoc: bool
     has_moodle: bool

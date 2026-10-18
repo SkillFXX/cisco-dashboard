@@ -78,11 +78,11 @@
 				{#if auth.user}
 					<div class="flex items-center gap-2 pl-2 border-l border-zinc-800">
 						<div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-200">
-							{auth.user.username.slice(0, 2).toUpperCase()}
+							{(auth.user.full_name || auth.user.email || "RT").slice(0, 2).toUpperCase()}
 						</div>
 						<div class="hidden lg:block text-left">
 							<div class="text-xs font-medium text-zinc-200 leading-none">
-								{auth.user.full_name || auth.user.username}
+								{auth.user.full_name || auth.user.email}
 							</div>
 							<div class="text-[10px] text-zinc-500 leading-none mt-1">
 								{auth.user.email}

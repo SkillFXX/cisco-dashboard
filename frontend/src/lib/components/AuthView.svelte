@@ -3,30 +3,17 @@
 	import Card from "./Card.svelte";
 	import Button from "./Button.svelte";
 	import Badge from "./Badge.svelte";
-	import { ArrowRight, User, Lock } from "lucide-svelte";
+	import { ArrowRight, Mail, Lock } from "lucide-svelte";
 
 	let mode = $state<"login" | "register">("login");
 
 	// Login state
-	let loginUsername = $state("");
+	let loginEmail = $state("");
 	let loginPassword = $state("");
 
 	// Register state
-	let regUsername = $state("");
 	let regEmail = $state("");
 	let regPassword = $state("");
-	let regFullName = $state("");
-
-	// Integrated platforms during signup
-	let scodocUrl = $state("https://wscodoc.iutbeziers.fr");
-	let scodocUser = $state("");
-	let scodocPass = $state("");
-
-	let moodleUrl = $state("https://moodle.umontpellier.fr");
-	let moodleUser = $state("");
-	let moodlePass = $state("");
-
-	let icalUrl = $state("");
 
 	let isSubmitting = $state(false);
 	let error = $state("");
@@ -36,9 +23,9 @@
 		isSubmitting = true;
 		error = "";
 		try {
-			await auth.login(loginUsername, loginPassword);
+			await auth.login(loginEmail, loginPassword);
 		} catch (err: any) {
-			error = err.message || "Identifiants invalides";
+			error = err.message || "Adresse email ou mot de passe incorrect";
 		} finally {
 			isSubmitting = false;
 		}
@@ -50,17 +37,8 @@
 		error = "";
 		try {
 			await auth.register({
-				username: regUsername,
 				email: regEmail,
-				password: regPassword,
-				full_name: regFullName,
-				scodoc_url: scodocUrl,
-				scodoc_username: scodocUser || undefined,
-				scodoc_password: scodocPass || undefined,
-				moodle_url: moodleUrl,
-				moodle_username: moodleUser || undefined,
-				moodle_password: moodlePass || undefined,
-				ical_url: icalUrl || undefined
+				password: regPassword
 			});
 		} catch (err: any) {
 			error = err.message || "Erreur lors de la création du compte";
@@ -88,20 +66,20 @@
 		</div>
 	</div>
 
-	<div class="mt-8 sm:mx-auto sm:w-full {mode === 'register' ? 'sm:max-w-2xl' : 'sm:max-w-md'}">
+	<div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
 		<Card class="p-6 sm:p-8 border-app-border bg-app-card shadow-2xl rounded-xl">
 			<!-- Tab Switcher -->
 			<div class="grid grid-cols-2 p-1 bg-app-surface rounded-lg mb-6 border border-app-border">
 				<button
 					type="button"
-					onclick={() => (mode = "login")}
+					onclick={() => { mode = "login"; error = ""; }}
 					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'login' ? 'bg-white/[0.08] text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
 				>
 					Se Connecter
 				</button>
 				<button
 					type="button"
-					onclick={() => (mode = "register")}
+					onclick={() => { mode = "register"; error = ""; }}
 					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'register' ? 'bg-white/[0.08] text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
 				>
 					Créer un Compte
@@ -118,16 +96,16 @@
 				<!-- Formulaire Connexion -->
 				<form onsubmit={handleLogin} class="space-y-4">
 					<div>
-						<label for="l-user" class="block text-xs font-medium text-zinc-300 mb-1">Identifiant</label>
+						<label for="l-email" class="block text-xs font-medium text-zinc-300 mb-1">Adresse email</label>
 						<div class="relative">
-							<User class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+							<Mail class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
 							<input
-								id="l-user"
-								type="text"
-								bind:value={loginUsername}
+								id="l-email"
+								type="email"
+								bind:value={loginEmail}
 								required
 								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
-								placeholder="ex: prenom.nom"
+								placeholder="votre.email@etu.umontpellier.fr"
 							/>
 						</div>
 					</div>
@@ -153,147 +131,45 @@
 					</Button>
 				</form>
 			{:else}
-				<!-- Formulaire Inscription avec services tiers intégrés -->
+				<!-- Formulaire Inscription minimaliste (Email + Mot de passe uniquement) -->
 				<form onsubmit={handleRegister} class="space-y-4">
-					<div class="border-b border-app-border pb-3">
-						<h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-2">1. Compte Dashboard Cisco</h3>
-						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-							<div>
-								<label for="r-name" class="block text-xs font-medium text-zinc-400 mb-1">Nom & Prénom *</label>
-								<input
-									id="r-name"
-									type="text"
-									bind:value={regFullName}
-									required
-									placeholder="ex: Jean Dupont"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-							<div>
-								<label for="r-user" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant de connexion *</label>
-								<input
-									id="r-user"
-									type="text"
-									bind:value={regUsername}
-									required
-									placeholder="ex: jean.dupont"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-							<div>
-								<label for="r-email" class="block text-xs font-medium text-zinc-400 mb-1">Email universitaire *</label>
-								<input
-									id="r-email"
-									type="email"
-									bind:value={regEmail}
-									required
-									placeholder="prenom.nom@etu.umontpellier.fr"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-							<div>
-								<label for="r-pwd" class="block text-xs font-medium text-zinc-400 mb-1">Mot de passe de l'application *</label>
-								<input
-									id="r-pwd"
-									type="password"
-									bind:value={regPassword}
-									required
-									placeholder="••••••••••••"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-						</div>
-					</div>
-
-					<!-- Section ScoDoc -->
-					<div class="border-b border-app-border pb-3">
-						<h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">2. Identifiants ScoDoc (Notes & Absences)</h3>
-						<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-							<div>
-								<label for="r-sco-url" class="block text-[11px] text-zinc-400 mb-0.5">URL ScoDoc</label>
-								<input
-									id="r-sco-url"
-									type="text"
-									bind:value={scodocUrl}
-									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-							<div>
-								<label for="r-sco-u" class="block text-[11px] text-zinc-400 mb-0.5">Identifiant CAS</label>
-								<input
-									id="r-sco-u"
-									type="text"
-									bind:value={scodocUser}
-									placeholder="prenom.nom"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-							<div>
-								<label for="r-sco-p" class="block text-[11px] text-zinc-400 mb-0.5">Mot de passe CAS</label>
-								<input
-									id="r-sco-p"
-									type="password"
-									bind:value={scodocPass}
-									placeholder="••••••••"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-						</div>
-					</div>
-
-					<!-- Section Moodle -->
-					<div class="border-b border-app-border pb-3">
-						<h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">3. Accès Moodle (Devoirs & DM)</h3>
-						<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-							<div>
-								<label for="r-mdl-url" class="block text-[11px] text-zinc-400 mb-0.5">URL Moodle</label>
-								<input
-									id="r-mdl-url"
-									type="text"
-									bind:value={moodleUrl}
-									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-							<div>
-								<label for="r-mdl-u" class="block text-[11px] text-zinc-400 mb-0.5">Identifiant Moodle</label>
-								<input
-									id="r-mdl-u"
-									type="text"
-									bind:value={moodleUser}
-									placeholder="ex: jdupont"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-							<div>
-								<label for="r-mdl-p" class="block text-[11px] text-zinc-400 mb-0.5">Mot de passe Moodle</label>
-								<input
-									id="r-mdl-p"
-									type="password"
-									bind:value={moodlePass}
-									placeholder="••••••••"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-						</div>
-					</div>
-
-					<!-- Section ADE iCal -->
 					<div>
-						<h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-2">4. Emploi du Temps UM Montpellier (ADE Campus)</h3>
-						<div>
-							<label for="r-ical" class="block text-[11px] text-zinc-400 mb-0.5">Lien iCal exporté (.ics)</label>
+						<label for="r-email" class="block text-xs font-medium text-zinc-300 mb-1">Adresse email</label>
+						<div class="relative">
+							<Mail class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
 							<input
-								id="r-ical"
-								type="url"
-								bind:value={icalUrl}
-								placeholder="https://edt.umontpellier.fr/.../export.ics"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-2.5 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+								id="r-email"
+								type="email"
+								bind:value={regEmail}
+								required
+								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+								placeholder="votre.email@etu.umontpellier.fr"
 							/>
 						</div>
 					</div>
 
-					<Button variant="cisco" type="submit" class="w-full mt-4" disabled={isSubmitting}>
-						{isSubmitting ? "Création du compte..." : "Créer mon Compte & Accéder au Panel"}
+					<div>
+						<label for="r-pwd" class="block text-xs font-medium text-zinc-300 mb-1">Mot de passe</label>
+						<div class="relative">
+							<Lock class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+							<input
+								id="r-pwd"
+								type="password"
+								bind:value={regPassword}
+								required
+								minlength="4"
+								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+								placeholder="••••••••••••"
+							/>
+						</div>
+					</div>
+
+					<p class="text-[11px] text-zinc-400 leading-relaxed pt-1">
+						Votre nom, prénom et accès aux services (ScoDoc, Moodle, ADE) pourront être configurés ou modifiés à tout moment dans les Paramètres.
+					</p>
+
+					<Button variant="cisco" type="submit" class="w-full mt-2" disabled={isSubmitting}>
+						{isSubmitting ? "Création en cours..." : "Créer mon Compte"}
 						<ArrowRight class="w-4 h-4" />
 					</Button>
 				</form>

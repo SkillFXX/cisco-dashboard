@@ -51,10 +51,10 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const api = {
 	// Auth
-	async login(username: string, password: string) {
+	async login(email: string, password: string) {
 		const data = await request<{ access_token: string; user: any }>("/auth/login", {
 			method: "POST",
-			body: JSON.stringify({ username, password })
+			body: JSON.stringify({ email, password })
 		});
 		localStorage.setItem("cisco_token", data.access_token);
 		localStorage.setItem("cisco_user", JSON.stringify(data.user));
@@ -73,6 +73,20 @@ export const api = {
 
 	async getMe() {
 		return await request<any>("/auth/me");
+	},
+
+	async updateProfile(profile: {
+		full_name?: string;
+		email?: string;
+		current_password?: string;
+		new_password?: string;
+	}) {
+		const data = await request<any>("/auth/profile", {
+			method: "PUT",
+			body: JSON.stringify(profile)
+		});
+		localStorage.setItem("cisco_user", JSON.stringify(data));
+		return data;
 	},
 
 	logout() {

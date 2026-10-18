@@ -2,8 +2,8 @@ import { api } from "../api";
 
 export interface UserProfile {
 	id: number;
-	username: string;
 	email: string;
+	username?: string;
 	full_name?: string;
 	photo_base64?: string | null;
 	has_scodoc?: boolean;
@@ -48,8 +48,8 @@ class AuthStore {
 		this.isLoading = false;
 	}
 
-	async login(username: string, pwd: string) {
-		const res = await api.login(username, pwd);
+	async login(email: string, pwd: string) {
+		const res = await api.login(email, pwd);
 		this.token = res.access_token;
 		this.user = res.user;
 		// fetch fresh user details
@@ -75,6 +75,15 @@ class AuthStore {
 			// keep user from register response
 		}
 		return res;
+	}
+
+	async updateProfile(profile: any) {
+		const updated = await api.updateProfile(profile);
+		this.user = updated;
+		if (typeof window !== "undefined") {
+			localStorage.setItem("cisco_user", JSON.stringify(updated));
+		}
+		return updated;
 	}
 
 	logout() {

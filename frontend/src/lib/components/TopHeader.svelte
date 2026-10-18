@@ -23,19 +23,23 @@
 
 	let userDisplayName = $derived(() => {
 		if (!auth.user) return "Étudiant R&T";
-		if (auth.user.full_name) {
-			return `${auth.user.full_name} (RT2)`;
+		if (auth.user.full_name && auth.user.full_name.trim()) {
+			return `${auth.user.full_name.trim()} (RT2)`;
 		}
-		return `${auth.user.username} (RT2)`;
+		if (auth.user.email) {
+			return `${auth.user.email.split("@")[0]} (RT2)`;
+		}
+		return "Étudiant R&T";
 	});
 
 	let userInitials = $derived(() => {
 		if (!auth.user) return "RT";
-		const parts = (auth.user.full_name || auth.user.username).trim().split(" ");
-		if (parts.length >= 2) {
+		const name = (auth.user.full_name || auth.user.email || "RT").trim();
+		const parts = name.split(/[\s._@-]+/);
+		if (parts.length >= 2 && parts[0] && parts[1]) {
 			return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 		}
-		return auth.user.username.slice(0, 2).toUpperCase();
+		return name.slice(0, 2).toUpperCase();
 	});
 </script>
 
