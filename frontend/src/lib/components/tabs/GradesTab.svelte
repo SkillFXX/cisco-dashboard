@@ -124,10 +124,10 @@
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-app-border">
 		<div>
 			<h1 class="text-xl font-bold text-white tracking-tight">
-				Notes & Relevé ScoDoc
+				Notes
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
-				Moyennes par Unité d'Enseignement (UE), matières et analyse comparative dans la promotion.
+				Moyennes par UE, matières et classements.
 			</p>
 		</div>
 
@@ -137,7 +137,7 @@
 			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-zinc-800 border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
 		>
 			<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
-			<span>Rafraîchir ScoDoc</span>
+			<span>Actualiser</span>
 		</button>
 	</div>
 

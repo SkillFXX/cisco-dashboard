@@ -24,31 +24,28 @@
 	} = $props();
 
 	const tabs = [
-		{ id: "dashboard", label: "Vue d'ensemble", icon: LayoutDashboard },
-		{ id: "grades", label: "Notes & UEs", icon: GraduationCap },
+		{ id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+		{ id: "grades", label: "Notes", icon: GraduationCap },
 		{ id: "timetable", label: "Emploi du temps", icon: CalendarDays },
-		{ id: "tasks", label: "Devoirs & DS", icon: ListTodo },
+		{ id: "tasks", label: "Devoirs", icon: ListTodo },
 		{ id: "absences", label: "Absences", icon: Clock },
-		{ id: "settings", label: "Services & Paramètres", icon: Settings }
+		{ id: "settings", label: "Paramètres", icon: Settings }
 	];
 </script>
 
 <header class="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="flex items-center justify-between h-16">
-			<!-- Logo Cisco Student -->
+			<!-- Logo Cisco Dashboard -->
 			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-black text-xl tracking-wider">
-					C
-				</div>
+				<img src="/icon.png" alt="Cisco Dashboard" class="w-9 h-9 rounded-lg object-contain shadow-sm" />
 				<div>
 					<div class="flex items-center gap-2">
-						<span class="font-bold text-lg tracking-tight text-white font-mono">CISCO</span>
-						<Badge variant="cisco" class="font-mono text-[10px] tracking-wide uppercase px-2 py-0.5">
-							BUT R&T
+						<span class="font-bold text-lg tracking-tight text-white font-sans">Cisco</span>
+						<Badge variant="cisco" class="text-[10px] tracking-wide uppercase px-2 py-0.5">
+							Dashboard
 						</Badge>
 					</div>
-					<p class="text-xs text-zinc-400 font-sans">Panel Étudiant Universitaire</p>
 				</div>
 			</div>
 

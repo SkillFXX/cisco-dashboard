@@ -1,16 +1,16 @@
-# 🌐 CISCO STUDENT - Panel Étudiant Universitaire (BUT Réseaux & Télécoms)
+# Cisco Dashboard - Panel Étudiant Universitaire (BUT Réseaux & Télécoms)
 
 Plateforme web centralisée moderne type *Pronote / Linear* conçue pour les étudiants en **BUT Réseaux et Télécommunications** (et adaptable à tous les BUT / IUT).
 
 Elle agrège et synchronise automatiquement l'ensemble de vos outils du quotidien :
-- 🎓 **ScoDoc** : Moyenne générale, rang dans la promotion, moyennes par UE & Matières (Ressources R101, R102, R107... et SAÉ), dernières notes avec moyennes/min/max de promo, absences justifiées & non justifiées avec motifs et créneaux. Intégré via le paquet PyPI officiel [`scodoc-api`](https://pypi.org/project/scodoc-api/) (`pip install scodoc-api`, code source sur [GitHub](https://github.com/SkillFXX/scodoc-api)).
-- 📚 **Moodle (Université de Montpellier / IUT)** : Récupération des cours inscrits, devoirs maison (DM), TP notés à rendre et échéances via l'API WebService Moodle Mobile.
-- 📅 **Emploi du temps ADE Campus / UM Net** : Parsing en direct de votre flux iCal exporté (`.ics`), détection du cours en cours, salle, enseignant et vue calendrier jour / semaine.
-- 📝 **Agenda & Échéancier unifié** : Ajout manuel de dates de devoirs surveillés (DS), contrôles, rendus de TP ou to-do list avec compte à rebours ("Dans 2 jours", "Demain", "Aujourd'hui") et archivage.
+- **ScoDoc** : Moyenne générale, rang dans la promotion, moyennes par UE & Matières (Ressources R101, R102, R107... et SAÉ), dernières notes avec moyennes/min/max de promo, absences justifiées & non justifiées avec motifs et créneaux. Intégré via le paquet PyPI officiel [`scodoc-api`](https://pypi.org/project/scodoc-api/) (`pip install scodoc-api`, code source sur [GitHub](https://github.com/SkillFXX/scodoc-api)).
+- **Moodle (Université de Montpellier / IUT)** : Récupération des cours inscrits, devoirs maison (DM), TP notés à rendre et échéances via l'API WebService Moodle Mobile.
+- **Emploi du temps ADE Campus / UM Net** : Parsing en direct de votre flux iCal exporté (`.ics`), détection du cours en cours, salle, enseignant et vue calendrier jour / semaine.
+- **Agenda & Échéancier unifié** : Ajout manuel de dates de devoirs surveillés (DS), contrôles, rendus de TP ou to-do list avec compte à rebours ("Dans 2 jours", "Demain", "Aujourd'hui") et archivage.
 
 ---
 
-## 🛠️ Stack Technique
+## Stack Technique
 
 - **Backend** : [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12+)
 - **Connecteur ScoDoc** : [`scodoc-api`](https://pypi.org/project/scodoc-api/) disponible sur PyPI
@@ -21,7 +21,7 @@ Elle agrège et synchronise automatiquement l'ensemble de vos outils du quotidie
 
 ---
 
-## 🚀 Démarrage Rapide
+## Démarrage Rapide
 
 ### 1. Lancer le Backend FastAPI
 

@@ -241,10 +241,10 @@
 		<div>
 			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
 				<Settings class="w-5 h-5 text-cyan-400" />
-				<span>Paramètres & Profil</span>
+				<span>Paramètres</span>
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
-				Gérez votre compte et synchronisez vos services universitaires (ScoDoc, Moodle, ADE Campus).
+				Gérez votre compte et vos services connectés.
 			</p>
 		</div>
 
@@ -254,7 +254,7 @@
 			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs shrink-0"
 		>
 			<Sparkles class="w-3.5 h-3.5" />
-			<span>Assistant d'intégration</span>
+			<span>Assistant de configuration</span>
 		</button>
 	</div>
 
@@ -280,11 +280,11 @@
 			{/each}
 		</div>
 	{:else}
-		<!-- Section 1 : Profil Étudiant & Sécurité -->
+		<!-- Section 1 : Mon compte -->
 		<section class="space-y-4">
 			<div class="flex items-center gap-2 pb-1 border-b border-app-border">
 				<User class="w-4 h-4 text-cyan-400" />
-				<h2 class="text-sm font-bold text-white uppercase tracking-wider">Mon Compte & Profil Étudiant</h2>
+				<h2 class="text-sm font-bold text-white uppercase tracking-wider">Mon compte</h2>
 			</div>
 
 			<form onsubmit={saveProfile} class="space-y-4">
@@ -309,8 +309,8 @@
 								<ShieldCheck class="w-4 h-4" />
 							</div>
 							<div>
-								<h3 class="font-bold text-white text-sm">Informations Personnelles</h3>
-								<p class="text-xs text-zinc-400">Identité détectée et adresse email de votre compte.</p>
+								<h3 class="font-bold text-white text-sm">Profil</h3>
+								<p class="text-xs text-zinc-400">Identité et adresse email</p>
 							</div>
 						</div>
 					</div>
@@ -320,7 +320,7 @@
 							<div>
 								<span class="text-[11px] font-medium text-zinc-400 block">Nom & Prénom</span>
 								<span class="text-sm font-bold text-white">
-									{auth.user?.full_name || "En attente de synchronisation ScoDoc ou Moodle"}
+									{auth.user?.full_name || "En attente de synchronisation"}
 								</span>
 							</div>
 							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {auth.user?.full_name ? 'bg-emerald-600 text-white' : 'bg-zinc-700 text-white'}">
@@ -380,11 +380,11 @@
 			</form>
 		</section>
 
-		<!-- Section 2 : Connexions aux Services Universitaires -->
+		<!-- Section 2 : Services -->
 		<section class="space-y-4">
 			<div class="flex items-center gap-2 pb-1 border-b border-app-border">
 				<Link2 class="w-4 h-4 text-cyan-400" />
-				<h2 class="text-sm font-bold text-white uppercase tracking-wider">Services Universitaires & Synchronisations</h2>
+				<h2 class="text-sm font-bold text-white uppercase tracking-wider">Services</h2>
 			</div>
 
 			<form onsubmit={saveServices} class="space-y-5">
@@ -410,8 +410,8 @@
 								<FileText class="w-4 h-4" />
 							</div>
 							<div>
-								<h3 class="font-bold text-white text-sm">ScoDoc (Notes, Moyennes & Absences)</h3>
-								<p class="text-xs text-zinc-400">Authentification avec le serveur CAS universitaire.</p>
+								<h3 class="font-bold text-white text-sm">ScoDoc</h3>
+								<p class="text-xs text-zinc-400">Notes, Moyennes & Absences</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
@@ -465,7 +465,7 @@
 
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
-							<label for="scodoc-url" class="block text-xs font-medium text-zinc-400 mb-1">URL du serveur ScoDoc</label>
+							<label for="scodoc-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de ScoDoc</label>
 							<input
 								id="scodoc-url"
 								type="text"
@@ -475,7 +475,7 @@
 							/>
 						</div>
 						<div>
-							<label for="scodoc-user" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant CAS ENT</label>
+							<label for="scodoc-user" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant CAS</label>
 							<input
 								id="scodoc-user"
 								type="text"
@@ -505,8 +505,8 @@
 								<BookOpen class="w-4 h-4" />
 							</div>
 							<div>
-								<h3 class="font-bold text-white text-sm">Moodle (Devoirs à rendre & DM)</h3>
-								<p class="text-xs text-zinc-400">Récupération automatique des échéances et devoirs à rendre.</p>
+								<h3 class="font-bold text-white text-sm">Moodle</h3>
+								<p class="text-xs text-zinc-400">Devoirs et cours en ligne</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
@@ -560,7 +560,7 @@
 
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
-							<label for="moodle-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de votre Moodle</label>
+							<label for="moodle-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de Moodle</label>
 							<input
 								id="moodle-url"
 								type="text"
@@ -593,7 +593,7 @@
 
 					<div class="pt-2">
 						<label for="moodle-token" class="block text-xs font-medium text-zinc-400 mb-1">
-							Ou Jeton WebService personnel (optionnel)
+							Jeton personnel (optionnel)
 						</label>
 						<input
 							id="moodle-token"
@@ -605,7 +605,7 @@
 					</div>
 				</Card>
 
-				<!-- Card 3 : ADE Campus / UM Net iCal -->
+				<!-- Card 3 : Emploi du temps (iCal) -->
 				<Card class="space-y-4 p-5">
 					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
 						<div class="flex items-center gap-2.5">
@@ -613,8 +613,8 @@
 								<Calendar class="w-4 h-4" />
 							</div>
 							<div>
-								<h3 class="font-bold text-white text-sm">Emploi du Temps ADE Campus (Flux iCal)</h3>
-								<p class="text-xs text-zinc-400">Synchronisation des cours, salles, enseignants et créneaux de DS.</p>
+								<h3 class="font-bold text-white text-sm">Emploi du temps</h3>
+								<p class="text-xs text-zinc-400">Planning des cours et évaluations</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
@@ -667,7 +667,7 @@
 					{/if}
 
 					<div>
-						<label for="ical-url" class="block text-xs font-medium text-zinc-400 mb-1">Lien de l'URL iCal exporté (.ics)</label>
+						<label for="ical-url" class="block text-xs font-medium text-zinc-400 mb-1">Lien iCal (.ics)</label>
 						<div class="flex items-center gap-2">
 							<Link2 class="w-4 h-4 text-zinc-500 shrink-0" />
 							<input
@@ -683,7 +683,7 @@
 
 				<div class="flex justify-end gap-3 pt-2">
 					<Button variant="cisco" type="submit" size="lg" disabled={isSavingServices}>
-						{isSavingServices ? "Enregistrement..." : "Enregistrer les Services"}
+						{isSavingServices ? "Enregistrement..." : "Enregistrer les services"}
 					</Button>
 				</div>
 			</form>

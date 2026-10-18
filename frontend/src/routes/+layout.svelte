@@ -1,13 +1,14 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '#lib/assets/favicon.svg';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<title>Cisco Dashboard</title>
+	<link rel="icon" type="image/png" href="/icon.png" />
+	<link rel="shortcut icon" type="image/png" href="/icon.png" />
 </svelte:head>
 
 {@render children()}

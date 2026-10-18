@@ -30,7 +30,7 @@
 </script>
 
 <svelte:head>
-	<title>Cisco - Panel Étudiant BUT R&T</title>
+	<title>Cisco Dashboard</title>
 </svelte:head>
 
 <div class="min-h-screen bg-app-bg text-zinc-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">

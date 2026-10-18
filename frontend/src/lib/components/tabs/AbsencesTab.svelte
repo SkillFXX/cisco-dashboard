@@ -90,10 +90,10 @@
 		<div>
 			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
 				<Clock class="w-5 h-5 text-cyan-400" />
-				<span>Bilan d'Assiduité & Absences</span>
+				<span>Absences</span>
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
-				Données extraites en temps réel de votre compte ScoDoc. Suivi officiel des demi-journées manquées et des retards.
+				Suivi de vos absences et retards.
 			</p>
 		</div>
 
@@ -103,7 +103,7 @@
 			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-white/[0.04] border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
 		>
 			<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
-			<span>Actualiser ScoDoc</span>
+			<span>Actualiser</span>
 		</button>
 	</div>
 

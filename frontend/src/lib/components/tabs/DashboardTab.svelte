@@ -343,7 +343,7 @@
 			<div class="space-y-2">
 				<div class="space-y-0.5">
 					<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Moyenne générale</h3>
-					<p class="text-xs text-zinc-500">Relevé officiel ScoDoc</p>
+					<p class="text-xs text-zinc-500">Relevé ScoDoc</p>
 				</div>
 				<div class="flex items-baseline gap-1">
 					<span class="text-3xl font-extrabold text-white tracking-tight">
@@ -423,7 +423,7 @@
 		<Card class="flex flex-col justify-between">
 			<div class="space-y-0.5">
 				<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Prochain cours</h3>
-				<p class="text-xs text-zinc-500">Emploi du temps ADE</p>
+				<p class="text-xs text-zinc-500">Emploi du temps</p>
 			</div>
 
 			{#if nextClassInfo()}
@@ -450,11 +450,11 @@
 
 	<!-- Ligne 2 : Emploi du temps et Devoirs (sans empilement de boites) -->
 	<div class="grid grid-cols-1 md:grid-cols-12 gap-5">
-		<!-- Colonne Gauche : Emploi du temps de la semaine (8 cols) -->
+		<!-- Colonne Gauche : Emploi du temps (8 cols) -->
 		<Card class="md:col-span-8 space-y-4">
 			<div class="flex items-center justify-between">
 				<div>
-					<h2 class="text-sm font-bold text-white">Emploi du temps de la semaine</h2>
+					<h2 class="text-sm font-bold text-white">Emploi du temps</h2>
 					<p class="text-xs text-zinc-500">
 						Du {weekDays[0].formattedDate} au {weekDays[4].formattedDate}
 					</p>
@@ -464,7 +464,7 @@
 						onclick={() => onNavigate("timetable")}
 						class="text-xs text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
 					>
-						Vue détaillée <ArrowUpRight class="w-3 h-3" />
+						Voir tout <ArrowUpRight class="w-3 h-3" />
 					</button>
 				{/if}
 			</div>
@@ -556,18 +556,18 @@
 			{/if}
 		</Card>
 
-		<!-- Colonne Droite : Devoirs et evaluations a venir (4 cols) -->
+		<!-- Colonne Droite : Devoirs à venir (4 cols) -->
 		<Card class="md:col-span-4 flex flex-col justify-between space-y-4">
 			<div>
 				<div class="space-y-0.5 mb-3">
-					<h2 class="text-sm font-bold text-white">Devoirs & Contrôles à venir</h2>
-					<p class="text-xs text-zinc-500">Devoirs Moodle et contrôles personnels</p>
+					<h2 class="text-sm font-bold text-white">Devoirs à venir</h2>
+					<p class="text-xs text-zinc-500">Devoirs et échéances</p>
 				</div>
 
 				<div class="space-y-2.5">
 					{#if upcomingTasks().length === 0}
 						<div class="py-12 text-center text-zinc-500 text-xs">
-							Aucun devoir ou contrôle à venir.
+							Aucun devoir à venir.
 						</div>
 					{:else}
 						{#each upcomingTasks() as item}
@@ -622,7 +622,7 @@
 					class="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-dashed border-app-border hover:border-cyan-500/50 bg-app-surface hover:bg-white/[0.04] text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
 				>
 					<Plus class="w-4 h-4 text-cyan-400" />
-					<span>+ Ajouter un DS ou devoir</span>
+					<span>Ajouter un devoir</span>
 				</button>
 			{/if}
 		</Card>
@@ -640,7 +640,7 @@
 					onclick={() => onNavigate("grades")}
 					class="text-xs text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
 				>
-					Relevé complet ScoDoc <ArrowUpRight class="w-3 h-3" />
+					Voir toutes les notes <ArrowUpRight class="w-3 h-3" />
 				</button>
 			{/if}
 		</div>

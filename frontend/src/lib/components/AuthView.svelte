@@ -54,15 +54,15 @@
 			<img src="/icon.png" alt="Cisco" class="w-16 h-16 rounded-xl object-contain shadow-2xl" />
 		</div>
 		<h1 class="text-3xl font-extrabold tracking-tight text-white">
-			CISCO STUDENT
+			CISCO DASHBOARD
 		</h1>
 		<p class="text-sm text-zinc-400">
 			Le tableau de bord unifié pour étudiants en <strong>BUT Réseaux & Télécoms</strong>
 		</p>
 		<div class="flex items-center justify-center gap-2 pt-1">
-			<Badge variant="cisco">ScoDoc API</Badge>
-			<Badge variant="secondary">Moodle Mobile</Badge>
-			<Badge variant="outline">ADE Campus iCal</Badge>
+			<Badge variant="cisco">ScoDoc</Badge>
+			<Badge variant="secondary">Moodle</Badge>
+			<Badge variant="outline">Emploi du temps</Badge>
 		</div>
 	</div>
 
@@ -75,14 +75,14 @@
 					onclick={() => { mode = "login"; error = ""; }}
 					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'login' ? 'bg-white/[0.08] text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
 				>
-					Se Connecter
+					Se connecter
 				</button>
 				<button
 					type="button"
 					onclick={() => { mode = "register"; error = ""; }}
 					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'register' ? 'bg-white/[0.08] text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
 				>
-					Créer un Compte
+					Créer un compte
 				</button>
 			</div>
 

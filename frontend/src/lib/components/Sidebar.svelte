@@ -21,8 +21,8 @@
 	const navItems = [
 		{ id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
 		{ id: "timetable", label: "Emploi du temps", icon: Calendar },
-		{ id: "grades", label: "Notes & UEs", icon: FileText },
-		{ id: "tasks", label: "Devoirs & DS", icon: GraduationCap },
+		{ id: "grades", label: "Notes", icon: FileText },
+		{ id: "tasks", label: "Devoirs", icon: GraduationCap },
 		{ id: "absences", label: "Absences", icon: Clock },
 		{ id: "settings", label: "Paramètres", icon: Settings }
 	];
@@ -32,11 +32,11 @@
 	<div>
 		<!-- En-tete Logo Cisco avec icon.png -->
 		<div class="px-5 py-6 flex items-center gap-3">
-			<img src="/icon.png" alt="Cisco" class="w-8 h-8 rounded-lg object-contain shadow-sm" />
+			<img src="/icon.png" alt="Cisco Dashboard" class="w-8 h-8 rounded-lg object-contain shadow-sm" />
 			<div class="flex items-center gap-2">
 				<span class="font-extrabold text-base tracking-tight text-white font-sans">Cisco</span>
 				<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">
-					BUT R&T
+					Dashboard
 				</span>
 			</div>
 		</div>

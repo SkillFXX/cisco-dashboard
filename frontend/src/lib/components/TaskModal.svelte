@@ -120,7 +120,7 @@
 <Modal
 	bind:open
 	title={task ? "Modifier le devoir" : "Ajouter un devoir"}
-	description={task ? "Modifiez les informations de ce devoir ou de cette épreuve." : "Planifiez vos contrôles, devoirs ou rappels personnels."}
+	description={task ? "Modifiez les informations de ce devoir." : "Planifiez vos devoirs, contrôles ou rappels."}
 >
 	<form onsubmit={handleSubmit} class="space-y-4">
 		{#if error}

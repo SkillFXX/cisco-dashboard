@@ -297,10 +297,10 @@
 		<div>
 			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
 				<ListTodo class="w-5 h-5 text-cyan-400" />
-				<span>Devoirs & Contrôles</span>
+				<span>Devoirs</span>
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
-				Consultez et suivez l'ensemble de vos échéances : DM Moodle, DS Calendrier et tâches personnelles.
+				Vos devoirs, travaux à rendre et devoirs surveillés.
 			</p>
 		</div>
 

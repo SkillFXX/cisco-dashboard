@@ -281,7 +281,7 @@
 				Emploi du temps
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
-				Planning ADE Campus synchronisé avec détection en direct des cours, salles et enseignants.
+				Planning de vos cours, salles et enseignants.
 			</p>
 		</div>
 

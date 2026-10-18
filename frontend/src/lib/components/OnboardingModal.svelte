@@ -218,13 +218,13 @@
 			<div class="space-y-1 pr-8 mb-6">
 				<div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-cyan-600 text-white text-xs font-semibold mb-2">
 					<Sparkles class="w-3.5 h-3.5" />
-					<span>Assistant d'intégration</span>
+					<span>Assistant de configuration</span>
 				</div>
 				<h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">
-					Configuration de vos Services
+					Connexion de vos services
 				</h2>
 				<p class="text-xs text-zinc-400">
-					Reliez vos services universitaires un par un pour synchroniser automatiquement vos notes, devoirs et emploi du temps.
+					Reliez vos services un par un pour synchroniser vos données.
 				</p>
 			</div>
 
@@ -263,7 +263,7 @@
 							<span>3</span>
 						{/if}
 					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 3 ? 'text-white' : 'text-zinc-500'}">ADE Planning</span>
+					<span class="hidden sm:inline font-medium text-xs {currentStep === 3 ? 'text-white' : 'text-zinc-500'}">Emploi du temps</span>
 				</div>
 
 				<!-- Step 4 -->
@@ -291,16 +291,16 @@
 							<FileText class="w-5 h-5" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-sm">Étape 1 : Relevé ScoDoc (Notes & Absences)</h3>
+							<h3 class="font-bold text-white text-sm">ScoDoc</h3>
 							<p class="text-xs text-zinc-400 mt-0.5">
-								Importe vos moyennes par UE, classement, et absences. Votre nom et photo d'étudiant sont synchronisés automatiquement.
+								Notes, moyennes et absences
 							</p>
 						</div>
 					</div>
 
 					<div class="space-y-3 pt-2">
 						<div>
-							<label for="onb-sco-url" class="block text-xs font-medium text-zinc-400 mb-1">URL du serveur ScoDoc</label>
+							<label for="onb-sco-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de ScoDoc</label>
 							<input
 								id="onb-sco-url"
 								type="text"
@@ -311,7 +311,7 @@
 						</div>
 						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
-								<label for="onb-sco-u" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant CAS ENT</label>
+								<label for="onb-sco-u" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant CAS</label>
 								<input
 									id="onb-sco-u"
 									type="text"
@@ -321,7 +321,7 @@
 								/>
 							</div>
 							<div>
-								<label for="onb-sco-p" class="block text-xs font-medium text-zinc-400 mb-1">Mot de passe CAS ENT</label>
+								<label for="onb-sco-p" class="block text-xs font-medium text-zinc-400 mb-1">Mot de passe CAS</label>
 								<input
 									id="onb-sco-p"
 									type="password"
@@ -342,7 +342,7 @@
 							Passer cette étape
 						</button>
 						<Button variant="cisco" onclick={saveStepScoDoc} disabled={isSaving}>
-							{isSaving ? "Vérification en cours..." : "Vérifier & Connecter ScoDoc"}
+							{isSaving ? "Vérification en cours..." : "Connecter ScoDoc"}
 							<ArrowRight class="w-4 h-4 ml-1" />
 						</Button>
 					</div>
@@ -356,16 +356,16 @@
 							<BookOpen class="w-5 h-5" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-sm">Étape 2 : Moodle (Devoirs & DM)</h3>
+							<h3 class="font-bold text-white text-sm">Moodle</h3>
 							<p class="text-xs text-zinc-400 mt-0.5">
-								Récupère les dates d'échéances de vos devoirs à rendre, devoirs maison et travaux pratiques.
+								Devoirs et cours en ligne
 							</p>
 						</div>
 					</div>
 
 					<div class="space-y-3 pt-2">
 						<div>
-							<label for="onb-mdl-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de votre Moodle</label>
+							<label for="onb-mdl-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de Moodle</label>
 							<input
 								id="onb-mdl-url"
 								type="text"
@@ -397,7 +397,7 @@
 							</div>
 						</div>
 						<div>
-							<label for="onb-mdl-token" class="block text-xs font-medium text-zinc-400 mb-1">Ou Jeton WebService Moodle (optionnel)</label>
+							<label for="onb-mdl-token" class="block text-xs font-medium text-zinc-400 mb-1">Jeton personnel (optionnel)</label>
 							<input
 								id="onb-mdl-token"
 								type="text"
@@ -426,14 +426,14 @@
 								Passer cette étape
 							</button>
 							<Button variant="cisco" onclick={saveStepMoodle} disabled={isSaving}>
-								{isSaving ? "Vérification en cours..." : "Vérifier & Connecter Moodle"}
+								{isSaving ? "Vérification en cours..." : "Connecter Moodle"}
 								<ArrowRight class="w-4 h-4 ml-1" />
 							</Button>
 						</div>
 					</div>
 				</div>
 
-			<!-- Step 3 : ADE Campus iCal -->
+			<!-- Step 3 : Emploi du temps iCal -->
 			{:else if currentStep === 3}
 				<div class="space-y-4">
 					<div class="flex items-center gap-3 p-3.5 rounded-xl bg-blue-600/10 border border-blue-500/20">
@@ -441,16 +441,16 @@
 							<Calendar class="w-5 h-5" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-sm">Étape 3 : Emploi du Temps ADE Campus</h3>
+							<h3 class="font-bold text-white text-sm">Emploi du temps</h3>
 							<p class="text-xs text-zinc-400 mt-0.5">
-								Affiche en direct vos cours, salles, professeurs et créneaux de devoirs surveillés (DS).
+								Planning des cours et évaluations
 							</p>
 						</div>
 					</div>
 
 					<div class="space-y-3 pt-2">
 						<div>
-							<label for="onb-ical" class="block text-xs font-medium text-zinc-400 mb-1">Lien de l'URL exportée (.ics)</label>
+							<label for="onb-ical" class="block text-xs font-medium text-zinc-400 mb-1">Lien iCal (.ics)</label>
 							<div class="flex items-center gap-2">
 								<Link2 class="w-4 h-4 text-zinc-500 shrink-0" />
 								<input
@@ -463,7 +463,7 @@
 							</div>
 						</div>
 						<div class="p-3 rounded-lg bg-zinc-900 border border-app-border text-[11px] text-zinc-400 leading-relaxed">
-							<strong>Où trouver ce lien ?</strong> Connectez-vous sur votre ENT ou ADE Campus, ouvrez votre planning, cliquez sur <em>Options d'exportation</em> ou <em>S'abonner</em>, puis copiez l'adresse web du lien iCal (.ics).
+							Copiez l'adresse web de votre lien iCal (.ics) depuis votre ENT ou ADE Campus.
 						</div>
 					</div>
 
@@ -485,7 +485,7 @@
 								Passer cette étape
 							</button>
 							<Button variant="cisco" onclick={saveStepIcal} disabled={isSaving}>
-								{isSaving ? "Vérification du flux..." : "Vérifier & Enregistrer ADE"}
+								{isSaving ? "Vérification en cours..." : "Enregistrer l'emploi du temps"}
 								<ArrowRight class="w-4 h-4 ml-1" />
 							</Button>
 						</div>
@@ -499,9 +499,9 @@
 						<div class="w-12 h-12 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center mx-auto">
 							<Check class="w-6 h-6" />
 						</div>
-						<h3 class="font-bold text-white text-base">Configuration Terminée !</h3>
+						<h3 class="font-bold text-white text-base">C'est tout bon !</h3>
 						<p class="text-xs text-zinc-400 max-w-md mx-auto">
-							Votre espace de travail Cisco Student est configuré. Voici le récapitulatif de vos connexions :
+							Vos services sont configurés. Voici le récapitulatif de vos connexions :
 						</p>
 					</div>
 
@@ -545,11 +545,11 @@
 							</div>
 						</div>
 
-						<!-- ADE Campus -->
+						<!-- Emploi du temps -->
 						<div class="p-4 rounded-xl border border-app-border bg-app-surface flex flex-col justify-between space-y-3">
 							<div class="flex items-center gap-2">
 								<Calendar class="w-4 h-4 text-blue-400" />
-								<span class="text-xs font-bold text-white">ADE Campus</span>
+								<span class="text-xs font-bold text-white">Emploi du temps</span>
 							</div>
 							<div>
 								{#if icalSaved}
@@ -569,7 +569,7 @@
 						<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-950/20 flex items-center justify-between">
 							<div class="flex items-center gap-2">
 								<Sparkles class="w-4 h-4 text-cyan-400" />
-								<span class="text-xs text-zinc-300">Identité étudiante confirmée :</span>
+								<span class="text-xs text-zinc-300">Identité :</span>
 							</div>
 							<span class="text-xs font-bold text-white">{auth.user.full_name}</span>
 						</div>

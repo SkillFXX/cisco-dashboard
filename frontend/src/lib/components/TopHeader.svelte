@@ -12,11 +12,11 @@
 
 	const breadcrumbsMap: Record<string, { category: string; page: string }> = {
 		dashboard: { category: "Tableau de bord", page: "Vue d'ensemble" },
-		timetable: { category: "Emploi du temps", page: "Semaine en cours" },
-		grades: { category: "Notes & Évaluations", page: "Relevé ScoDoc" },
-		tasks: { category: "Devoirs & DS", page: "Échéances" },
-		absences: { category: "Absences", page: "Justificatifs" },
-		settings: { category: "Paramètres", page: "Services & Comptes" }
+		timetable: { category: "Emploi du temps", page: "Semaine" },
+		grades: { category: "Notes", page: "Relevé" },
+		tasks: { category: "Devoirs", page: "Échéances" },
+		absences: { category: "Absences", page: "Bilan" },
+		settings: { category: "Paramètres", page: "Services" }
 	};
 
 	let breadcrumb = $derived(breadcrumbsMap[activeTab] || { category: "Tableau de bord", page: "Vue d'ensemble" });
