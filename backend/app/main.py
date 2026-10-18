@@ -2,7 +2,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .database import engine, Base
+from .database import engine, Base, init_db
 from .models import User, UserCredentials, PersonalTask
 from .routers import auth, settings as settings_router, scodoc, moodle, timetable, tasks, dashboard
 
@@ -10,8 +10,8 @@ from .routers import auth, settings as settings_router, scodoc, moodle, timetabl
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create tables in SQLite
-Base.metadata.create_all(bind=engine)
+# Initialize tables and schema updates
+init_db()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

@@ -22,6 +22,30 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+def init_db():
+    from sqlalchemy import text
+    Base.metadata.create_all(bind=engine)
+
+    if settings.DATABASE_URL.startswith("sqlite"):
+        with engine.connect() as conn:
+            try:
+                res = conn.execute(text("PRAGMA table_info(user_credentials);")).fetchall()
+                col_names = [r[1] for r in res]
+                cols_to_add = [
+                    ("scodoc_verified", "BOOLEAN DEFAULT 0"),
+                    ("scodoc_last_error", "TEXT"),
+                    ("moodle_verified", "BOOLEAN DEFAULT 0"),
+                    ("moodle_last_error", "TEXT"),
+                    ("ical_verified", "BOOLEAN DEFAULT 0"),
+                    ("ical_last_error", "TEXT"),
+                ]
+                for col_name, col_def in cols_to_add:
+                    if col_name not in col_names:
+                        conn.execute(text(f"ALTER TABLE user_credentials ADD COLUMN {col_name} {col_def};"))
+                conn.commit()
+            except Exception as e:
+                print(f"Warning during DB column migration: {e}")
+
 def get_db():
     db = SessionLocal()
     try:

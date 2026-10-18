@@ -241,6 +241,7 @@ def fetch_moodle_data(
         result = {
             "configured": True,
             "site_name": site_info.get("sitename", "Moodle"),
+            "fullname": site_info.get("fullname"),
             "courses": parsed_courses,
             "upcoming_assignments": upcoming,
             "connection_error": None

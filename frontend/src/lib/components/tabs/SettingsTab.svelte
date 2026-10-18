@@ -16,11 +16,12 @@
 		FileText,
 		BookOpen,
 		Calendar,
-		ShieldCheck
+		ShieldCheck,
+		Sparkles,
+		RefreshCw
 	} from "lucide-svelte";
 
 	// Profile state
-	let full_name = $state(auth.user?.full_name || "");
 	let email = $state(auth.user?.email || "");
 	let current_password = $state("");
 	let new_password = $state("");
@@ -32,13 +33,25 @@
 	let scodoc_url = $state("https://wscodoc.iutbeziers.fr");
 	let scodoc_username = $state("");
 	let scodoc_password = $state("");
+	let scodoc_configured = $state(false);
+	let scodoc_verified = $state(false);
+	let scodoc_last_error = $state("");
 
 	let moodle_url = $state("https://moodle.umontpellier.fr");
 	let moodle_username = $state("");
 	let moodle_password = $state("");
 	let moodle_token = $state("");
+	let moodle_configured = $state(false);
+	let moodle_verified = $state(false);
+	let moodle_last_error = $state("");
 
 	let ical_url = $state("");
+	let ical_configured = $state(false);
+	let ical_verified = $state(false);
+	let ical_last_error = $state("");
+
+	let testingService = $state<string | null>(null);
+	let testFeedback = $state<{ service: string; success: boolean; message: string } | null>(null);
 
 	let isLoading = $state(true);
 	let isSavingServices = $state(false);
@@ -46,9 +59,8 @@
 	let servicesErrorMsg = $state("");
 
 	$effect(() => {
-		if (auth.user) {
-			if (!full_name && auth.user.full_name) full_name = auth.user.full_name;
-			if (!email && auth.user.email) email = auth.user.email;
+		if (auth.user && auth.user.email) {
+			if (!email) email = auth.user.email;
 		}
 	});
 
@@ -59,18 +71,93 @@
 			const data = await api.getSettings();
 			if (data.scodoc_url) scodoc_url = data.scodoc_url;
 			if (data.scodoc_username) scodoc_username = data.scodoc_username;
+			scodoc_configured = data.scodoc_configured;
+			scodoc_verified = data.scodoc_verified;
+			scodoc_last_error = data.scodoc_last_error || "";
+
 			if (data.moodle_url) moodle_url = data.moodle_url;
 			if (data.moodle_username) moodle_username = data.moodle_username;
+			moodle_configured = data.moodle_configured;
+			moodle_verified = data.moodle_verified;
+			moodle_last_error = data.moodle_last_error || "";
+
 			if (data.ical_url) ical_url = data.ical_url;
+			ical_configured = data.ical_configured;
+			ical_verified = data.ical_verified;
+			ical_last_error = data.ical_last_error || "";
 
 			if (auth.user) {
-				full_name = auth.user.full_name || "";
 				email = auth.user.email || "";
 			}
 		} catch (e: any) {
 			servicesErrorMsg = e.message || "Erreur de chargement des paramètres";
 		} finally {
 			isLoading = false;
+		}
+	}
+
+	async function testConnection(service: "scodoc" | "moodle" | "ical") {
+		testingService = service;
+		testFeedback = null;
+		try {
+			let payload: any = { service, save_if_valid: true };
+			if (service === "scodoc") {
+				payload.url = scodoc_url.trim();
+				payload.username = scodoc_username.trim();
+				payload.password = scodoc_password.trim() || undefined;
+			} else if (service === "moodle") {
+				payload.url = moodle_url.trim();
+				payload.username = moodle_username.trim() || undefined;
+				payload.password = moodle_password.trim() || undefined;
+				payload.token = moodle_token.trim() || undefined;
+			} else if (service === "ical") {
+				payload.url = ical_url.trim();
+			}
+
+			const res = await api.verifyService(payload);
+			testFeedback = {
+				service,
+				success: res.success,
+				message: res.message
+			};
+
+			if (res.success) {
+				if (service === "scodoc") {
+					scodoc_verified = true;
+					scodoc_last_error = "";
+					scodoc_configured = true;
+				} else if (service === "moodle") {
+					moodle_verified = true;
+					moodle_last_error = "";
+					moodle_configured = true;
+				} else if (service === "ical") {
+					ical_verified = true;
+					ical_last_error = "";
+					ical_configured = true;
+				}
+				if (res.student_name && auth.user) {
+					auth.user.full_name = res.student_name;
+				}
+			} else {
+				if (service === "scodoc") {
+					scodoc_verified = false;
+					scodoc_last_error = res.message;
+				} else if (service === "moodle") {
+					moodle_verified = false;
+					moodle_last_error = res.message;
+				} else if (service === "ical") {
+					ical_verified = false;
+					ical_last_error = res.message;
+				}
+			}
+		} catch (e: any) {
+			testFeedback = {
+				service,
+				success: false,
+				message: e.message || "Erreur lors du test de connexion."
+			};
+		} finally {
+			testingService = null;
 		}
 	}
 
@@ -82,7 +169,6 @@
 
 		try {
 			await auth.updateProfile({
-				full_name: full_name.trim(),
 				email: email.trim(),
 				current_password: current_password.trim() || undefined,
 				new_password: new_password.trim() || undefined
@@ -107,7 +193,7 @@
 		servicesErrorMsg = "";
 
 		try {
-			await api.updateSettings({
+			const data = await api.updateSettings({
 				scodoc_url,
 				scodoc_username: scodoc_username.trim() || undefined,
 				scodoc_password: scodoc_password.trim() || undefined,
@@ -121,6 +207,19 @@
 			servicesSuccessMsg = "Paramètres de connexion aux services enregistrés avec succès.";
 			scodoc_password = "";
 			moodle_password = "";
+
+			scodoc_configured = data.scodoc_configured;
+			scodoc_verified = data.scodoc_verified;
+			scodoc_last_error = data.scodoc_last_error || "";
+
+			moodle_configured = data.moodle_configured;
+			moodle_verified = data.moodle_verified;
+			moodle_last_error = data.moodle_last_error || "";
+
+			ical_configured = data.ical_configured;
+			ical_verified = data.ical_verified;
+			ical_last_error = data.ical_last_error || "";
+
 			setTimeout(() => {
 				servicesSuccessMsg = "";
 			}, 4000);
@@ -138,14 +237,25 @@
 
 <div class="max-w-4xl space-y-8 pb-10">
 	<!-- En-tête -->
-	<div class="pb-2 border-b border-app-border">
-		<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-			<Settings class="w-5 h-5 text-cyan-400" />
-			<span>Paramètres & Profil</span>
-		</h1>
-		<p class="text-xs text-zinc-400 mt-0.5">
-			Gérez votre profil étudiant, vos informations de compte et synchronisez vos services universitaires (ScoDoc, Moodle, ADE Campus).
-		</p>
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
+		<div>
+			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+				<Settings class="w-5 h-5 text-cyan-400" />
+				<span>Paramètres & Profil</span>
+			</h1>
+			<p class="text-xs text-zinc-400 mt-0.5">
+				Gérez votre compte et synchronisez vos services universitaires (ScoDoc, Moodle, ADE Campus).
+			</p>
+		</div>
+
+		<button
+			type="button"
+			onclick={() => (auth.isOnboardingOpen = true)}
+			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs shrink-0"
+		>
+			<Sparkles class="w-3.5 h-3.5" />
+			<span>Assistant d'intégration</span>
+		</button>
 	</div>
 
 	{#if isLoading}
@@ -200,24 +310,26 @@
 							</div>
 							<div>
 								<h3 class="font-bold text-white text-sm">Informations Personnelles</h3>
-								<p class="text-xs text-zinc-400">Modifiez votre nom et votre adresse email.</p>
+								<p class="text-xs text-zinc-400">Identité détectée et adresse email de votre compte.</p>
 							</div>
 						</div>
 					</div>
 
-					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<div>
-							<label for="p-fullname" class="block text-xs font-medium text-zinc-400 mb-1">Nom & Prénom</label>
-							<input
-								id="p-fullname"
-								type="text"
-								bind:value={full_name}
-								placeholder="ex: Jean Dupont"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
-							/>
+					<div class="space-y-3">
+						<div class="flex items-center justify-between p-3.5 rounded-xl border border-app-border bg-app-surface/50">
+							<div>
+								<span class="text-[11px] font-medium text-zinc-400 block">Nom & Prénom</span>
+								<span class="text-sm font-bold text-white">
+									{auth.user?.full_name || "En attente de synchronisation ScoDoc ou Moodle"}
+								</span>
+							</div>
+							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {auth.user?.full_name ? 'bg-emerald-600 text-white' : 'bg-zinc-700 text-white'}">
+								{auth.user?.full_name ? "Automatique" : "Non détecté"}
+							</span>
 						</div>
+
 						<div>
-							<label for="p-email" class="block text-xs font-medium text-zinc-400 mb-1">Adresse email</label>
+							<label for="p-email" class="block text-xs font-medium text-zinc-400 mb-1">Adresse email du compte</label>
 							<input
 								id="p-email"
 								type="email"
@@ -292,26 +404,64 @@
 
 				<!-- Card 1 : ScoDoc -->
 				<Card class="space-y-4 p-5">
-					<div class="flex items-center justify-between border-b border-app-border pb-3">
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
 						<div class="flex items-center gap-2.5">
-							<div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
+							<div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0">
 								<FileText class="w-4 h-4" />
 							</div>
 							<div>
 								<h3 class="font-bold text-white text-sm">ScoDoc (Notes, Moyennes & Absences)</h3>
-								<p class="text-xs text-zinc-400">Authentification automatique avec le serveur CAS universitaire.</p>
+								<p class="text-xs text-zinc-400">Authentification avec le serveur CAS universitaire.</p>
 							</div>
 						</div>
-						{#if scodoc_username}
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-								Configuré
-							</span>
-						{:else}
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-300">
-								Non configuré
-							</span>
-						{/if}
+						<div class="flex items-center gap-2 shrink-0">
+							{#if scodoc_verified}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
+									Vérifié & Connecté
+								</span>
+							{:else if scodoc_configured}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-600 text-white">
+									Identifiants invalides
+								</span>
+							{:else}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
+									Non configuré
+								</span>
+							{/if}
+
+							<button
+								type="button"
+								onclick={() => testConnection("scodoc")}
+								disabled={testingService === "scodoc" || !scodoc_username}
+								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+							>
+								{#if testingService === "scodoc"}
+									<RefreshCw class="w-3 h-3 animate-spin" />
+									<span>Vérification...</span>
+								{:else}
+									<span>Tester</span>
+								{/if}
+							</button>
+						</div>
 					</div>
+
+					{#if testFeedback && testFeedback.service === "scodoc"}
+						<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {testFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
+							{#if testFeedback.success}
+								<Check class="w-4 h-4 shrink-0" />
+							{:else}
+								<AlertCircle class="w-4 h-4 shrink-0" />
+							{/if}
+							<span>{testFeedback.message}</span>
+						</div>
+					{/if}
+
+					{#if scodoc_last_error && (!testFeedback || testFeedback.service !== "scodoc")}
+						<div class="p-3 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
+							<AlertCircle class="w-4 h-4 shrink-0" />
+							<span>{scodoc_last_error}</span>
+						</div>
+					{/if}
 
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
@@ -349,9 +499,9 @@
 
 				<!-- Card 2 : Moodle -->
 				<Card class="space-y-4 p-5">
-					<div class="flex items-center justify-between border-b border-app-border pb-3">
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
 						<div class="flex items-center gap-2.5">
-							<div class="w-8 h-8 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center">
+							<div class="w-8 h-8 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center shrink-0">
 								<BookOpen class="w-4 h-4" />
 							</div>
 							<div>
@@ -359,16 +509,54 @@
 								<p class="text-xs text-zinc-400">Récupération automatique des échéances et devoirs à rendre.</p>
 							</div>
 						</div>
-						{#if moodle_username || moodle_token}
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-								Configuré
-							</span>
-						{:else}
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-300">
-								Non configuré
-							</span>
-						{/if}
+						<div class="flex items-center gap-2 shrink-0">
+							{#if moodle_verified}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
+									Vérifié & Connecté
+								</span>
+							{:else if moodle_configured}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-600 text-white">
+									Identifiants invalides
+								</span>
+							{:else}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
+									Non configuré
+								</span>
+							{/if}
+
+							<button
+								type="button"
+								onclick={() => testConnection("moodle")}
+								disabled={testingService === "moodle" || (!moodle_username && !moodle_token)}
+								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+							>
+								{#if testingService === "moodle"}
+									<RefreshCw class="w-3 h-3 animate-spin" />
+									<span>Vérification...</span>
+								{:else}
+									<span>Tester</span>
+								{/if}
+							</button>
+						</div>
 					</div>
+
+					{#if testFeedback && testFeedback.service === "moodle"}
+						<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {testFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
+							{#if testFeedback.success}
+								<Check class="w-4 h-4 shrink-0" />
+							{:else}
+								<AlertCircle class="w-4 h-4 shrink-0" />
+							{/if}
+							<span>{testFeedback.message}</span>
+						</div>
+					{/if}
+
+					{#if moodle_last_error && (!testFeedback || testFeedback.service !== "moodle")}
+						<div class="p-3 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
+							<AlertCircle class="w-4 h-4 shrink-0" />
+							<span>{moodle_last_error}</span>
+						</div>
+					{/if}
 
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
@@ -419,9 +607,9 @@
 
 				<!-- Card 3 : ADE Campus / UM Net iCal -->
 				<Card class="space-y-4 p-5">
-					<div class="flex items-center justify-between border-b border-app-border pb-3">
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
 						<div class="flex items-center gap-2.5">
-							<div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
+							<div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
 								<Calendar class="w-4 h-4" />
 							</div>
 							<div>
@@ -429,16 +617,54 @@
 								<p class="text-xs text-zinc-400">Synchronisation des cours, salles, enseignants et créneaux de DS.</p>
 							</div>
 						</div>
-						{#if ical_url}
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-								Configuré
-							</span>
-						{:else}
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-300">
-								Non configuré
-							</span>
-						{/if}
+						<div class="flex items-center gap-2 shrink-0">
+							{#if ical_verified}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
+									Vérifié & Connecté
+								</span>
+							{:else if ical_configured}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-600 text-white">
+									Flux invalide
+								</span>
+							{:else}
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
+									Non configuré
+								</span>
+							{/if}
+
+							<button
+								type="button"
+								onclick={() => testConnection("ical")}
+								disabled={testingService === "ical" || !ical_url}
+								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+							>
+								{#if testingService === "ical"}
+									<RefreshCw class="w-3 h-3 animate-spin" />
+									<span>Vérification...</span>
+								{:else}
+									<span>Tester</span>
+								{/if}
+							</button>
+						</div>
 					</div>
+
+					{#if testFeedback && testFeedback.service === "ical"}
+						<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {testFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
+							{#if testFeedback.success}
+								<Check class="w-4 h-4 shrink-0" />
+							{:else}
+								<AlertCircle class="w-4 h-4 shrink-0" />
+							{/if}
+							<span>{testFeedback.message}</span>
+						</div>
+					{/if}
+
+					{#if ical_last_error && (!testFeedback || testFeedback.service !== "ical")}
+						<div class="p-3 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
+							<AlertCircle class="w-4 h-4 shrink-0" />
+							<span>{ical_last_error}</span>
+						</div>
+					{/if}
 
 					<div>
 						<label for="ical-url" class="block text-xs font-medium text-zinc-400 mb-1">Lien de l'URL iCal exporté (.ics)</label>

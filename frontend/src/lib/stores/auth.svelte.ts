@@ -15,6 +15,7 @@ class AuthStore {
 	user = $state<UserProfile | null>(null);
 	token = $state<string | null>(null);
 	isLoading = $state<boolean>(true);
+	isOnboardingOpen = $state<boolean>(false);
 	isAuthenticated = $derived(!!this.token && !!this.user);
 
 	constructor() {
@@ -74,6 +75,7 @@ class AuthStore {
 		} catch {
 			// keep user from register response
 		}
+		this.isOnboardingOpen = true;
 		return res;
 	}
 

@@ -40,6 +40,16 @@ class UserCredentials(Base):
     # Fallback simulation
     use_mock_fallback = Column(Boolean, default=False)
 
+    # Verification status
+    scodoc_verified = Column(Boolean, default=False)
+    scodoc_last_error = Column(Text, nullable=True)
+
+    moodle_verified = Column(Boolean, default=False)
+    moodle_last_error = Column(Text, nullable=True)
+
+    ical_verified = Column(Boolean, default=False)
+    ical_last_error = Column(Text, nullable=True)
+
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="credentials")

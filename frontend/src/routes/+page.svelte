@@ -13,6 +13,7 @@
 	import AbsencesTab from "$lib/components/tabs/AbsencesTab.svelte";
 	import SettingsTab from "$lib/components/tabs/SettingsTab.svelte";
 	import AuthView from "$lib/components/AuthView.svelte";
+	import OnboardingModal from "$lib/components/OnboardingModal.svelte";
 
 	let activeTab = $state("dashboard");
 	let isAddTaskOpen = $state(false);
@@ -80,6 +81,14 @@
 		<TaskModal
 			bind:open={isAddTaskOpen}
 			onTaskCreated={handleTaskCreated}
+		/>
+
+		<!-- Assistant d'accueil pas à pas (Onboarding) -->
+		<OnboardingModal
+			bind:open={auth.isOnboardingOpen}
+			onComplete={() => {
+				tasksRefreshTrigger += 1;
+			}}
 		/>
 	{/if}
 </div>

@@ -57,15 +57,39 @@ class CredentialsUpdate(BaseModel):
     use_mock_fallback: Optional[bool] = False
 
 class CredentialsResponse(BaseModel):
-    scodoc_url: Optional[str]
-    scodoc_username: Optional[str]
-    scodoc_configured: bool
-    moodle_url: Optional[str]
-    moodle_username: Optional[str]
-    moodle_configured: bool
-    ical_url: Optional[str]
-    ical_configured: bool
+    scodoc_url: Optional[str] = None
+    scodoc_username: Optional[str] = None
+    scodoc_configured: bool = False
+    scodoc_verified: bool = False
+    scodoc_last_error: Optional[str] = None
+    moodle_url: Optional[str] = None
+    moodle_username: Optional[str] = None
+    moodle_configured: bool = False
+    moodle_verified: bool = False
+    moodle_last_error: Optional[str] = None
+    ical_url: Optional[str] = None
+    ical_configured: bool = False
+    ical_verified: bool = False
+    ical_last_error: Optional[str] = None
     use_mock_fallback: bool = False
+
+# Service Verification Schemas
+class ServiceVerifyRequest(BaseModel):
+    service: str # "scodoc", "moodle", "ical"
+    url: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    token: Optional[str] = None
+    save_if_valid: Optional[bool] = False
+
+class ServiceVerifyResponse(BaseModel):
+    success: bool
+    service: str
+    message: str
+    student_name: Optional[str] = None
+    student_pic: Optional[str] = None
+    token: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
 
 # Tasks / DS Schemas
 class PersonalTaskCreate(BaseModel):

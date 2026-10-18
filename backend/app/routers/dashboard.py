@@ -149,11 +149,16 @@ def get_dashboard_overview(
     # Tri par date / urgence
     unified_assignments.sort(key=lambda x: (x.get("days_left", 99), x.get("due_date", "")))
 
-    student_name = ""
-    if current_user.full_name:
-        student_name = current_user.full_name
-    elif scodoc_data.get("etudiant"):
-        student_name = f"{scodoc_data['etudiant'].get('prenom', '')} {scodoc_data['etudiant'].get('nom', '')}".strip()
+    student_name = current_user.full_name or ""
+    if not student_name:
+        if scodoc_data.get("etudiant"):
+            student_name = f"{scodoc_data['etudiant'].get('prenom', '')} {scodoc_data['etudiant'].get('nom', '')}".strip()
+        elif moodle_data.get("fullname"):
+            student_name = moodle_data.get("fullname", "").strip()
+
+        if student_name:
+            current_user.full_name = student_name
+            db.commit()
 
     scodoc_connected = bool(scodoc_data.get("configured", False) and not scodoc_data.get("connection_error"))
     moodle_connected = bool(moodle_data.get("configured", False) and not moodle_data.get("connection_error"))
@@ -162,8 +167,8 @@ def get_dashboard_overview(
     return {
         "user": {
             "id": current_user.id,
-            "username": current_user.username,
-            "full_name": student_name or current_user.username,
+            "email": current_user.email,
+            "full_name": student_name or current_user.email.split("@")[0],
             "photo_base64": scodoc_data.get("etudiant", {}).get("photo_base64") if scodoc_data.get("etudiant") else None
         },
         "stats": {

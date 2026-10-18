@@ -204,6 +204,28 @@ export const api = {
 			method: "PUT",
 			body: JSON.stringify(settings)
 		});
+	},
+
+	async verifyService(payload: {
+		service: "scodoc" | "moodle" | "ical";
+		url?: string;
+		username?: string;
+		password?: string;
+		token?: string;
+		save_if_valid?: boolean;
+	}) {
+		return await request<{
+			success: boolean;
+			service: string;
+			message: string;
+			student_name?: string;
+			student_pic?: string;
+			token?: string;
+			details?: any;
+		}>("/settings/verify", {
+			method: "POST",
+			body: JSON.stringify(payload)
+		});
 	}
 };
 
