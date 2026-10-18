@@ -243,21 +243,23 @@
 				const itemId = `timetable-${e.id || e.dt_start}`;
 				const isDone = completedExternalIds.has(itemId);
 				const daysLeft = computeDaysLeft(e.dt_start || e.date);
+				const rawRoom = (e.location || "").trim();
+				const room = rawRoom ? (rawRoom.toLowerCase().startsWith("salle") ? rawRoom : `Salle ${rawRoom}`) : "Salle non précisée";
 
 				return {
 					id: itemId,
-					title: e.title,
-					subject: e.location ? `Salle ${e.location}` : "Calendrier",
+					title: e.title || "Contrôle DS",
+					subject: "DS",
 					category: "DS",
 					due_date: e.dt_start || e.date,
 					days_left: daysLeft,
 					status: isDone ? "done" : "todo",
-					description: `Épreuve surveillée de ${e.start_time || ""} à ${e.end_time || ""} (${e.location || "Salle non précisée"} - Calendrier)`,
+					description: room,
 					is_personal: false,
 					source: "timetable",
 					start_time: e.start_time,
 					end_time: e.end_time,
-					location: e.location
+					location: room
 				};
 			});
 
@@ -466,21 +468,23 @@
 										</button>
 
 										<div class="min-w-0 flex-1">
-											<!-- Nom du module / matière mis en évidence -->
+											<!-- Titre du devoir mis en évidence -->
 											<div class="flex items-center gap-2">
 												<span class="font-bold text-xs text-white truncate">
-													{item.subject}
+													{item.title}
 												</span>
 												{#if item.source === "moodle"}
-													<span class="text-[10px] text-cyan-400 font-medium">Moodle</span>
+													<span class="text-[10px] text-cyan-400 font-medium shrink-0">Moodle</span>
 												{:else if item.source === "timetable"}
-													<span class="text-[10px] text-rose-400 font-medium">Calendrier</span>
+													<span class="text-[10px] text-rose-400 font-medium shrink-0">Calendrier</span>
 												{/if}
 											</div>
-											<!-- Titre du devoir -->
-											<p class="text-xs text-zinc-300 truncate mt-0.5">
-												{item.title}
-											</p>
+											<!-- Salle ou consignes sous le titre -->
+											{#if item.description}
+												<p class="text-xs text-zinc-400 truncate mt-0.5">
+													{item.description}
+												</p>
+											{/if}
 										</div>
 									</div>
 
@@ -585,17 +589,19 @@
 										<div class="min-w-0 flex-1">
 											<div class="flex items-center gap-2">
 												<span class="font-bold text-xs text-white truncate">
-													{item.subject}
+													{item.title}
 												</span>
 												{#if item.source === "moodle"}
-													<span class="text-[10px] text-cyan-400 font-medium">Moodle</span>
+													<span class="text-[10px] text-cyan-400 font-medium shrink-0">Moodle</span>
 												{:else if item.source === "timetable"}
-													<span class="text-[10px] text-rose-400 font-medium">Calendrier</span>
+													<span class="text-[10px] text-rose-400 font-medium shrink-0">Calendrier</span>
 												{/if}
 											</div>
-											<p class="text-xs text-zinc-300 truncate mt-0.5">
-												{item.title}
-											</p>
+											{#if item.description}
+												<p class="text-xs text-zinc-400 truncate mt-0.5">
+													{item.description}
+												</p>
+											{/if}
 										</div>
 									</div>
 
@@ -690,17 +696,19 @@
 										<div class="min-w-0 flex-1">
 											<div class="flex items-center gap-2">
 												<span class="font-bold text-xs text-zinc-400 line-through truncate">
-													{item.subject}
+													{item.title}
 												</span>
 												{#if item.source === "moodle"}
-													<span class="text-[10px] text-zinc-500 font-medium">Moodle</span>
+													<span class="text-[10px] text-zinc-500 font-medium shrink-0">Moodle</span>
 												{:else if item.source === "timetable"}
-													<span class="text-[10px] text-zinc-500 font-medium">Calendrier</span>
+													<span class="text-[10px] text-zinc-500 font-medium shrink-0">Calendrier</span>
 												{/if}
 											</div>
-											<p class="text-xs text-zinc-500 line-through truncate mt-0.5">
-												{item.title}
-											</p>
+											{#if item.description}
+												<p class="text-xs text-zinc-500 line-through truncate mt-0.5">
+													{item.description}
+												</p>
+											{/if}
 										</div>
 									</div>
 
@@ -880,7 +888,7 @@
 					{#if selectedTask.description}
 						<div class="space-y-1.5">
 							<h4 class="text-xs font-bold text-zinc-300 uppercase tracking-wider">
-								Consignes / Détails
+								{selectedTask.source === "timetable" ? "Salle" : "Consignes / Détails"}
 							</h4>
 							<div class="p-4 rounded-xl bg-app-surface border border-app-border text-xs text-zinc-300 whitespace-pre-line leading-relaxed max-h-60 overflow-y-auto">
 								{selectedTask.description}

@@ -1,7 +1,8 @@
 import logging
 import datetime
 import hashlib
-from typing import Dict, Any, Optional
+import re
+from typing import Dict, Any, Optional, List
 import requests
 from bs4 import BeautifulSoup
 from .cache_service import get_cached_data, set_cached_data
@@ -18,6 +19,104 @@ def clean_html(raw_html: str) -> str:
         return soup.get_text(separator=" ", strip=True)
     except Exception:
         return raw_html
+
+
+def fetch_course_sections_hierarchy(ws_url: str, auth_token: str, course_id: int) -> Dict[str, Any]:
+    """
+    Interroge core_course_get_contents pour mapper cmid et instance id
+    vers la liste ordonnée des sections parentes.
+    Ex: [ "Généralités", "Première séquence" ]
+    """
+    cmid_to_chain: Dict[int, List[str]] = {}
+    instance_to_chain: Dict[int, List[str]] = {}
+    try:
+        resp = requests.get(
+            ws_url,
+            params={
+                "wstoken": auth_token,
+                "wsfunction": "core_course_get_contents",
+                "courseid": course_id,
+                "moodlewsrestformat": "json"
+            },
+            timeout=10
+        )
+        data = resp.json()
+        if not isinstance(data, list):
+            return {"cmid": cmid_to_chain, "instance": instance_to_chain}
+
+        sec_info = {}
+        for sec in data:
+            s_id = sec.get("id")
+            s_name = clean_html(sec.get("name", "")).strip()
+            sec_info[s_id] = {
+                "name": s_name,
+                "parent_id": sec.get("parentsection")
+            }
+
+        for sec in data:
+            s_id = sec.get("id")
+            chain = []
+            curr = s_id
+            visited = set()
+            while curr and curr not in visited:
+                visited.add(curr)
+                info = sec_info.get(curr)
+                if not info:
+                    break
+                nm = info.get("name", "").strip()
+                if nm and not re.match(r"^(section\s*\d+|topic\s*\d+|thème\s*\d+|général)$", nm, re.IGNORECASE):
+                    chain.insert(0, nm)
+                curr = info.get("parent_id")
+
+            for mod in sec.get("modules", []):
+                mid = mod.get("id")
+                inst = mod.get("instance")
+                if mid:
+                    cmid_to_chain[mid] = chain
+                if inst:
+                    instance_to_chain[inst] = chain
+
+    except Exception as e:
+        logger.debug(f"Erreur recuperation sections cours {course_id}: {e}")
+
+    return {"cmid": cmid_to_chain, "instance": instance_to_chain}
+
+
+def build_moodle_title(
+    course_shortname: Optional[str],
+    course_fullname: Optional[str],
+    section_chain: list,
+    assignment_name: str
+) -> str:
+    """
+    Construit un titre complet hiérarchique :
+    [Nom / Code cours] - [Sections parentes] - [Nom du devoir]
+    Exemple : R112 - Généralités - Première séquence - Fiches ROME
+    """
+    parts = []
+
+    # 1. Code / nom du cours
+    short_clean = (course_shortname or "").strip()
+    full_clean = (course_fullname or "").strip()
+
+    if short_clean:
+        parts.append(short_clean)
+    elif full_clean:
+        parts.append(full_clean.split(" - ")[0].strip())
+
+    # 2. Sections parentes
+    if section_chain:
+        for sec in section_chain:
+            s_clean = sec.strip()
+            if s_clean and not any(s_clean.lower() == p.lower() for p in parts):
+                parts.append(s_clean)
+
+    # 3. Nom du devoir
+    a_clean = (assignment_name or "").strip()
+    if a_clean and not any(a_clean.lower() == p.lower() for p in parts):
+        parts.append(a_clean)
+
+    return " - ".join(parts) if parts else a_clean
 
 
 def fetch_moodle_data(
@@ -150,8 +249,20 @@ def fetch_moodle_data(
                     now = datetime.datetime.now()
                     courses_assignments = assign_data.get("courses", [])
 
+                    # Pré-récupération des sections pour les cours ayant des devoirs à venir
+                    sections_cache: Dict[int, Dict[str, Any]] = {}
                     for ca in courses_assignments:
+                        ca_id = ca.get("id")
+                        has_upcoming = any(a.get("duedate", 0) > 0 for a in ca.get("assignments", []))
+                        if has_upcoming and ca_id and ca_id not in sections_cache:
+                            sections_cache[ca_id] = fetch_course_sections_hierarchy(ws_url, auth_token, ca_id)
+
+                    for ca in courses_assignments:
+                        ca_id = ca.get("id")
                         c_name = ca.get("fullname", "Cours")
+                        c_short = ca.get("shortname", "")
+                        sec_maps = sections_cache.get(ca_id, {"cmid": {}, "instance": {}})
+
                         for a in ca.get("assignments", []):
                             aid = a.get("id")
                             if aid in seen_assign_ids:
@@ -163,19 +274,27 @@ def fetch_moodle_data(
                                 days_left = (due_dt.date() - now.date()).days
                                 if days_left >= 0:
                                     cmid = a.get("cmid")
-                                    cid = a.get("course")
+                                    cid = a.get("course") or ca_id
                                     assign_url = f"{effective_base_url}/mod/assign/view.php?id={cmid}" if cmid else f"{effective_base_url}/course/view.php?id={cid}"
+                                    
+                                    # Hiérarchie des sections parentes
+                                    chain = sec_maps["cmid"].get(cmid) or sec_maps["instance"].get(aid) or []
+                                    hierarchical_title = build_moodle_title(c_short, c_name, chain, a.get("name", "Devoir"))
+                                    intro_clean = clean_html(a.get("intro", "")).strip()
+                                    desc = intro_clean if intro_clean else "Consignes et dépôt disponibles sur Moodle."
+
                                     upcoming.append({
                                         "id": aid,
                                         "course_id": cid,
                                         "course_name": c_name,
-                                        "name": a.get("name"),
+                                        "name": hierarchical_title,
+                                        "raw_name": a.get("name"),
                                         "duedate": due_dt.isoformat(),
                                         "days_left": days_left,
                                         "status": "pending",
                                         "submission_allowed": True,
                                         "submitted": False,
-                                        "description": clean_html(a.get("intro", "")),
+                                        "description": desc,
                                         "url": assign_url
                                     })
                 except Exception as e:
@@ -206,19 +325,26 @@ def fetch_moodle_data(
                             due_dt = datetime.datetime.fromtimestamp(ts)
                             days_left = (due_dt.date() - now.date()).days
                             if days_left >= 0:
-                                ev_course_id = ev.get("course", {}).get("id")
+                                ev_course = ev.get("course", {})
+                                ev_course_id = ev_course.get("id")
+                                c_short = ev_course.get("shortname", "")
+                                c_name = ev_course.get("fullname", "Moodle")
+                                ev_title = build_moodle_title(c_short, c_name, [], clean_name)
                                 ev_url = ev.get("url") or (f"{effective_base_url}/course/view.php?id={ev_course_id}" if ev_course_id else effective_base_url)
+                                intro_clean = clean_html(ev.get("description", "")).strip()
+                                desc = intro_clean if intro_clean else "Consignes et dépôt disponibles sur Moodle."
                                 upcoming.append({
                                     "id": ev.get("id"),
                                     "course_id": ev_course_id,
-                                    "course_name": ev.get("course", {}).get("fullname", "Moodle"),
-                                    "name": clean_name,
+                                    "course_name": c_name,
+                                    "name": ev_title,
+                                    "raw_name": clean_name,
                                     "duedate": due_dt.isoformat(),
                                     "days_left": days_left,
                                     "status": "pending",
                                     "submission_allowed": True,
                                     "submitted": False,
-                                    "description": clean_html(ev.get("description", "")),
+                                    "description": desc,
                                     "url": ev_url
                                 })
             except Exception as e:

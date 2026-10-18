@@ -139,16 +139,20 @@ def get_dashboard_overview(
                 dt_start = datetime.datetime.fromisoformat(ev["dt_start"])
                 if dt_start.date() >= today_date:
                     days_left = (dt_start.date() - today_date).days
+                    raw_loc = (ev.get("location") or "").strip()
+                    room = f"Salle {raw_loc}" if raw_loc and not raw_loc.lower().startswith("salle") else (raw_loc or "Salle non précisée")
+                    course_title = ev.get("title", "Contrôle DS").strip()
                     unified_assignments.append({
                         "id": tt_id,
                         "is_personal": False,
                         "source": "timetable",
-                        "title": ev.get("title", "Contrôle DS"),
-                        "subject": ev.get("location") or "Calendrier",
+                        "title": course_title,
+                        "subject": "DS",
                         "due_date": ev.get("dt_start"),
                         "days_left": days_left,
                         "type": "ds",
-                        "description": f"Épreuve surveillée de {ev.get('start_time')} à {ev.get('end_time')} ({ev.get('location', 'Salle non précisée')} - Calendrier)"
+                        "description": room,
+                        "location": room
                     })
             except Exception:
                 pass

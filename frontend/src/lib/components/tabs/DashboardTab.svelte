@@ -7,8 +7,8 @@
 	import {
 		Plus,
 		Check,
-		Square,
-		CheckSquare2,
+		Circle,
+		CheckCircle2,
 		Clock,
 		Calendar,
 		RefreshCw,
@@ -559,60 +559,112 @@
 		<!-- Colonne Droite : Devoirs à venir (4 cols) -->
 		<Card class="md:col-span-4 flex flex-col justify-between space-y-4">
 			<div>
-				<div class="space-y-0.5 mb-3">
-					<h2 class="text-sm font-bold text-white">Devoirs à venir</h2>
-					<p class="text-xs text-zinc-500">Devoirs et échéances</p>
+				<div class="flex items-center justify-between mb-3">
+					<div class="space-y-0.5">
+						<h2 class="text-sm font-bold text-white">Devoirs à venir</h2>
+						<p class="text-xs text-zinc-500">Devoirs et échéances</p>
+					</div>
+					{#if onNavigate}
+						<button
+							onclick={() => onNavigate("tasks")}
+							class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors cursor-pointer"
+						>
+							Voir tout
+						</button>
+					{/if}
 				</div>
 
-				<div class="space-y-2.5">
-					{#if upcomingTasks().length === 0}
-						<div class="py-12 text-center text-zinc-500 text-xs">
-							Aucun devoir à venir.
-						</div>
-					{:else}
+				{#if upcomingTasks().length === 0}
+					<div class="py-12 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+						Aucun devoir à venir.
+					</div>
+				{:else}
+					<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
 						{#each upcomingTasks() as item}
-							<div class="flex items-start gap-3 p-3 rounded-lg bg-app-surface border border-app-border hover:border-zinc-700 transition-colors">
-								<!-- Bouton case a cocher -->
-								<button
-									onclick={() => toggleTaskStatus(item)}
-									class="mt-0.5 text-zinc-500 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
-									title="Marquer comme fait"
-								>
-									{#if item.status === "done" || item.done}
-										<CheckSquare2 class="w-4 h-4 text-cyan-400" />
-									{:else}
-										<Square class="w-4 h-4 text-zinc-500 hover:text-zinc-300" />
-									{/if}
-								</button>
+							<div class="flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors gap-3 text-left">
+								<!-- Checkbox + Titre & Description -->
+								<div class="flex items-center gap-3.5 min-w-0 flex-1">
+									<button
+										type="button"
+										onclick={(e) => {
+											e.stopPropagation();
+											toggleTaskStatus(item);
+										}}
+										class="text-zinc-500 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
+										title="Marquer comme fait"
+									>
+										{#if item.status === "done" || item.done}
+											<CheckCircle2 class="w-5 h-5 text-emerald-400" />
+										{:else}
+											<Circle class="w-5 h-5" />
+										{/if}
+									</button>
 
-								<div class="space-y-1 flex-1 min-w-0">
-									<div class="flex items-center gap-1.5 flex-wrap">
-										<span class="text-xs font-semibold text-zinc-200 truncate {item.status === 'done' || item.done ? 'line-through text-zinc-500' : ''}">
-											{item.title}
+									<div class="min-w-0 flex-1">
+										<!-- Titre du devoir mis en évidence -->
+										<div class="flex items-center gap-2">
+											<span class="font-bold text-xs text-white truncate {item.status === 'done' || item.done ? 'line-through text-zinc-500' : ''}">
+												{item.title}
+											</span>
+											{#if item.source === "moodle"}
+												<span class="text-[10px] text-cyan-400 font-medium shrink-0">Moodle</span>
+											{:else if item.source === "timetable"}
+												<span class="text-[10px] text-rose-400 font-medium shrink-0">Calendrier</span>
+											{/if}
+										</div>
+										<!-- Salle ou consignes sous le titre -->
+										{#if item.description}
+											<p class="text-xs text-zinc-400 truncate mt-0.5">
+												{item.description}
+											</p>
+										{/if}
+									</div>
+								</div>
+
+								<!-- Catégorie (au milieu) : badge rond en couleur pleine -->
+								<div class="shrink-0 hidden sm:flex items-center justify-center">
+									{#if item.type === 'ds' || item.category === 'DS' || item.source === 'timetable'}
+										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-600 text-white">
+											DS
 										</span>
-										{#if item.days_left <= 2}
-											<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-600 text-white">
-												Urgent
-											</span>
-										{/if}
-										{#if item.type === "ds" || item.source === "timetable"}
-											<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-600 text-white">
-												DS
-											</span>
-										{:else if item.source === "moodle"}
-											<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-600 text-white">
-												Moodle
-											</span>
+									{:else if item.type === 'dm' || item.category === 'DM' || item.source === 'moodle'}
+										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-cyan-600 text-white">
+											DM
+										</span>
+									{:else if item.type === 'tp' || item.category === 'TP'}
+										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-600 text-white">
+											TP
+										</span>
+									{:else}
+										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-100">
+											Autres
+										</span>
+									{/if}
+								</div>
+
+								<!-- Date et délai (à droite) -->
+								<div class="flex flex-col items-end shrink-0 text-right">
+									<div class="text-xs font-semibold">
+										{#if item.days_left < 0}
+											<span class="text-rose-400">En retard ({Math.abs(item.days_left)} j)</span>
+										{:else if item.days_left === 0}
+											<span class="text-amber-300">Aujourd'hui</span>
+										{:else if item.days_left === 1}
+											<span class="text-amber-200">Demain</span>
+										{:else if item.days_left <= 5}
+											<span class="text-zinc-200">Dans <span class="text-white font-bold">{item.days_left}</span> j</span>
+										{:else}
+											<span class="text-zinc-400">Dans <span class="text-white font-bold">{item.days_left}</span> j</span>
 										{/if}
 									</div>
-									<div class="text-[11px] text-zinc-500">
-										{item.days_left === 0 ? "Aujourd'hui à 23:59" : item.days_left === 1 ? "Demain" : `Dans ${item.days_left} jours (${formatDateFr(item.due_date)})`}
-									</div>
+									<span class="text-[10px] text-zinc-500 mt-0.5">
+										{formatDateFr(item.due_date)}
+									</span>
 								</div>
 							</div>
 						{/each}
-					{/if}
-				</div>
+					</div>
+				{/if}
 			</div>
 
 			<!-- Bouton d'ajout -->
