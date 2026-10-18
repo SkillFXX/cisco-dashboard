@@ -1,0 +1,30 @@
+name: Deploy Cisco Dashboard
+
+on:
+  push:
+    branches: [ master, main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Deploy application
+        run: |
+          cd /var/www/cisco-dashboard
+          git fetch origin
+          git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+
+          # Mise a jour Backend
+          cd /var/www/cisco-dashboard/backend
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+          # Mise a jour Frontend
+          cd /var/www/cisco-dashboard/frontend
+          npm install
+          VITE_API_URL="/api" npm run build
+
+          # Redemarrage des services systemd
+          systemctl restart cisco-backend
+          systemctl restart cisco-frontend
