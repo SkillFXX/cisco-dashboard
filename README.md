@@ -54,7 +54,7 @@ Lors de la création de votre compte (ou dans l'onglet **Services & Paramètres*
    - URL : Ex. `https://wscodoc.iutbeziers.fr` (ou votre instance d'IUT)
    - Identifiant & Mot de passe CAS / ENT
 2. **Moodle** :
-   - URL : Ex. `https://moodle.umontpellier.fr`
+   - URL : Ex. `https://moodle-but.iutbeziers.fr/moodle`
    - Identifiant & Mot de passe ou Jeton de sécurité WebService
 3. **ADE Campus (iCal)** :
    - Copiez le lien de flux iCal exporté depuis votre espace ADE Campus / UM Net.

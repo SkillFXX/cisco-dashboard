@@ -13,6 +13,13 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def register(payload: UserRegister, db: Session = Depends(get_db)):
     email_clean = payload.email.strip().lower()
 
+    # Verifier la longueur minimale du mot de passe
+    if len(payload.password.strip()) < 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le mot de passe doit comporter au moins 4 caractères."
+        )
+
     # Verifier si l'email existe deja
     existing_email = db.query(User).filter(User.email == email_clean).first()
     if existing_email:
@@ -37,7 +44,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
         scodoc_url=payload.scodoc_url or "https://wscodoc.iutbeziers.fr",
         scodoc_username=payload.scodoc_username,
         scodoc_password=payload.scodoc_password,
-        moodle_url=payload.moodle_url or "https://moodle.umontpellier.fr",
+        moodle_url=payload.moodle_url or "https://moodle-but.iutbeziers.fr/moodle",
         moodle_username=payload.moodle_username,
         moodle_password=payload.moodle_password,
         moodle_token=payload.moodle_token,

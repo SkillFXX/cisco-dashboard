@@ -21,54 +21,61 @@ def get_dashboard_overview(
 ):
     creds = current_user.credentials
 
-    # 1. ScoDoc
-    try:
-        scodoc_data = fetch_scodoc_data(
+    # Exécution concurrente des 3 services externes pour un chargement 3x plus rapide
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        fut_scodoc = executor.submit(
+            fetch_scodoc_data,
             user_id=current_user.id,
             url=creds.scodoc_url if creds else None,
             username=creds.scodoc_username if creds else None,
             password=creds.scodoc_password if creds else None,
             force_refresh=force_refresh
         )
-    except Exception as e:
-        logger.warning(f"ScoDoc error in dashboard overview: {e}")
-        scodoc_data = get_empty_scodoc_data(str(e))
-
-    # 2. Moodle
-    try:
-        moodle_data = fetch_moodle_data(
+        fut_moodle = executor.submit(
+            fetch_moodle_data,
             url=creds.moodle_url if creds else None,
             username=creds.moodle_username if creds else None,
             password=creds.moodle_password if creds else None,
             token=creds.moodle_token if creds else None,
             force_refresh=force_refresh
         )
-    except Exception as e:
-        logger.warning(f"Moodle error in dashboard overview: {e}")
-        moodle_data = {
-            "configured": bool(creds and creds.moodle_url),
-            "site_name": "Moodle",
-            "courses": [],
-            "upcoming_assignments": [],
-            "connection_error": str(e)
-        }
-
-    # 3. Timetable
-    try:
-        timetable_data = fetch_timetable(
+        fut_timetable = executor.submit(
+            fetch_timetable,
             ical_url=creds.ical_url if creds else None,
             force_refresh=force_refresh
         )
-    except Exception as e:
-        logger.warning(f"Timetable error in dashboard overview: {e}")
-        timetable_data = {
-            "configured": bool(creds and creds.ical_url),
-            "connection_error": str(e),
-            "current_course": None,
-            "next_course": None,
-            "today_events": [],
-            "all_events": []
-        }
+
+        try:
+            scodoc_data = fut_scodoc.result()
+        except Exception as e:
+            logger.warning(f"ScoDoc error in dashboard overview: {e}")
+            scodoc_data = get_empty_scodoc_data(str(e))
+
+        try:
+            moodle_data = fut_moodle.result()
+        except Exception as e:
+            logger.warning(f"Moodle error in dashboard overview: {e}")
+            moodle_data = {
+                "configured": bool(creds and creds.moodle_url),
+                "site_name": "Moodle",
+                "courses": [],
+                "upcoming_assignments": [],
+                "connection_error": str(e)
+            }
+
+        try:
+            timetable_data = fut_timetable.result()
+        except Exception as e:
+            logger.warning(f"Timetable error in dashboard overview: {e}")
+            timetable_data = {
+                "configured": bool(creds and creds.ical_url),
+                "connection_error": str(e),
+                "current_course": None,
+                "next_course": None,
+                "today_events": [],
+                "all_events": []
+            }
 
     # 4. Personal Tasks / DS & External completed items
     now = datetime.datetime.now()

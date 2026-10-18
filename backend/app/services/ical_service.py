@@ -1,6 +1,5 @@
 import logging
 import datetime
-import re
 from typing import Dict, Any, Optional, List
 import requests
 import icalendar
@@ -10,18 +9,20 @@ logger = logging.getLogger(__name__)
 
 
 def detect_course_type(summary: str, description: str = "", location: str = "") -> str:
-    """Détecte simplement le type de cours à partir des lettres DS, TP, TD, CM ou SAE."""
-    text = f"{summary} {description}".upper()
-    if "DS" in text:
+    """Détecte la catégorie de cours selon le nom du cours dans l'ordre spécifié."""
+    title = (summary or "").upper()
+
+    if "DS" in title:
         return "DS"
-    if "TP" in text:
-        return "TP"
-    if "TD" in text:
-        return "TD"
-    if "CM" in text:
-        return "CM"
-    if "SAE" in text or "SAÉ" in text:
+    if "SAE" in title or "SAÉ" in title:
         return "SAE"
+    if "TP" in title:
+        return "TP"
+    if "TD" in title:
+        return "TD"
+    if "CM" in title:
+        return "CM"
+
     return "COURS"
 
 
@@ -139,6 +140,7 @@ def _refresh_event_statuses(data: Dict[str, Any]) -> Dict[str, Any]:
             dt_end = datetime.datetime.fromisoformat(e["dt_end"])
             e["is_current"] = (dt_start <= now <= dt_end)
             e["is_passed"] = (now > dt_end)
+            e["type"] = detect_course_type(e.get("title", ""), e.get("description", ""), e.get("location", ""))
             if e.get("date") == today_str:
                 today_events.append(e)
             if dt_start > now:

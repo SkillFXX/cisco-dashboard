@@ -68,7 +68,7 @@ export function getCourseColorStyle(type: string): string {
 		return "bg-[#3D1422] border-[#BE123C] text-[#FDA4AF]";
 	}
 	if (t === "SAE") {
-		return "bg-[#064E3B]/70 border-[#059669] text-[#6EE7B7]";
+		return "bg-[#064E3B] border-[#059669] text-[#6EE7B7]";
 	}
 	return "bg-[#1C2333] border-[#384158] text-[#E2E8F0]";
 }

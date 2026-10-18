@@ -37,7 +37,7 @@
 	let scodoc_verified = $state(false);
 	let scodoc_last_error = $state("");
 
-	let moodle_url = $state("https://moodle.umontpellier.fr");
+	let moodle_url = $state("https://moodle-but.iutbeziers.fr/moodle");
 	let moodle_username = $state("");
 	let moodle_password = $state("");
 	let moodle_token = $state("");
@@ -565,7 +565,7 @@
 								id="moodle-url"
 								type="text"
 								bind:value={moodle_url}
-								placeholder="https://moodle.umontpellier.fr"
+								placeholder="https://moodle-but.iutbeziers.fr/moodle"
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>

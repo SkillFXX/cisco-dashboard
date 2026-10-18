@@ -892,7 +892,7 @@
 					{#if selectedTask.source === "moodle"}
 						<div class="space-y-2 pt-2">
 							<a
-								href={selectedTask.url || "https://moodle.umontpellier.fr"}
+								href={selectedTask.url || "https://moodle-but.iutbeziers.fr/moodle"}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition-all shadow-xs cursor-pointer"

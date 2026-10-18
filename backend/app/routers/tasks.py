@@ -44,10 +44,13 @@ def toggle_item_status(
                 PersonalTask.id == task_id,
                 PersonalTask.user_id == current_user.id
             ).first()
-            if task:
-                task.status = new_status
-                db.commit()
-                return {"item_id": item_id, "status": new_status, "is_personal": True}
+            if not task:
+                raise HTTPException(status_code=404, detail="Tâche personnelle introuvable.")
+            task.status = new_status
+            db.commit()
+            return {"item_id": item_id, "status": new_status, "is_personal": True}
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
     else:

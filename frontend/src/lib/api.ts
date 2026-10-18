@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = (typeof window !== "undefined" && (window as any).__API_URL__) || import.meta.env?.VITE_API_URL || "http://localhost:8000/api";
 
 function getAuthHeader(): Record<string, string> {
 	if (typeof window === "undefined") return {};

@@ -112,9 +112,14 @@ def update_service_settings(payload: CredentialsUpdate, current_user: User = Dep
         if ical_check["success"]:
             creds.ical_verified = True
             creds.ical_last_error = None
-        else:
-            creds.ical_verified = False
-            creds.ical_last_error = ical_check["message"]
+    # Invalidation du cache si modification des identifiants
+    from ..services.cache_service import invalidate_cache
+    if scodoc_changed:
+        invalidate_cache(f"scodoc:{current_user.id}")
+    if moodle_changed:
+        invalidate_cache("moodle:")
+    if ical_changed:
+        invalidate_cache("ical:")
 
     db.commit()
     db.refresh(creds)
@@ -185,7 +190,7 @@ def verify_service_endpoint(
         }
 
     elif service == "moodle":
-        url = payload.url or creds.moodle_url or "https://moodle.umontpellier.fr"
+        url = payload.url or creds.moodle_url or "https://moodle-but.iutbeziers.fr/moodle"
         user = payload.username or creds.moodle_username
         pwd = payload.password or creds.moodle_password
         tok = payload.token or creds.moodle_token

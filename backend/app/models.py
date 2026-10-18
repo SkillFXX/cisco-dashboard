@@ -29,7 +29,7 @@ class UserCredentials(Base):
     scodoc_password = Column(String(255), nullable=True)
 
     # Moodle settings
-    moodle_url = Column(String(255), nullable=True, default="https://moodle.umontpellier.fr")
+    moodle_url = Column(String(255), nullable=True, default="https://moodle-but.iutbeziers.fr/moodle")
     moodle_username = Column(String(100), nullable=True)
     moodle_password = Column(String(255), nullable=True)
     moodle_token = Column(String(255), nullable=True)

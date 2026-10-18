@@ -18,7 +18,7 @@ def get_cached_data(key: str, allow_stale: bool = False, max_age_seconds: Option
         if not entry:
             return None
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         ttl = max_age_seconds if max_age_seconds is not None else entry.ttl_seconds
         age = (now - entry.updated_at).total_seconds()
 
@@ -38,8 +38,8 @@ def set_cached_data(key: str, data: Any, ttl_seconds: int = 900) -> None:
     """Enregistre ou met a jour des donnees dans le cache SQLite persistant."""
     db = SessionLocal()
     try:
-        now = datetime.datetime.utcnow()
-        serialized = json.dumps(data)
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        serialized = json.dumps(data, default=str)
 
         entry = db.query(KVCache).filter_by(key=key).first()
         if entry:
