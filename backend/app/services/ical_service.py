@@ -31,8 +31,8 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
     cal = icalendar.Calendar.from_ical(ical_content)
     now = datetime.datetime.now()
     today = datetime.date.today()
-    start_search = today - datetime.timedelta(days=60)
-    end_search = today + datetime.timedelta(days=120)
+    start_search = today - datetime.timedelta(days=7)
+    end_search = today + datetime.timedelta(days=45)
 
     recurring_events = recurring_ical_events.of(cal).between(start_search, end_search)
 

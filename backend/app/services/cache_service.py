@@ -75,3 +75,18 @@ def invalidate_cache(key_prefix: str) -> None:
     finally:
         db.close()
 
+
+def cleanup_expired_cache() -> None:
+    """Nettoie les entrees de cache expirees de la base pour reduire l'empreinte disque et memoire."""
+    db = SessionLocal()
+    try:
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        cutoff = now - datetime.timedelta(days=1)
+        db.query(KVCache).filter(KVCache.updated_at < cutoff).delete(synchronize_session=False)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.debug(f"Nettoyage kv_cache ignore: {e}")
+    finally:
+        db.close()
+

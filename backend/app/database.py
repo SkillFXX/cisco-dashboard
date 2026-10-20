@@ -15,7 +15,7 @@ if settings.DATABASE_URL.startswith("sqlite"):
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute("PRAGMA busy_timeout=5000")
-        cursor.execute("PRAGMA cache_size=-64000") # 64MB cache
+        cursor.execute("PRAGMA cache_size=-2000") # 2MB cache par connexion
         cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -45,6 +45,13 @@ def init_db():
                 conn.commit()
             except Exception as e:
                 print(f"Warning during DB column migration: {e}")
+
+        # Purge périodique du cache obsolète au démarrage
+        try:
+            from .services.cache_service import cleanup_expired_cache
+            cleanup_expired_cache()
+        except Exception:
+            pass
 
 def get_db():
     db = SessionLocal()

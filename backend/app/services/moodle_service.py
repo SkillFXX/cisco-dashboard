@@ -21,7 +21,7 @@ def clean_html(raw_html: str) -> str:
         return raw_html
 
 
-def fetch_course_sections_hierarchy(ws_url: str, auth_token: str, course_id: int) -> Dict[str, Any]:
+def fetch_course_sections_hierarchy(ws_url: str, auth_token: str, course_id: int, session: Optional[requests.Session] = None) -> Dict[str, Any]:
     """
     Interroge core_course_get_contents pour mapper cmid et instance id
     vers la liste ordonnée des sections parentes.
@@ -30,7 +30,8 @@ def fetch_course_sections_hierarchy(ws_url: str, auth_token: str, course_id: int
     cmid_to_chain: Dict[int, List[str]] = {}
     instance_to_chain: Dict[int, List[str]] = {}
     try:
-        resp = requests.get(
+        http_client = session if session is not None else requests
+        resp = http_client.get(
             ws_url,
             params={
                 "wstoken": auth_token,
@@ -38,7 +39,7 @@ def fetch_course_sections_hierarchy(ws_url: str, auth_token: str, course_id: int
                 "courseid": course_id,
                 "moodlewsrestformat": "json"
             },
-            timeout=10
+            timeout=8
         )
         data = resp.json()
         if not isinstance(data, list):
@@ -148,6 +149,11 @@ def fetch_moodle_data(
     auth_token = token
     effective_base_url = raw_base_url
 
+    session = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(pool_connections=5, pool_maxsize=10, max_retries=1)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+
     # Tester l'URL fournie ainsi que le sous-chemin /moodle courant sur les instances universitaires
     candidate_urls = [raw_base_url]
     if not raw_base_url.endswith("/moodle"):
@@ -158,14 +164,14 @@ def fetch_moodle_data(
         for cand in candidate_urls:
             try:
                 token_url = f"{cand}/login/token.php"
-                resp = requests.post(
+                resp = session.post(
                     token_url,
                     data={
                         "username": username,
                         "password": password,
                         "service": "moodle_mobile_app"
                     },
-                    timeout=12
+                    timeout=10
                 )
                 if resp.status_code == 200:
                     data = resp.json()
@@ -177,41 +183,45 @@ def fetch_moodle_data(
                 logger.debug(f"Test token Moodle sur {cand} échoué: {e}")
 
     if not auth_token:
-        return {
+        err_res = {
             "configured": False,
             "site_name": "Moodle",
             "courses": [],
             "upcoming_assignments": [],
             "connection_error": "Échec d'authentification Moodle (Token indisponible)."
         }
+        set_cached_data(cache_key, err_res, ttl_seconds=120)
+        return err_res
 
     # Interrogation des webservices Moodle
     ws_url = f"{effective_base_url}/webservice/rest/server.php"
     try:
         # 1. Site Info
-        site_info_resp = requests.get(
+        site_info_resp = session.get(
             ws_url,
             params={
                 "wstoken": auth_token,
                 "wsfunction": "core_webservice_get_site_info",
                 "moodlewsrestformat": "json"
             },
-            timeout=12
+            timeout=10
         )
         site_info = site_info_resp.json()
         user_id = site_info.get("userid")
 
         if not user_id:
-            return {
+            err_res = {
                 "configured": False,
                 "site_name": "Moodle",
                 "courses": [],
                 "upcoming_assignments": [],
                 "connection_error": f"Erreur Moodle : {site_info.get('message', 'Utilisateur non identifié')}"
             }
+            set_cached_data(cache_key, err_res, ttl_seconds=120)
+            return err_res
 
         # 2. Courses
-        courses_resp = requests.get(
+        courses_resp = session.get(
             ws_url,
             params={
                 "wstoken": auth_token,
@@ -219,7 +229,7 @@ def fetch_moodle_data(
                 "userid": user_id,
                 "moodlewsrestformat": "json"
             },
-            timeout=12
+            timeout=10
         )
         raw_courses = courses_resp.json()
         if not isinstance(raw_courses, list):
@@ -244,18 +254,19 @@ def fetch_moodle_data(
                     params[f"courseids[{i}]"] = cid
 
                 try:
-                    assign_resp = requests.get(ws_url, params=params, timeout=15)
+                    assign_resp = session.get(ws_url, params=params, timeout=12)
                     assign_data = assign_resp.json()
                     now = datetime.datetime.now()
+                    now_ts = now.timestamp()
                     courses_assignments = assign_data.get("courses", [])
 
-                    # Pré-récupération des sections pour les cours ayant des devoirs à venir
+                    # Pré-récupération des sections STRICTEMENT pour les cours ayant de vrais devoirs futurs
                     sections_cache: Dict[int, Dict[str, Any]] = {}
                     for ca in courses_assignments:
                         ca_id = ca.get("id")
-                        has_upcoming = any(a.get("duedate", 0) > 0 for a in ca.get("assignments", []))
+                        has_upcoming = any(a.get("duedate", 0) >= now_ts for a in ca.get("assignments", []))
                         if has_upcoming and ca_id and ca_id not in sections_cache:
-                            sections_cache[ca_id] = fetch_course_sections_hierarchy(ws_url, auth_token, ca_id)
+                            sections_cache[ca_id] = fetch_course_sections_hierarchy(ws_url, auth_token, ca_id, session=session)
 
                     for ca in courses_assignments:
                         ca_id = ca.get("id")
@@ -302,14 +313,14 @@ def fetch_moodle_data(
 
             # Événements du calendrier Moodle (quizz, devoirs spécifiques)
             try:
-                cal_resp = requests.get(
+                cal_resp = session.get(
                     ws_url,
                     params={
                         "wstoken": auth_token,
                         "wsfunction": "core_calendar_get_action_events_by_timesort",
                         "moodlewsrestformat": "json"
                     },
-                    timeout=10
+                    timeout=8
                 )
                 cal_data = cal_resp.json()
                 now = datetime.datetime.now()
@@ -377,10 +388,16 @@ def fetch_moodle_data(
 
     except Exception as e:
         logger.error(f"Erreur Moodle API: {e}")
-        return {
+        stale = get_cached_data(cache_key, allow_stale=True)
+        if stale:
+            stale["connection_error"] = f"Avertissement actualisation Moodle ({e}). Affichage de la version enregistrée."
+            return stale
+        err_res = {
             "configured": False,
             "site_name": "Moodle",
             "courses": [],
             "upcoming_assignments": [],
             "connection_error": str(e)
         }
+        set_cached_data(cache_key, err_res, ttl_seconds=120)
+        return err_res
