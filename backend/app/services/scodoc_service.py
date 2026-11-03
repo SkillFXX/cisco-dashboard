@@ -94,6 +94,11 @@ def fetch_scodoc_data(
                 "status": "Validée" if (ue.moyenne and ue.moyenne >= 10) else ("Compensable" if (ue.moyenne and ue.moyenne >= 8) else "Non validée")
             })
 
+        # ECTS : "acquis" vaut 0 tant que le semestre n'est pas valide, ne pas le deduire des moyennes d'UE
+        releve_stats = getattr(releve, "stats", None)
+        ects_total = getattr(releve_stats, "ects_total", 0) or sum(u.get("ects", 0) or 0 for u in ues_list) or 30
+        ects_acquis = getattr(releve_stats, "ects_acquis", 0) or 0
+
         # Traitement des matieres (Ressources & SAES) avec calcul des moyennes reelles par matieres
         matieres_list = []
         for code, mat in list(releve.ressources.items()) + list(releve.saes.items()):
@@ -204,8 +209,8 @@ def fetch_scodoc_data(
                 "min_promo": getattr(releve.stats, "min_promo", None) if hasattr(releve, "stats") else None,
                 "max_promo": getattr(releve.stats, "max_promo", None) if hasattr(releve, "stats") else None,
                 "moy_promo": getattr(releve.stats, "moy_promo", None) if hasattr(releve, "stats") else None,
-                "ects_total": getattr(releve.stats, "ects_total", 0) if (hasattr(releve, "stats") and getattr(releve.stats, "ects_total", 0)) else sum(u.get("ects", 0) for u in ues_list) or 30,
-                "ects_acquis": getattr(releve.stats, "ects_acquis", 0) if (hasattr(releve, "stats") and getattr(releve.stats, "ects_acquis", 0)) else sum(u.get("ects", 0) for u in ues_list if u.get("moyenne") and u.get("moyenne") >= 10)
+                "ects_total": ects_total,
+                "ects_acquis": ects_acquis
             },
             "ues": ues_list,
             "recent_grades": recent_grades,
