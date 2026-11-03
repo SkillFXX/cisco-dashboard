@@ -11,7 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY seed.py .
 
-RUN mkdir -p /data
+RUN useradd --system --uid 10001 app && mkdir -p /data && chown app /data
+USER app
 VOLUME /data
 
 EXPOSE 8000

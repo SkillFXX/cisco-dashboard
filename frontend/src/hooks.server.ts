@@ -1,5 +1,19 @@
 import type { Handle } from '@sveltejs/kit';
 
+const SECURITY_HEADERS: Record<string, string> = {
+	'X-Content-Type-Options': 'nosniff',
+	'X-Frame-Options': 'DENY',
+	'Referrer-Policy': 'strict-origin-when-cross-origin',
+	'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+};
+
+function withSecurityHeaders(response: Response): Response {
+	for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+		response.headers.set(name, value);
+	}
+	return response;
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	const pathname = event.url.pathname;
 
@@ -14,6 +28,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 		const headers = new Headers(event.request.headers);
 		headers.delete('host');
+		headers.delete('connection');
 
 		try {
 			const fetchOptions: RequestInit = {
@@ -27,7 +42,18 @@ export const handle: Handle = async ({ event, resolve }) => {
 				duplex: 'half'
 			};
 
-			return await fetch(targetUrl, fetchOptions);
+			const upstream = await fetch(targetUrl, fetchOptions);
+			// fetch() décompresse le corps : retirer les en-têtes devenus faux
+			const responseHeaders = new Headers(upstream.headers);
+			responseHeaders.delete('content-encoding');
+			responseHeaders.delete('content-length');
+			return withSecurityHeaders(
+				new Response(upstream.body, {
+					status: upstream.status,
+					statusText: upstream.statusText,
+					headers: responseHeaders
+				})
+			);
 		} catch (err) {
 			console.error(`Erreur proxy backend vers ${targetUrl}:`, err);
 			return new Response(
@@ -40,6 +66,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	return resolve(event);
+	return withSecurityHeaders(await resolve(event));
 };
 

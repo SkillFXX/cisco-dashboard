@@ -30,6 +30,11 @@ class AuthStore {
 				}
 			}
 			this.isLoading = false;
+			// Jeton rejeté par l'API : repasser immédiatement à l'écran de connexion
+			window.addEventListener("cisco:unauthorized", () => {
+				this.token = null;
+				this.user = null;
+			});
 		}
 	}
 

@@ -21,10 +21,12 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 		headers
 	});
 
-	if (res.status === 401) {
+	// 401 avec un jeton : session expirée. Sans jeton (ex. login), on laisse remonter le message du serveur.
+	if (res.status === 401 && headers.Authorization) {
 		if (typeof window !== "undefined") {
 			localStorage.removeItem("cisco_token");
 			localStorage.removeItem("cisco_user");
+			window.dispatchEvent(new Event("cisco:unauthorized"));
 		}
 		throw new Error("Session expirée ou non autorisée");
 	}
