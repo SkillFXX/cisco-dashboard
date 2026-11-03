@@ -51,7 +51,7 @@
 
 	// Accordéon pour les 3 catégories
 	let isTodoOpen = $state(true);
-	let isLongTermOpen = $state(true);
+	let isLongTermOpen = $state(false);
 	let isDoneOpen = $state(false);
 
 	// Sidebar tiroir pour le détail d'un devoir
@@ -268,7 +268,8 @@
 
 	// Filtrage par catégorie sélectionnée (Toutes, DS, DM, TP, Autres)
 	let filteredItems = $derived(() => {
-		const items = allUnifiedItems();
+		// Les devoirs dont l'échéance est antérieure à aujourd'hui ne sont plus affichés
+		const items = allUnifiedItems().filter((i) => i.days_left >= 0);
 		if (activeCategory === "ALL") return items;
 		return items.filter((i) => i.category === activeCategory);
 	});
@@ -470,6 +471,9 @@
 										<div class="min-w-0 flex-1">
 											<!-- Titre du devoir mis en évidence -->
 											<div class="flex items-center gap-2">
+												{#if item.subject && !["Moodle", "DS", "Personnel"].includes(item.subject)}
+													<span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-zinc-300 shrink-0 max-w-[40%] truncate">{item.subject}</span>
+												{/if}
 												<span class="font-bold text-xs text-white truncate">
 													{item.title}
 												</span>
@@ -588,6 +592,9 @@
 
 										<div class="min-w-0 flex-1">
 											<div class="flex items-center gap-2">
+												{#if item.subject && !["Moodle", "DS", "Personnel"].includes(item.subject)}
+													<span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-zinc-300 shrink-0 max-w-[40%] truncate">{item.subject}</span>
+												{/if}
 												<span class="font-bold text-xs text-white truncate">
 													{item.title}
 												</span>
@@ -695,6 +702,9 @@
 
 										<div class="min-w-0 flex-1">
 											<div class="flex items-center gap-2">
+												{#if item.subject && !["Moodle", "DS", "Personnel"].includes(item.subject)}
+													<span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 shrink-0 max-w-[40%] truncate">{item.subject}</span>
+												{/if}
 												<span class="font-bold text-xs text-zinc-400 line-through truncate">
 													{item.title}
 												</span>
