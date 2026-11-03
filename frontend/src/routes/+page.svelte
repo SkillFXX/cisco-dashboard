@@ -18,6 +18,8 @@
 	let activeTab = $state("dashboard");
 	let isAddTaskOpen = $state(false);
 	let tasksRefreshTrigger = $state(0);
+	// Incrémenté pour remonter les onglets et recharger leurs données (ex. fin de l'onboarding)
+	let dataVersion = $state(0);
 
 	onMount(async () => {
 		await auth.init();
@@ -53,6 +55,7 @@
 				/>
 
 				<main class="flex-1 p-6 max-w-7xl w-full mx-auto overflow-y-auto">
+					{#key dataVersion}
 					{#if activeTab === "dashboard"}
 						<DashboardTab
 							{tasksRefreshTrigger}
@@ -73,6 +76,7 @@
 					{:else if activeTab === "settings"}
 						<SettingsTab />
 					{/if}
+					{/key}
 				</main>
 			</div>
 		</div>
@@ -88,6 +92,7 @@
 			bind:open={auth.isOnboardingOpen}
 			onComplete={() => {
 				tasksRefreshTrigger += 1;
+				dataVersion += 1;
 			}}
 		/>
 	{/if}
