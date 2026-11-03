@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Modal from "./Modal.svelte";
 	import Button from "./Button.svelte";
+	import DateTimePicker from "./DateTimePicker.svelte";
 	import { api } from "$lib/api";
 
 	let {
@@ -177,13 +178,7 @@
 
 			<div>
 				<label for="task-date" class="block text-xs font-medium text-zinc-400 mb-1">Date et heure limite *</label>
-				<input
-					id="task-date"
-					type="datetime-local"
-					bind:value={due_date}
-					required
-					class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
-				/>
+				<DateTimePicker id="task-date" bind:value={due_date} />
 			</div>
 		</div>
 
