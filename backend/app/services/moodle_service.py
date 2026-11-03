@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional, List
 import requests
 from bs4 import BeautifulSoup
 from .cache_service import get_cached_data, set_cached_data
+from .url_guard import validate_service_url
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +136,16 @@ def fetch_moodle_data(
             "courses": [],
             "upcoming_assignments": [],
             "connection_error": "Identifiants Moodle non configurés."
+        }
+
+    url_err = validate_service_url(url)
+    if url_err:
+        return {
+            "configured": False,
+            "site_name": "Moodle",
+            "courses": [],
+            "upcoming_assignments": [],
+            "connection_error": url_err
         }
 
     user_ident = token or f"{username}@{url}"

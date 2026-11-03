@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Any, Optional
 from scodoc_api import ScoDoc
 from .cache_service import get_cached_data, set_cached_data
+from .url_guard import validate_service_url
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,10 @@ def fetch_scodoc_data(
         empty = get_empty_scodoc_data("Identifiants ScoDoc non configurés.")
         set_cached_data(cache_key, empty, ttl_seconds=300)
         return empty
+
+    url_err = validate_service_url(url)
+    if url_err:
+        return get_empty_scodoc_data(url_err)
 
     # 2. Appel reel ScoDoc via scodoc_api 1.1.0
     try:
@@ -268,7 +273,7 @@ def fetch_evaluation_distribution(
     distribution: list[float] = []
 
     # 1. Tentative via l'API ScoDoc
-    if url and username and password:
+    if url and username and password and not validate_service_url(url):
         try:
             client = ScoDoc(base_url=url, username=username, password=password, auto_login=True)
             raw_dist = client.get_evaluation_distribution(evaluation_id)

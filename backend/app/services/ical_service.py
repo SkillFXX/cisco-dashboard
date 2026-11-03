@@ -92,6 +92,7 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
 
 import hashlib
 from .cache_service import get_cached_data, set_cached_data
+from .url_guard import safe_get
 
 
 def fetch_timetable(ical_url: Optional[str] = None, force_refresh: bool = False) -> Dict[str, Any]:
@@ -110,9 +111,10 @@ def fetch_timetable(ical_url: Optional[str] = None, force_refresh: bool = False)
             return _refresh_event_statuses(cached)
 
     try:
-        resp = requests.get(clean_url, timeout=20)
-        resp.raise_for_status()
-        events = parse_ical_stream(resp.text)
+        status_code, content = safe_get(clean_url, timeout=20)
+        if status_code != 200:
+            raise ValueError(f"Code HTTP {status_code}")
+        events = parse_ical_stream(content)
         res = _format_timetable_response(events, configured=True)
         set_cached_data(cache_key, res, ttl_seconds=900)
         return res

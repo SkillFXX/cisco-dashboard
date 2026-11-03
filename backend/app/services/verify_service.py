@@ -1,33 +1,11 @@
 import logging
 import urllib.parse
-import ipaddress
 import requests
 from typing import Dict, Any, Optional
 from scodoc_api import ScoDoc, ScoDocAuthError, ScoDocConnectionError
+from .url_guard import validate_service_url, safe_get
 
 logger = logging.getLogger(__name__)
-
-
-def validate_service_url(url: str) -> Optional[str]:
-    """Valide le format d'URL et prévient les attaques SSRF vers les réseaux sensibles."""
-    try:
-        parsed = urllib.parse.urlparse(url)
-        if parsed.scheme not in ("http", "https"):
-            return "L'adresse doit commencer par http:// ou https://"
-        host = parsed.hostname
-        if not host:
-            return "Nom d'hôte de l'URL invalide."
-        if host in ("169.254.169.254", "metadata.google.internal", "instance-data"):
-            return "Accès aux adresses de métadonnées interdit."
-        try:
-            ip = ipaddress.ip_address(host)
-            if ip.is_link_local or ip.is_reserved or (ip.is_private and not ip.is_loopback):
-                return "L'accès aux adresses IP privées est restreint."
-        except ValueError:
-            pass
-        return None
-    except Exception as e:
-        return f"Format d'URL invalide : {e}"
 
 
 def verify_scodoc(url: str, username: str, password: str) -> Dict[str, Any]:
@@ -227,18 +205,17 @@ def verify_ical(url: str) -> Dict[str, Any]:
         return {"success": False, "message": url_err}
 
     try:
-        resp = requests.get(
+        status_code, content = safe_get(
             url,
             headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CiscoStudent/1.0"},
             timeout=12
         )
-        if resp.status_code != 200:
+        if status_code != 200:
             return {
                 "success": False,
-                "message": f"Impossible d'accéder au calendrier ADE (Code HTTP {resp.status_code})."
+                "message": f"Impossible d'accéder au calendrier ADE (Code HTTP {status_code})."
             }
 
-        content = resp.text
         if "BEGIN:VCALENDAR" not in content.upper():
             return {
                 "success": False,
