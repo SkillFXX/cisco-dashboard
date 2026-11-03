@@ -10,6 +10,8 @@ from ..schemas import (
 )
 from ..auth import get_current_user
 from ..services.verify_service import verify_scodoc, verify_moodle, verify_ical
+from ..services.url_guard import validate_service_url
+from ..services.cache_service import invalidate_cache, moodle_cache_key, ical_cache_key
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -47,35 +49,37 @@ def update_service_settings(payload: CredentialsUpdate, current_user: User = Dep
         creds = UserCredentials(user_id=current_user.id)
         db.add(creds)
 
-    scodoc_changed = False
-    if payload.scodoc_url is not None:
-        creds.scodoc_url = payload.scodoc_url
-        scodoc_changed = True
-    if payload.scodoc_username is not None:
-        creds.scodoc_username = payload.scodoc_username
-        scodoc_changed = True
-    if payload.scodoc_password is not None and payload.scodoc_password != "":
-        creds.scodoc_password = payload.scodoc_password
-        scodoc_changed = True
+    def apply(field: str, value, skip_empty: bool = False) -> bool:
+        """Applique une valeur et retourne True si elle differe de l'existante."""
+        if value is None or (skip_empty and value == ""):
+            return False
+        if getattr(creds, field) == value:
+            return False
+        setattr(creds, field, value)
+        return True
 
-    moodle_changed = False
-    if payload.moodle_url is not None:
-        creds.moodle_url = payload.moodle_url
-        moodle_changed = True
-    if payload.moodle_username is not None:
-        creds.moodle_username = payload.moodle_username
-        moodle_changed = True
-    if payload.moodle_password is not None and payload.moodle_password != "":
-        creds.moodle_password = payload.moodle_password
-        moodle_changed = True
-    if payload.moodle_token is not None:
-        creds.moodle_token = payload.moodle_token
-        moodle_changed = True
+    for field, value in (
+        ("scodoc_url", payload.scodoc_url),
+        ("moodle_url", payload.moodle_url),
+        ("ical_url", payload.ical_url),
+    ):
+        if value:
+            url_err = validate_service_url(value.strip())
+            if url_err:
+                raise HTTPException(status_code=400, detail=url_err)
 
-    ical_changed = False
-    if payload.ical_url is not None:
-        creds.ical_url = payload.ical_url
-        ical_changed = True
+    scodoc_changed = any([
+        apply("scodoc_url", payload.scodoc_url),
+        apply("scodoc_username", payload.scodoc_username),
+        apply("scodoc_password", payload.scodoc_password, skip_empty=True),
+    ])
+    moodle_changed = any([
+        apply("moodle_url", payload.moodle_url),
+        apply("moodle_username", payload.moodle_username),
+        apply("moodle_password", payload.moodle_password, skip_empty=True),
+        apply("moodle_token", payload.moodle_token),
+    ])
+    ical_changed = apply("ical_url", payload.ical_url)
 
     if payload.use_mock_fallback is not None:
         creds.use_mock_fallback = payload.use_mock_fallback
@@ -113,13 +117,12 @@ def update_service_settings(payload: CredentialsUpdate, current_user: User = Dep
             creds.ical_verified = True
             creds.ical_last_error = None
     # Invalidation du cache si modification des identifiants
-    from ..services.cache_service import invalidate_cache
     if scodoc_changed:
-        invalidate_cache(f"scodoc:{current_user.id}")
+        invalidate_cache(f"scodoc:{current_user.id}:", exact=f"scodoc:{current_user.id}")
     if moodle_changed:
-        invalidate_cache("moodle:")
+        invalidate_cache(exact=moodle_cache_key(creds.moodle_url, creds.moodle_username, creds.moodle_token))
     if ical_changed:
-        invalidate_cache("ical:")
+        invalidate_cache(exact=ical_cache_key(creds.ical_url))
 
     db.commit()
     db.refresh(creds)

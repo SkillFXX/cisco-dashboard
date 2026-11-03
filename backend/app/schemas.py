@@ -1,11 +1,12 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from typing import Literal
+from pydantic import BaseModel, EmailStr, Field
 
 # Auth Schemas
 class UserRegister(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(max_length=128)
     full_name: Optional[str] = None
     # Optional credentials during signup
     scodoc_url: Optional[str] = None
@@ -25,8 +26,8 @@ class UserLogin(BaseModel):
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
-    current_password: Optional[str] = None
-    new_password: Optional[str] = None
+    current_password: Optional[str] = Field(default=None, max_length=128)
+    new_password: Optional[str] = Field(default=None, max_length=128)
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -54,7 +55,7 @@ class CredentialsUpdate(BaseModel):
     moodle_password: Optional[str] = None
     moodle_token: Optional[str] = None
     ical_url: Optional[str] = None
-    use_mock_fallback: Optional[bool] = False
+    use_mock_fallback: Optional[bool] = None
 
 class CredentialsResponse(BaseModel):
     scodoc_url: Optional[str] = None
@@ -92,21 +93,24 @@ class ServiceVerifyResponse(BaseModel):
     details: Optional[Dict[str, Any]] = None
 
 # Tasks / DS Schemas
+EventType = Literal["ds", "dm", "tp", "todo", "exam"]
+TaskStatus = Literal["todo", "done"]
+
 class PersonalTaskCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    subject: Optional[str] = None
+    title: str = Field(min_length=1, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=5000)
+    subject: Optional[str] = Field(default=None, max_length=100)
     due_date: datetime
-    event_type: str = "ds"
-    status: str = "todo"
+    event_type: EventType = "ds"
+    status: TaskStatus = "todo"
 
 class PersonalTaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    subject: Optional[str] = None
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=5000)
+    subject: Optional[str] = Field(default=None, max_length=100)
     due_date: Optional[datetime] = None
-    event_type: Optional[str] = None
-    status: Optional[str] = None
+    event_type: Optional[EventType] = None
+    status: Optional[TaskStatus] = None
 
 class PersonalTaskResponse(BaseModel):
     id: int
@@ -123,6 +127,6 @@ class PersonalTaskResponse(BaseModel):
         from_attributes = True
 
 class ItemStatusToggle(BaseModel):
-    item_id: str
+    item_id: str = Field(min_length=1, max_length=150)
     status: str # "todo" or "done"
 

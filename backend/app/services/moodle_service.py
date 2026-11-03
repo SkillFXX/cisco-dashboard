@@ -5,7 +5,7 @@ import re
 from typing import Dict, Any, Optional, List
 import requests
 from bs4 import BeautifulSoup
-from .cache_service import get_cached_data, set_cached_data
+from .cache_service import get_cached_data, set_cached_data, moodle_cache_key
 from .url_guard import validate_service_url
 
 logger = logging.getLogger(__name__)
@@ -148,8 +148,7 @@ def fetch_moodle_data(
             "connection_error": url_err
         }
 
-    user_ident = token or f"{username}@{url}"
-    cache_key = f"moodle:{hashlib.md5(user_ident.encode('utf-8')).hexdigest()}"
+    cache_key = moodle_cache_key(url, username, token)
 
     if not force_refresh:
         cached = get_cached_data(cache_key)

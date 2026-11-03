@@ -1,3 +1,4 @@
+import hashlib
 import json
 import datetime
 import logging
@@ -63,15 +64,28 @@ def set_cached_data(key: str, data: Any, ttl_seconds: int = 900) -> None:
         db.close()
 
 
-def invalidate_cache(key_prefix: str) -> None:
-    """Invalide les entrees de cache commencant par key_prefix."""
+def moodle_cache_key(url: Optional[str], username: Optional[str], token: Optional[str]) -> str:
+    ident = token or f"{username}@{url}"
+    return f"moodle:{hashlib.sha256(ident.encode('utf-8')).hexdigest()[:32]}"
+
+
+def ical_cache_key(url: Optional[str]) -> str:
+    return f"ical:{hashlib.sha256((url or '').strip().encode('utf-8')).hexdigest()[:32]}"
+
+
+def invalidate_cache(key_prefix: Optional[str] = None, exact: Optional[str] = None) -> None:
+    """Invalide l'entree `exact` et/ou les entrees commencant par key_prefix."""
     db = SessionLocal()
     try:
-        db.query(KVCache).filter(KVCache.key.like(f"{key_prefix}%")).delete(synchronize_session=False)
+        if exact:
+            db.query(KVCache).filter(KVCache.key == exact).delete(synchronize_session=False)
+        if key_prefix:
+            escaped = key_prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            db.query(KVCache).filter(KVCache.key.like(f"{escaped}%", escape="\\")).delete(synchronize_session=False)
         db.commit()
     except Exception as e:
         db.rollback()
-        logger.warning(f"Erreur invalidation kv_cache pour prefixe '{key_prefix}': {e}")
+        logger.warning(f"Erreur invalidation kv_cache ('{key_prefix}', '{exact}'): {e}")
     finally:
         db.close()
 

@@ -82,10 +82,10 @@ def get_absences(
 @router.get("/evaluation/{evaluation_id}/distribution")
 def get_evaluation_distribution(
     evaluation_id: int,
-    min_promo: Optional[float] = Query(None),
-    moy_promo: Optional[float] = Query(None),
-    max_promo: Optional[float] = Query(None),
-    total_promo: Optional[int] = Query(None),
+    min_promo: Optional[float] = Query(None, ge=0, le=20),
+    moy_promo: Optional[float] = Query(None, ge=0, le=20),
+    max_promo: Optional[float] = Query(None, ge=0, le=20),
+    total_promo: Optional[int] = Query(None, ge=1, le=1000),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

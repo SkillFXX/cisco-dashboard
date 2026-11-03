@@ -59,7 +59,7 @@
 				title = task.title || "";
 				description = task.description || "";
 				subject = task.subject || "R101 Réseaux";
-				event_type = task.event_type || (task.category ? task.category.toLowerCase() : "ds");
+				event_type = task.event_type || (task.category && task.category !== "AUTRES" ? task.category.toLowerCase() : task.category ? "todo" : "ds");
 				if (task.due_date) {
 					try {
 						const d = new Date(task.due_date);

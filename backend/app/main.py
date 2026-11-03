@@ -16,7 +16,10 @@ init_db()
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="API pour le tableau de bord étudiant Cisco BUT Réseaux & Télécoms",
-    version="1.0.0"
+    version="1.0.0",
+    docs_url="/docs" if settings.ENABLE_DOCS else None,
+    redoc_url=None,
+    openapi_url="/openapi.json" if settings.ENABLE_DOCS else None
 )
 
 # CORS Middleware to allow SvelteKit frontend securely

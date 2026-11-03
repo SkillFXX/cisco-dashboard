@@ -364,7 +364,7 @@
 									id="p-newpwd"
 									type="password"
 									bind:value={new_password}
-									placeholder="Minimum 4 caractères"
+									placeholder="Minimum 8 caractères"
 									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>

@@ -91,7 +91,7 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
 
 
 import hashlib
-from .cache_service import get_cached_data, set_cached_data
+from .cache_service import get_cached_data, set_cached_data, ical_cache_key
 from .url_guard import safe_get
 
 
@@ -101,8 +101,7 @@ def fetch_timetable(ical_url: Optional[str] = None, force_refresh: bool = False)
         return _format_timetable_response([], configured=False)
 
     clean_url = ical_url.strip()
-    url_hash = hashlib.md5(clean_url.encode("utf-8")).hexdigest()
-    cache_key = f"ical:{url_hash}"
+    cache_key = ical_cache_key(clean_url)
 
     if not force_refresh:
         cached = get_cached_data(cache_key)

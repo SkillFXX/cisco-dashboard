@@ -157,7 +157,7 @@
 								type="password"
 								bind:value={regPassword}
 								required
-								minlength="4"
+								minlength="8"
 								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
 								placeholder="••••••••••••"
 							/>

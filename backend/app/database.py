@@ -46,12 +46,45 @@ def init_db():
             except Exception as e:
                 print(f"Warning during DB column migration: {e}")
 
+        with engine.connect() as conn:
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_personal_tasks_user_id ON personal_tasks (user_id)"))
+            conn.commit()
+
+        _encrypt_legacy_credentials()
+
         # Purge périodique du cache obsolète au démarrage
         try:
             from .services.cache_service import cleanup_expired_cache
             cleanup_expired_cache()
         except Exception:
             pass
+
+def _encrypt_legacy_credentials():
+    """Rechiffre les mots de passe/jetons de services encore stockes en clair."""
+    from sqlalchemy import text
+    from sqlalchemy.orm.attributes import flag_modified
+    from .models import UserCredentials
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text(
+                "SELECT id FROM user_credentials WHERE "
+                "(scodoc_password IS NOT NULL AND scodoc_password != '' AND scodoc_password NOT LIKE 'enc:%') OR "
+                "(moodle_password IS NOT NULL AND moodle_password != '' AND moodle_password NOT LIKE 'enc:%') OR "
+                "(moodle_token IS NOT NULL AND moodle_token != '' AND moodle_token NOT LIKE 'enc:%')"
+            )).fetchall()
+        if not rows:
+            return
+        db = SessionLocal()
+        try:
+            for (cred_id,) in rows:
+                creds = db.get(UserCredentials, cred_id)
+                for field in ("scodoc_password", "moodle_password", "moodle_token"):
+                    flag_modified(creds, field)
+            db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Warning during credentials encryption migration: {e}")
 
 def get_db():
     db = SessionLocal()

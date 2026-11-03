@@ -5,20 +5,32 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User, UserCredentials
 from ..schemas import UserRegister, UserLogin, TokenResponse, UserResponse, UserProfileUpdate
+from ..services.url_guard import validate_service_url
+from ..ratelimit import login_limiter, register_limiter
 from ..auth import get_password_hash, verify_password, create_access_token, get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+MIN_PASSWORD_LENGTH = 8
+DUMMY_HASH = get_password_hash("dummy-password-for-timing")
+
 @router.post("/register", response_model=TokenResponse)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
     email_clean = payload.email.strip().lower()
+    register_limiter.check("register")
+    register_limiter.record("register")
 
-    # Verifier la longueur minimale du mot de passe
-    if len(payload.password.strip()) < 4:
+    if len(payload.password) < MIN_PASSWORD_LENGTH:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le mot de passe doit comporter au moins 4 caractères."
+            detail=f"Le mot de passe doit comporter au moins {MIN_PASSWORD_LENGTH} caractères."
         )
+
+    for url in (payload.scodoc_url, payload.moodle_url, payload.ical_url):
+        if url:
+            url_err = validate_service_url(url.strip())
+            if url_err:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=url_err)
 
     # Verifier si l'email existe deja
     existing_email = db.query(User).filter(User.email == email_clean).first()
@@ -68,16 +80,21 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(payload: UserLogin, db: Session = Depends(get_db)):
     identifier = (payload.email or payload.username or "").strip().lower()
+    login_limiter.check(identifier)
     user = db.query(User).filter(
         (User.email == identifier) | (User.username == identifier)
     ).first()
 
-    if not user or not verify_password(payload.password, user.hashed_password):
+    # Hash factice si l'utilisateur n'existe pas : evite de distinguer les comptes par le temps de reponse
+    password_ok = verify_password(payload.password, user.hashed_password if user else DUMMY_HASH)
+    if not user or not password_ok:
+        login_limiter.record(identifier)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou mot de passe incorrect."
         )
 
+    login_limiter.reset(identifier)
     token = create_access_token(data={"sub": str(user.id)})
     photo = None
     try:
@@ -129,10 +146,10 @@ def update_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Le mot de passe actuel est incorrect."
             )
-        if len(payload.new_password.strip()) < 4:
+        if len(payload.new_password.strip()) < MIN_PASSWORD_LENGTH:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Le nouveau mot de passe doit comporter au moins 4 caractères."
+                detail=f"Le nouveau mot de passe doit comporter au moins {MIN_PASSWORD_LENGTH} caractères."
             )
         current_user.hashed_password = get_password_hash(payload.new_password.strip())
 

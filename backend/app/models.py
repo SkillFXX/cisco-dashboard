@@ -2,6 +2,7 @@ import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from .database import Base
+from .crypto import EncryptedString
 
 class User(Base):
     __tablename__ = "users"
@@ -26,13 +27,13 @@ class UserCredentials(Base):
     # ScoDoc settings
     scodoc_url = Column(String(255), nullable=True, default="https://wscodoc.iutbeziers.fr")
     scodoc_username = Column(String(100), nullable=True)
-    scodoc_password = Column(String(255), nullable=True)
+    scodoc_password = Column(EncryptedString(512), nullable=True)
 
     # Moodle settings
     moodle_url = Column(String(255), nullable=True, default="https://moodle-but.iutbeziers.fr/moodle")
     moodle_username = Column(String(100), nullable=True)
-    moodle_password = Column(String(255), nullable=True)
-    moodle_token = Column(String(255), nullable=True)
+    moodle_password = Column(EncryptedString(512), nullable=True)
+    moodle_token = Column(EncryptedString(512), nullable=True)
 
     # UM Net / ADE Campus iCal URL
     ical_url = Column(Text, nullable=True)
@@ -59,7 +60,7 @@ class PersonalTask(Base):
     __tablename__ = "personal_tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)

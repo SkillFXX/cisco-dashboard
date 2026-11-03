@@ -34,7 +34,7 @@ cd backend
 # Lancer le serveur d'API
 uvicorn app.main:app --reload --port 8000
 ```
-L'API démarre sur : **`http://localhost:8000`** (Documentation Swagger interactive sur `http://localhost:8000/docs`).
+L'API démarre sur : **`http://localhost:8000`** (Swagger sur `/docs` si `ENABLE_DOCS=true`).
 
 ### 2. Lancer le Frontend SvelteKit
 
