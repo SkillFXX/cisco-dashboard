@@ -351,9 +351,9 @@
 					</span>
 					<span class="text-sm font-semibold text-zinc-500">/20</span>
 				</div>
-				<div class="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+				<div class="flex items-center gap-1.5 text-xs text-zinc-400 font-medium">
 					{#if overview?.stats?.rang}
-						<span>Rang #{overview.stats.rang} sur {overview.stats.total_promo || 66} étudiants</span>
+						<span>Rang <span class="text-zinc-200">{overview.stats.rang}</span>{overview.stats.total_promo ? ` / ${overview.stats.total_promo}` : ""}</span>
 					{:else}
 						<span>Semestre en cours</span>
 					{/if}
