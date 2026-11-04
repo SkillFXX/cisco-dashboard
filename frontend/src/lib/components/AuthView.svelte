@@ -3,9 +3,60 @@
 	import Card from "./Card.svelte";
 	import Button from "./Button.svelte";
 	import Badge from "./Badge.svelte";
+	import { onMount } from "svelte";
+	import { api } from "$lib/api";
 	import { ArrowRight, Mail, Lock } from "lucide-svelte";
 
-	let mode = $state<"login" | "register">("login");
+	let mode = $state<"login" | "register" | "forgot" | "reset">("login");
+	let canResetPassword = $state(false);
+	let resetToken = $state("");
+	let forgotEmail = $state("");
+	let newPassword = $state("");
+	let info = $state("");
+
+	onMount(async () => {
+		const token = new URLSearchParams(window.location.search).get("reset");
+		if (token) {
+			resetToken = token;
+			mode = "reset";
+		}
+		try {
+			canResetPassword = (await api.getCapabilities()).password_reset;
+		} catch {
+			canResetPassword = false;
+		}
+	});
+
+	async function handleForgot(e: SubmitEvent) {
+		e.preventDefault();
+		isSubmitting = true;
+		error = "";
+		info = "";
+		try {
+			info = (await api.forgotPassword(forgotEmail)).message;
+		} catch (err: any) {
+			error = err.message || "Impossible d'envoyer l'email.";
+		} finally {
+			isSubmitting = false;
+		}
+	}
+
+	async function handleReset(e: SubmitEvent) {
+		e.preventDefault();
+		isSubmitting = true;
+		error = "";
+		try {
+			info = (await api.resetPassword(resetToken, newPassword)).message;
+			newPassword = "";
+			resetToken = "";
+			window.history.replaceState({}, "", window.location.pathname);
+			mode = "login";
+		} catch (err: any) {
+			error = err.message || "Lien invalide ou expiré.";
+		} finally {
+			isSubmitting = false;
+		}
+	}
 
 	// Login state
 	let loginEmail = $state("");
@@ -69,6 +120,7 @@
 	<div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
 		<Card class="p-6 sm:p-8 border-app-border bg-app-card shadow-2xl rounded-xl">
 			<!-- Tab Switcher -->
+			{#if mode === "login" || mode === "register"}
 			<div class="grid grid-cols-2 p-1 bg-app-surface rounded-lg mb-6 border border-app-border">
 				<button
 					type="button"
@@ -85,6 +137,13 @@
 					Créer un compte
 				</button>
 			</div>
+			{/if}
+
+			{#if info}
+				<div class="p-3 mb-5 rounded-lg bg-emerald-600/20 text-emerald-300 text-xs font-medium">
+					{info}
+				</div>
+			{/if}
 
 			{#if error}
 				<div class="p-3 mb-5 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium">
@@ -129,8 +188,17 @@
 						{isSubmitting ? "Connexion en cours..." : "Accéder à mon Dashboard"}
 						<ArrowRight class="w-4 h-4" />
 					</Button>
+					{#if canResetPassword}
+						<button
+							type="button"
+							onclick={() => { mode = "forgot"; error = ""; info = ""; }}
+							class="w-full text-center text-xs text-zinc-400 hover:text-cyan-400 transition-colors cursor-pointer"
+						>
+							Mot de passe oublié ?
+						</button>
+					{/if}
 				</form>
-			{:else}
+			{:else if mode === "register"}
 				<!-- Formulaire Inscription minimaliste (Email + Mot de passe uniquement) -->
 				<form onsubmit={handleRegister} class="space-y-4">
 					<div>
@@ -171,6 +239,48 @@
 					<Button variant="cisco" type="submit" class="w-full mt-2" disabled={isSubmitting}>
 						{isSubmitting ? "Création en cours..." : "Créer mon Compte"}
 						<ArrowRight class="w-4 h-4" />
+					</Button>
+				</form>
+			{:else if mode === "forgot"}
+				<form onsubmit={handleForgot} class="space-y-4">
+					<p class="text-xs text-zinc-400 leading-relaxed">
+						Saisissez l'adresse email de votre compte : un lien de réinitialisation vous sera envoyé.
+					</p>
+					<div class="relative">
+						<Mail class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+						<input
+							type="email"
+							bind:value={forgotEmail}
+							required
+							aria-label="Adresse email"
+							class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+							placeholder="votre.email@etu.umontpellier.fr"
+						/>
+					</div>
+					<Button variant="cisco" type="submit" class="w-full" disabled={isSubmitting}>
+						{isSubmitting ? "Envoi..." : "Envoyer le lien"}
+					</Button>
+					<button type="button" onclick={() => { mode = "login"; error = ""; info = ""; }} class="w-full text-center text-xs text-zinc-400 hover:text-white cursor-pointer">
+						Retour à la connexion
+					</button>
+				</form>
+			{:else if mode === "reset"}
+				<form onsubmit={handleReset} class="space-y-4">
+					<p class="text-xs text-zinc-400 leading-relaxed">Choisissez votre nouveau mot de passe (8 caractères minimum).</p>
+					<div class="relative">
+						<Lock class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+						<input
+							type="password"
+							bind:value={newPassword}
+							required
+							minlength="8"
+							aria-label="Nouveau mot de passe"
+							class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+							placeholder="Nouveau mot de passe"
+						/>
+					</div>
+					<Button variant="cisco" type="submit" class="w-full" disabled={isSubmitting}>
+						{isSubmitting ? "Enregistrement..." : "Changer mon mot de passe"}
 					</Button>
 				</form>
 			{/if}

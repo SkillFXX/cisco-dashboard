@@ -73,6 +73,24 @@ export const api = {
 		return data;
 	},
 
+	async getCapabilities() {
+		return await request<{ password_reset: boolean }>("/auth/capabilities");
+	},
+
+	async forgotPassword(email: string) {
+		return await request<{ message: string }>("/auth/forgot-password", {
+			method: "POST",
+			body: JSON.stringify({ email })
+		});
+	},
+
+	async resetPassword(token: string, new_password: string) {
+		return await request<{ message: string }>("/auth/reset-password", {
+			method: "POST",
+			body: JSON.stringify({ token, new_password })
+		});
+	},
+
 	async getMe() {
 		return await request<any>("/auth/me");
 	},
