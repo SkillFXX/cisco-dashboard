@@ -1,3 +1,4 @@
+import re
 import logging
 import datetime
 from typing import Dict, Any, Optional, List
@@ -24,6 +25,33 @@ def detect_course_type(summary: str, description: str = "", location: str = "") 
         return "CM"
 
     return "COURS"
+
+
+_STATUS_RE = re.compile(r"^(a\s+)?valid(é|ée|e|er)s?$", re.IGNORECASE)
+_TEACHER_RE = re.compile(r"^[^a-zà-ÿ]+\S\s{2,}\S[^a-zà-ÿ]*$")
+
+
+def parse_description(description: str) -> Dict[str, str]:
+    """Extrait enseignants et groupes de la description ADE.
+
+    Les lignes arrivent dans un ordre variable (groupe, enseignant, statut de validation, date d'export...),
+    on les classe donc par leur forme plutot que par leur position.
+    """
+    teachers: List[str] = []
+    groups: List[str] = []
+    for raw in description.replace("\\n", "\n").split("\n"):
+        line = " ".join(raw.split())
+        if not line or line.startswith(("#", "(Exported")) or _STATUS_RE.match(line):
+            continue
+        if line.upper().startswith(("ZZ ", "SAE ")) or "A DEFINIR" in line.upper():
+            continue
+        if _TEACHER_RE.match(raw.strip()):
+            name = line.title()
+            if name not in teachers:
+                teachers.append(name)
+        elif line not in groups:
+            groups.append(line)
+    return {"teacher": ", ".join(teachers), "group": ", ".join(groups)}
 
 
 def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
@@ -61,6 +89,7 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
             dt_end = dt_end.astimezone(paris_tz).replace(tzinfo=None)
 
         evt_type = detect_course_type(summary, description, location)
+        people = parse_description(description)
 
         is_current = (dt_start <= now <= dt_end)
         is_passed = (now > dt_end)
@@ -80,8 +109,8 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
             "dt_end": dt_end.isoformat(),
             "duration_minutes": int((dt_end - dt_start).total_seconds() / 60),
             "location": location,
-            "teacher": description.split("\n")[0] if description else "",
-            "group": description.split("\n")[1] if len(description.split("\n")) > 1 else "",
+            "teacher": people["teacher"],
+            "group": people["group"],
             "is_current": is_current,
             "is_passed": is_passed
         })

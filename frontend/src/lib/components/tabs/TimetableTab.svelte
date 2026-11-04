@@ -716,7 +716,7 @@
 						<UserIcon class="w-3.5 h-3.5 text-cyan-400" />
 						<span class="text-[11px] font-medium uppercase tracking-wider">Enseignant</span>
 					</div>
-					<div class="text-sm font-bold text-white truncate" title={selectedCourse.teacher}>
+					<div class="text-sm font-bold text-white break-words" title={selectedCourse.teacher}>
 						{selectedCourse.teacher || "Non spécifié"}
 					</div>
 					<div class="text-[10px] text-zinc-400">
@@ -730,7 +730,7 @@
 						<Users class="w-3.5 h-3.5 text-cyan-400" />
 						<span class="text-[11px] font-medium uppercase tracking-wider">Groupe</span>
 					</div>
-					<div class="text-sm font-bold text-white truncate" title={selectedCourse.group}>
+					<div class="text-sm font-bold text-white break-words" title={selectedCourse.group}>
 						{selectedCourse.group || "Promotion"}
 					</div>
 					<div class="text-[10px] text-zinc-400">
