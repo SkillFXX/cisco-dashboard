@@ -5,8 +5,10 @@
 	import Card from "../Card.svelte";
 	import Skeleton from "../Skeleton.svelte";
 	import EvaluationDetailModal from "../EvaluationDetailModal.svelte";
+	import GradeHistoryChart from "../GradeHistoryChart.svelte";
 
 	let gradesData = $state<any>(null);
+	let history = $state<any[]>([]);
 	let isLoading = $state(true);
 	let error = $state("");
 	let selectedMatiere = $state<string>("ALL");
@@ -20,6 +22,8 @@
 		error = "";
 		try {
 			gradesData = await api.getGrades(forceRefresh);
+			// Chargé après les notes : le point du jour est enregistré lors de la récupération ScoDoc
+			history = await api.getGradeHistory().catch(() => []);
 		} catch (err: any) {
 			error = err.message || "Erreur de chargement des notes";
 		} finally {
@@ -283,6 +287,9 @@
 				</div>
 			</Card>
 		</div>
+
+		<!-- Courbe d'évolution moyenne / rang -->
+		<GradeHistoryChart data={history} />
 
 		<!-- 2. Section des UEs (jauge ultra-fine sans bordure, chiffres en blanc) -->
 		<div>
