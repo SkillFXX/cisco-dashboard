@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Float, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .database import Base
 from .crypto import EncryptedString
@@ -90,3 +90,69 @@ class CompletedExternalTask(Base):
     item_id = Column(String(150), nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+
+
+class AppSetting(Base):
+    """Parametres globaux de l'application (ex. serveur SMTP), valeur JSON."""
+    __tablename__ = "app_settings"
+
+    key = Column(String(50), primary_key=True)
+    value = Column(Text, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    token_hash = Column(String(64), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class NotificationChannels(Base):
+    """Canaux de notification d'un utilisateur (l'email utilise l'adresse du compte)."""
+    __tablename__ = "notification_channels"
+
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    webhook_url = Column(EncryptedString(512), nullable=True)  # Discord ou webhook compatible
+
+
+class NotificationRule(Base):
+    __tablename__ = "notification_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    enabled = Column(Boolean, default=True)
+    trigger = Column(String(30), nullable=False)  # "new_grade", "deadline", "daily_digest"
+    params = Column(Text, nullable=False, default="{}")  # JSON
+    channels = Column(Text, nullable=False, default="[]")  # JSON : ["email", "webhook"]
+    baseline_done = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class NotificationLog(Base):
+    __tablename__ = "notification_logs"
+    __table_args__ = (UniqueConstraint("rule_id", "dedupe_key", name="uq_notification_rule_key"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    rule_id = Column(Integer, nullable=False, index=True)
+    dedupe_key = Column(String(200), nullable=False)
+    sent_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class GradeSnapshot(Base):
+    """Un point par jour de la moyenne generale et du rang, pour les courbes d'evolution."""
+    __tablename__ = "grade_snapshots"
+    __table_args__ = (UniqueConstraint("user_id", "day", name="uq_snapshot_user_day"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    day = Column(String(10), nullable=False)  # YYYY-MM-DD
+    moyenne = Column(Float, nullable=True)
+    rang = Column(Integer, nullable=True)
+    total_promo = Column(Integer, nullable=True)

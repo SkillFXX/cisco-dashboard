@@ -31,3 +31,18 @@ class EncryptedString(TypeDecorator):
         except InvalidToken:
             logger.error("Impossible de dechiffrer un identifiant stocke (cle de chiffrement modifiee ?).")
             return None
+
+
+def encrypt_value(value: str) -> str:
+    return PREFIX + _fernet.encrypt(value.encode("utf-8")).decode("utf-8")
+
+
+def decrypt_value(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return value
+    if not value.startswith(PREFIX):
+        return value
+    try:
+        return _fernet.decrypt(value[len(PREFIX):].encode("utf-8")).decode("utf-8")
+    except InvalidToken:
+        return None

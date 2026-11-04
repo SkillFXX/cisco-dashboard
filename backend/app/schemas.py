@@ -43,6 +43,7 @@ class UserResponse(BaseModel):
     has_scodoc: bool
     has_moodle: bool
     has_ical: bool
+    is_admin: bool = False
     use_mock_fallback: bool = False
 
 # Credentials Schemas
@@ -130,3 +131,25 @@ class ItemStatusToggle(BaseModel):
     item_id: str = Field(min_length=1, max_length=150)
     status: str # "todo" or "done"
 
+
+# Admin Schemas
+class AdminUserUpdate(BaseModel):
+    full_name: Optional[str] = Field(default=None, max_length=100)
+    email: Optional[EmailStr] = None
+
+class AdminPasswordSet(BaseModel):
+    new_password: str = Field(min_length=8, max_length=128)
+
+class SmtpSettingsUpdate(BaseModel):
+    host: str = Field(default="", max_length=255)
+    port: int = Field(default=587, ge=1, le=65535)
+    security: Literal["starttls", "ssl", "none"] = "starttls"
+    username: str = Field(default="", max_length=255)
+    # None = conserver le mot de passe existant
+    password: Optional[str] = Field(default=None, max_length=512)
+    from_email: str = Field(default="", max_length=255)
+    from_name: str = Field(default="Cisco Dashboard", max_length=100)
+    public_url: str = Field(default="", max_length=255)
+
+class SmtpTestRequest(BaseModel):
+    to: Optional[EmailStr] = None

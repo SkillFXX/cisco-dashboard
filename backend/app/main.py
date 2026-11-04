@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import engine, Base, init_db
 from .models import User, UserCredentials, PersonalTask
-from .routers import auth, settings as settings_router, scodoc, moodle, timetable, tasks, dashboard
+from .routers import auth, settings as settings_router, scodoc, moodle, timetable, tasks, dashboard, admin
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -12,6 +12,39 @@ logger = logging.getLogger(__name__)
 
 # Initialize tables and schema updates
 init_db()
+
+
+def ensure_admin_account():
+    """Cree/synchronise le compte administrateur defini par ADMIN_EMAIL (et ADMIN_PASSWORD)."""
+    import secrets
+    from .database import SessionLocal
+    from .auth import get_password_hash, verify_password
+
+    admin_email = (settings.ADMIN_EMAIL or "").strip().lower()
+    if not admin_email:
+        return
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == admin_email).first()
+        if user is None:
+            password = settings.ADMIN_PASSWORD or secrets.token_urlsafe(16)
+            db.add(User(
+                username=admin_email,
+                email=admin_email,
+                hashed_password=get_password_hash(password),
+                full_name="Administrateur",
+            ))
+            db.commit()
+            if not settings.ADMIN_PASSWORD:
+                logger.warning(f"Compte admin {admin_email} créé avec le mot de passe temporaire : {password}")
+        elif settings.ADMIN_PASSWORD and not verify_password(settings.ADMIN_PASSWORD, user.hashed_password):
+            user.hashed_password = get_password_hash(settings.ADMIN_PASSWORD)
+            db.commit()
+    finally:
+        db.close()
+
+
+ensure_admin_account()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -45,6 +78,7 @@ app.include_router(scodoc.router)
 app.include_router(moodle.router)
 app.include_router(timetable.router)
 app.include_router(tasks.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def root():

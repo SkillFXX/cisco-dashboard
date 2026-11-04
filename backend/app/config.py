@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     DATABASE_URL: str = DATABASE_URL
     ENABLE_DOCS: bool = False
+    # Compte administrateur : l'email est la source de verite, ADMIN_PASSWORD (si defini) est applique au demarrage
+    ADMIN_EMAIL: str = ""
+    ADMIN_PASSWORD: str = ""
+    # URL publique du site (liens des emails de reinitialisation), ex. https://cisco.example.com
+    PUBLIC_URL: str = ""
 
     class Config:
         env_file = ".env"

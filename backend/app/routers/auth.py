@@ -7,12 +7,39 @@ from ..models import User, UserCredentials
 from ..schemas import UserRegister, UserLogin, TokenResponse, UserResponse, UserProfileUpdate
 from ..services.url_guard import validate_service_url
 from ..ratelimit import login_limiter, register_limiter
-from ..auth import get_password_hash, verify_password, create_access_token, get_current_user
+from ..auth import get_password_hash, verify_password, create_access_token, get_current_user, is_admin_user, is_admin_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 MIN_PASSWORD_LENGTH = 8
 DUMMY_HASH = get_password_hash("dummy-password-for-timing")
+
+def _cached_photo(user_id: int):
+    try:
+        from ..services.cache_service import get_cached_data
+        cached_scodoc = get_cached_data(f"scodoc:{user_id}")
+        if cached_scodoc and cached_scodoc.get("etudiant"):
+            return cached_scodoc["etudiant"].get("photo_base64")
+    except Exception:
+        pass
+    return None
+
+
+def build_user_response(user: User) -> dict:
+    creds = user.credentials
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "photo_base64": _cached_photo(user.id),
+        "has_scodoc": bool(creds and creds.scodoc_username and creds.scodoc_password),
+        "has_moodle": bool(creds and (creds.moodle_token or (creds.moodle_username and creds.moodle_password))),
+        "has_ical": bool(creds and creds.ical_url),
+        "is_admin": is_admin_user(user),
+        "use_mock_fallback": creds.use_mock_fallback if creds else False
+    }
+
 
 @router.post("/register", response_model=TokenResponse)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
@@ -31,6 +58,12 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
             url_err = validate_service_url(url.strip())
             if url_err:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=url_err)
+
+    if is_admin_email(email_clean):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Un compte avec cette adresse email existe déjà."
+        )
 
     # Verifier si l'email existe deja
     existing_email = db.query(User).filter(User.email == email_clean).first()
@@ -70,11 +103,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": {
-            "id": new_user.id,
-            "email": new_user.email,
-            "full_name": new_user.full_name
-        }
+        "user": build_user_response(new_user)
     }
 
 @router.post("/login", response_model=TokenResponse)
@@ -96,24 +125,10 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 
     login_limiter.reset(identifier)
     token = create_access_token(data={"sub": str(user.id)})
-    photo = None
-    try:
-        from ..services.cache_service import get_cached_data
-        cached_scodoc = get_cached_data(f"scodoc:{user.id}")
-        if cached_scodoc and cached_scodoc.get("etudiant"):
-            photo = cached_scodoc["etudiant"].get("photo_base64")
-    except Exception:
-        pass
-
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-            "photo_base64": photo
-        }
+        "user": build_user_response(user)
     }
 
 @router.put("/profile", response_model=UserResponse)
@@ -130,6 +145,11 @@ def update_profile(
     if payload.email is not None and str(payload.email).strip():
         new_email = str(payload.email).strip().lower()
         if new_email != current_user.email:
+            if is_admin_user(current_user) or is_admin_email(new_email):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="L'adresse email de l'administrateur est définie par la configuration du serveur."
+                )
             existing = db.query(User).filter(User.email == new_email, User.id != current_user.id).first()
             if existing:
                 raise HTTPException(
@@ -156,49 +176,9 @@ def update_profile(
     db.commit()
     db.refresh(current_user)
 
-    creds = current_user.credentials
-    photo = None
-    try:
-        from ..services.cache_service import get_cached_data
-        cached_scodoc = get_cached_data(f"scodoc:{current_user.id}")
-        if cached_scodoc and cached_scodoc.get("etudiant"):
-            photo = cached_scodoc["etudiant"].get("photo_base64")
-    except Exception:
-        pass
-
-    return {
-        "id": current_user.id,
-        "username": current_user.username,
-        "email": current_user.email,
-        "full_name": current_user.full_name,
-        "photo_base64": photo,
-        "has_scodoc": bool(creds and creds.scodoc_username and creds.scodoc_password),
-        "has_moodle": bool(creds and (creds.moodle_token or (creds.moodle_username and creds.moodle_password))),
-        "has_ical": bool(creds and creds.ical_url),
-        "use_mock_fallback": creds.use_mock_fallback if creds else False
-    }
+    return build_user_response(current_user)
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    creds = current_user.credentials
-    photo = None
-    try:
-        from ..services.cache_service import get_cached_data
-        cached_scodoc = get_cached_data(f"scodoc:{current_user.id}")
-        if cached_scodoc and cached_scodoc.get("etudiant"):
-            photo = cached_scodoc["etudiant"].get("photo_base64")
-    except Exception:
-        pass
-
-    return {
-        "id": current_user.id,
-        "username": current_user.username,
-        "email": current_user.email,
-        "full_name": current_user.full_name,
-        "photo_base64": photo,
-        "has_scodoc": bool(creds and creds.scodoc_username and creds.scodoc_password),
-        "has_moodle": bool(creds and (creds.moodle_token or (creds.moodle_username and creds.moodle_password))),
-        "has_ical": bool(creds and creds.ical_url),
-        "use_mock_fallback": creds.use_mock_fallback if creds else False
-    }
+    return build_user_response(current_user)
 

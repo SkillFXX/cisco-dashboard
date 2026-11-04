@@ -7,6 +7,9 @@ services:
     environment:
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
       DATABASE_URL: sqlite:////data/cisco_student.db
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      PUBLIC_URL: ${PUBLIC_URL:-}
     volumes:
       - cisco-data:/data
     expose:

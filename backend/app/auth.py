@@ -57,3 +57,18 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
+
+
+def is_admin_email(email: str) -> bool:
+    admin_email = (settings.ADMIN_EMAIL or "").strip().lower()
+    return bool(admin_email) and (email or "").strip().lower() == admin_email
+
+
+def is_admin_user(user: User) -> bool:
+    return is_admin_email(user.email)
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if not is_admin_user(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès réservé à l'administrateur.")
+    return current_user
