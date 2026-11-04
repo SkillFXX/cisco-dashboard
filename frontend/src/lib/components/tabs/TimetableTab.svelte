@@ -441,7 +441,44 @@
 					</div>
 				{:else}
 					<!-- Grille de la semaine avec axe des heures à gauche -->
-					<div>
+					<!-- Mobile : agenda jour par jour (la grille horaire est illisible sur petit écran) -->
+					<div class="md:hidden space-y-4">
+						{#each weekDays() as day}
+							{@const dayEvents = weekEvents()
+								.filter((e: any) => e.date === day.isoDate)
+								.sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))}
+							<div>
+								<div class="flex items-baseline gap-2 pb-1.5 text-xs">
+									<span class="font-bold {day.isToday ? 'text-cyan-400' : 'text-white'}">{day.fullName}</span>
+									<span class="text-zinc-500">{day.formattedDate}</span>
+									{#if day.isToday}<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-cyan-600 text-white">Aujourd'hui</span>{/if}
+								</div>
+								{#if dayEvents.length === 0}
+									<p class="text-[11px] text-zinc-600 pl-1">Aucun cours</p>
+								{:else}
+									<div class="space-y-1.5">
+										{#each dayEvents as ev}
+											<button
+												type="button"
+												onclick={() => openCourseDetail(ev)}
+												class="w-full flex gap-3 text-left rounded-lg border p-2.5 cursor-pointer {ev.colorStyle}"
+											>
+												<div class="text-[11px] font-bold text-white shrink-0 leading-tight">
+													{ev.start_time}<br /><span class="font-medium opacity-70">{ev.end_time}</span>
+												</div>
+												<div class="min-w-0">
+													<div class="text-xs font-semibold text-white truncate">{ev.title}</div>
+													<div class="text-[11px] opacity-80 truncate">{ev.type}{ev.location ? ` · ${ev.location}` : ""}</div>
+												</div>
+											</button>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+
+					<div class="hidden md:block">
 						<!-- En-têtes des jours de la semaine -->
 						<div
 							class="grid border-b border-app-border pb-2 text-center text-xs font-medium text-zinc-400"
