@@ -58,3 +58,24 @@ Lors de la création de votre compte (ou dans l'onglet **Services & Paramètres*
    - Identifiant & Mot de passe ou Jeton de sécurité WebService
 3. **ADE Campus (iCal)** :
    - Copiez le lien de flux iCal exporté depuis votre espace ADE Campus / UM Net.
+
+---
+
+## 🛠️ Administration, notifications & PWA
+
+### Variables d'environnement (backend)
+
+| Variable | Rôle |
+|---|---|
+| `SECRET_KEY` | Clé de signature des sessions (générée et conservée à côté de la base si absente) |
+| `ADMIN_EMAIL` | Email du compte administrateur (onglet **Administration**) |
+| `ADMIN_PASSWORD` | Mot de passe de l'admin, appliqué à chaque démarrage |
+| `PUBLIC_URL` | URL publique du site, utilisée dans les emails « mot de passe oublié » (sinon saisie dans l'onglet Administration) |
+| `ENABLE_DOCS` | `true` pour exposer Swagger (`/docs`) |
+
+### Fonctionnalités
+- **Administration** : configuration du serveur SMTP, liste des utilisateurs, modification, changement de mot de passe et suppression de comptes.
+- **Mot de passe oublié** : disponible dès qu'un SMTP et une URL publique sont configurés ; les utilisateurs peuvent aussi changer leur mot de passe dans *Paramètres*.
+- **Notifications** : alertes personnalisées (nouvelle note, rappel X heures avant un devoir fait ou non, récapitulatif quotidien) par email ou webhook Discord.
+- **Courbe d'évolution** de la moyenne et du rang (un point par jour de connexion).
+- **PWA** : l'application est installable sur mobile et responsive.
