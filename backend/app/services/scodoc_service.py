@@ -45,6 +45,33 @@ def get_empty_scodoc_data(error_msg: Optional[str] = None) -> Dict[str, Any]:
     }
 
 
+def record_grade_snapshot(user_id: int, stats: Dict[str, Any]) -> None:
+    """Enregistre (ou met a jour) le point du jour pour la courbe d'evolution moyenne/rang."""
+    import datetime
+    from ..database import SessionLocal
+    from ..models import GradeSnapshot
+    moyenne = stats.get("moyenne_generale")
+    rang = stats.get("rang")
+    if moyenne is None and rang is None:
+        return
+    db = SessionLocal()
+    try:
+        today = datetime.date.today().isoformat()
+        row = db.query(GradeSnapshot).filter_by(user_id=user_id, day=today).first()
+        if not row:
+            row = GradeSnapshot(user_id=user_id, day=today)
+            db.add(row)
+        row.moyenne = float(moyenne) if moyenne is not None else None
+        row.rang = int(rang) if rang is not None else None
+        row.total_promo = stats.get("total_promo")
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.debug(f"Snapshot de notes ignore: {e}")
+    finally:
+        db.close()
+
+
 def fetch_scodoc_data(
     user_id: int,
     url: Optional[str],
@@ -238,6 +265,7 @@ def fetch_scodoc_data(
 
         # Mise en cache persistant SQLite (15 minutes)
         set_cached_data(cache_key, result, ttl_seconds=900)
+        record_grade_snapshot(user_id, result.get("stats") or {})
         return result
 
     except Exception as e:

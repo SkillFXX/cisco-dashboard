@@ -103,3 +103,22 @@ def get_evaluation_distribution(
         total_promo=total_promo
     )
 
+
+
+@router.get("/history")
+def get_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Evolution quotidienne de la moyenne generale et du rang (un point par jour de connexion)."""
+    from ..models import GradeSnapshot
+    rows = (
+        db.query(GradeSnapshot)
+        .filter(GradeSnapshot.user_id == current_user.id)
+        .order_by(GradeSnapshot.day.asc())
+        .all()
+    )
+    return [
+        {"day": r.day, "moyenne": r.moyenne, "rang": r.rang, "total_promo": r.total_promo}
+        for r in rows
+    ]
