@@ -40,7 +40,8 @@
 }
 
 /* Mobile : pas de zoom auto sur les champs, pas de scroll horizontal, cibles tactiles confortables */
-html, body { overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+/* overflow-x: clip (et non hidden) pour ne pas casser le position: sticky de la sidebar */
+html, body { overflow-x: clip; -webkit-tap-highlight-color: transparent; }
 @media (max-width: 767px) {
 	input, select, textarea { font-size: 16px !important; }
 }
