@@ -6,6 +6,7 @@ from .config import settings
 from .database import engine, Base, init_db
 from .models import User, UserCredentials, PersonalTask
 from .services.notifier import start_scheduler, stop_scheduler
+from .services.prefetch import start_prefetch, stop_prefetch
 from .routers import auth, settings as settings_router, scodoc, moodle, timetable, tasks, dashboard, admin, notifications
 
 # Setup logging
@@ -51,8 +52,10 @@ ensure_admin_account()
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     start_scheduler()
+    start_prefetch()
     yield
     stop_scheduler()
+    stop_prefetch()
 
 
 app = FastAPI(

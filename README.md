@@ -77,5 +77,6 @@ Lors de la création de votre compte (ou dans l'onglet **Services & Paramètres*
 - **Administration** : configuration du serveur SMTP, liste des utilisateurs, modification, changement de mot de passe et suppression de comptes.
 - **Mot de passe oublié** : disponible dès qu'un SMTP et une URL publique sont configurés ; les utilisateurs peuvent aussi changer leur mot de passe dans *Paramètres*.
 - **Notifications** : alertes personnalisées (nouvelle note, rappel X heures avant un devoir fait ou non, récapitulatif quotidien) par email ou webhook Discord.
-- **Courbe d'évolution** de la moyenne et du rang (un point par jour de connexion).
+- **Courbe d'évolution** de la moyenne et du rang (un point par jour), alimentée automatiquement.
+- **Préchargement en arrière-plan** : toutes les 5 minutes, les données ScoDoc, Moodle et emploi du temps de chaque utilisateur sont renouvelées avant l'expiration du cache (15 min), pour un affichage instantané à l'ouverture.
 - **PWA** : l'application est installable sur mobile et responsive.
