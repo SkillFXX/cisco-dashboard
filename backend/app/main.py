@@ -1,10 +1,12 @@
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import engine, Base, init_db
 from .models import User, UserCredentials, PersonalTask
-from .routers import auth, settings as settings_router, scodoc, moodle, timetable, tasks, dashboard, admin
+from .services.notifier import start_scheduler, stop_scheduler
+from .routers import auth, settings as settings_router, scodoc, moodle, timetable, tasks, dashboard, admin, notifications
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -46,7 +48,15 @@ def ensure_admin_account():
 
 ensure_admin_account()
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    start_scheduler()
+    yield
+    stop_scheduler()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.PROJECT_NAME,
     description="API pour le tableau de bord étudiant Cisco BUT Réseaux & Télécoms",
     version="1.0.0",
@@ -79,6 +89,7 @@ app.include_router(moodle.router)
 app.include_router(timetable.router)
 app.include_router(tasks.router)
 app.include_router(admin.router)
+app.include_router(notifications.router)
 
 @app.get("/")
 def root():
