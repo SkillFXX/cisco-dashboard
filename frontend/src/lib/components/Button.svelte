@@ -24,19 +24,19 @@
 	} = $props();
 
 	const variantClasses: Record<Variant, string> = {
-		default: "bg-cyan-600 text-white hover:bg-cyan-500 shadow-sm shadow-cyan-900/20 active:scale-[0.98]",
+		default: "bg-cyan-600 text-white font-semibold hover:bg-cyan-500 shadow-xs active:scale-[0.98]",
 		secondary: "bg-zinc-800 text-zinc-100 hover:bg-zinc-700/80 border border-zinc-700/60 active:scale-[0.98]",
 		destructive: "bg-red-600 text-white hover:bg-red-500 shadow-sm active:scale-[0.98]",
 		outline: "border border-zinc-700/80 bg-transparent hover:bg-zinc-800/80 text-zinc-200 active:scale-[0.98]",
 		ghost: "hover:bg-zinc-800/80 text-zinc-300 hover:text-white",
 		link: "text-cyan-400 underline-offset-4 hover:underline p-0 h-auto",
-		cisco: "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 shadow-md shadow-cyan-600/20 active:scale-[0.98]"
+		cisco: "bg-cyan-600 text-white font-semibold hover:bg-cyan-500 shadow-xs active:scale-[0.98]"
 	};
 
 	const sizeClasses: Record<Size, string> = {
-		default: "h-9 px-4 py-2 text-sm",
+		default: "h-9 px-4 py-2 text-xs",
 		sm: "h-8 px-3 text-xs",
-		lg: "h-11 px-6 text-base",
+		lg: "h-10 px-5 text-sm",
 		icon: "h-9 w-9 p-0 flex items-center justify-center"
 	};
 </script>
