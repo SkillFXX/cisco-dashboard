@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { api } from "$lib/api";
+	import { auth } from "$lib/stores/auth.svelte";
 	import Card from "../Card.svelte";
 	import Skeleton from "../Skeleton.svelte";
 	import { Bell, Mail, Webhook, Plus, Trash2, Pencil, Send, Check, X } from "lucide-svelte";
@@ -224,7 +225,7 @@
 						L'administrateur doit d'abord configurer un serveur SMTP.
 					{/if}
 				</p>
-				{#if overview.email_available}
+				{#if overview.email_available && auth.user?.is_admin}
 					<button onclick={() => testChannel("email")} class="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-white/[0.04] text-xs text-zinc-300 cursor-pointer">
 						<Send class="w-3.5 h-3.5" />Envoyer un test
 					</button>
@@ -261,9 +262,11 @@
 				</form>
 				{#if overview.webhook_configured}
 					<div class="mt-2 flex gap-2">
-						<button onclick={() => testChannel("webhook")} class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-white/[0.04] text-xs text-zinc-300 cursor-pointer">
-							<Send class="w-3.5 h-3.5" />Tester
-						</button>
+						{#if auth.user?.is_admin}
+							<button onclick={() => testChannel("webhook")} class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-white/[0.04] text-xs text-zinc-300 cursor-pointer">
+								<Send class="w-3.5 h-3.5" />Tester
+							</button>
+						{/if}
 						<button onclick={() => saveWebhook(true)} class="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-red-400 cursor-pointer">Supprimer</button>
 					</div>
 				{/if}
