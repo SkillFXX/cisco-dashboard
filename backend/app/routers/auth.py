@@ -1,17 +1,22 @@
 import re
+import hashlib
+import secrets
+import datetime
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ..database import get_db
-from ..models import User, UserCredentials
-from ..schemas import UserRegister, UserLogin, TokenResponse, UserResponse, UserProfileUpdate
+from ..database import get_db, SessionLocal
+from ..models import User, UserCredentials, PasswordResetToken
+from ..schemas import ForgotPasswordRequest, ResetPasswordRequest, UserRegister, UserLogin, TokenResponse, UserResponse, UserProfileUpdate
 from ..services.url_guard import validate_service_url
-from ..ratelimit import login_limiter, register_limiter
+from ..ratelimit import login_limiter, register_limiter, FailureLimiter
 from ..auth import get_password_hash, verify_password, create_access_token, get_current_user, is_admin_user, is_admin_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 MIN_PASSWORD_LENGTH = 8
+reset_limiter = FailureLimiter(max_failures=20, window_seconds=15 * 60)
 DUMMY_HASH = get_password_hash("dummy-password-for-timing")
 
 def _cached_photo(user_id: int):
@@ -182,3 +187,86 @@ def update_profile(
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return build_user_response(current_user)
 
+
+
+logger = logging.getLogger(__name__)
+RESET_TOKEN_TTL_MINUTES = 60
+forgot_limiter = FailureLimiter(max_failures=5, window_seconds=60 * 60)
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+@router.get("/capabilities")
+def get_capabilities():
+    """Indique les fonctions optionnelles disponibles (ex. mot de passe oublie si un SMTP est configure)."""
+    from ..mailer import load_smtp, is_configured, public_url
+    db = SessionLocal()
+    try:
+        cfg = load_smtp(db)
+        return {"password_reset": is_configured(cfg) and bool(public_url(cfg))}
+    finally:
+        db.close()
+
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    from ..mailer import load_smtp, is_configured, public_url, send_mail
+    email = str(payload.email).strip().lower()
+    forgot_limiter.check(email)
+    forgot_limiter.record(email)
+
+    cfg = load_smtp(db)
+    base_url = public_url(cfg)
+    if not is_configured(cfg) or not base_url:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="La réinitialisation par email n'est pas disponible. Contactez l'administrateur."
+        )
+
+    # Reponse identique que le compte existe ou non (pas d'enumeration)
+    generic = {"message": "Si un compte existe pour cette adresse, un email de réinitialisation vient d'être envoyé."}
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return generic
+
+    token = secrets.token_urlsafe(32)
+    db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user.id, PasswordResetToken.used == False).delete()  # noqa: E712
+    db.add(PasswordResetToken(
+        user_id=user.id,
+        token_hash=_hash_token(token),
+        expires_at=datetime.datetime.utcnow() + datetime.timedelta(minutes=RESET_TOKEN_TTL_MINUTES),
+    ))
+    db.commit()
+
+    link = f"{base_url}/?reset={token}"
+    try:
+        send_mail(
+            user.email,
+            "Réinitialisation de votre mot de passe - Cisco Dashboard",
+            f"Bonjour,\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable {RESET_TOKEN_TTL_MINUTES} minutes) :\n{link}\n\n"
+            "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.",
+            cfg,
+        )
+    except Exception as e:
+        logger.warning(f"Envoi de l'email de réinitialisation impossible : {e}")
+    return generic
+
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    reset_limiter.check("reset")
+    row = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == _hash_token(payload.token)).first()
+    if not row or row.used or row.expires_at < datetime.datetime.utcnow():
+        reset_limiter.record("reset")
+        raise HTTPException(status_code=400, detail="Lien invalide ou expiré. Refaites une demande.")
+
+    user = db.get(User, row.user_id)
+    if not user:
+        raise HTTPException(status_code=400, detail="Lien invalide ou expiré. Refaites une demande.")
+    user.hashed_password = get_password_hash(payload.new_password)
+    row.used = True
+    db.commit()
+    login_limiter.reset(user.email)
+    return {"message": "Mot de passe mis à jour. Vous pouvez vous connecter."}

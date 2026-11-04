@@ -153,3 +153,11 @@ class SmtpSettingsUpdate(BaseModel):
 
 class SmtpTestRequest(BaseModel):
     to: Optional[EmailStr] = None
+
+# Password reset
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=10, max_length=200)
+    new_password: str = Field(min_length=8, max_length=128)
