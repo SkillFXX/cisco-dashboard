@@ -14,12 +14,32 @@
 	import SettingsTab from "$lib/components/tabs/SettingsTab.svelte";
 	import AuthView from "$lib/components/AuthView.svelte";
 	import OnboardingModal from "$lib/components/OnboardingModal.svelte";
+	import NotificationsTab from "$lib/components/tabs/NotificationsTab.svelte";
+	import AdminTab from "$lib/components/tabs/AdminTab.svelte";
+	import MobileNav from "$lib/components/MobileNav.svelte";
 
 	let activeTab = $state("dashboard");
 	let isAddTaskOpen = $state(false);
 	let tasksRefreshTrigger = $state(0);
 	// Incrémenté pour remonter les onglets et recharger leurs données (ex. fin de l'onboarding)
 	let dataVersion = $state(0);
+
+	// Onglets déjà visités : ils restent montés (masqués) pour un retour instantané, sans recharger
+	let visited = $state<Set<string>>(new Set(["dashboard"]));
+	let previousTab = "dashboard";
+
+	$effect(() => {
+		const tab = activeTab;
+		if (previousTab === "settings" && tab !== "settings") {
+			// Les services ont pu changer : repartir d'onglets neufs
+			dataVersion += 1;
+			visited = new Set([tab]);
+		} else if (!visited.has(tab)) {
+			visited = new Set([...visited, tab]);
+		}
+		previousTab = tab;
+		window.scrollTo({ top: 0 });
+	});
 
 	onMount(async () => {
 		await auth.init();
@@ -46,6 +66,7 @@
 		<div class="flex min-h-screen">
 			<!-- Fixed Left Sidebar matching mockup -->
 			<Sidebar bind:activeTab />
+			<MobileNav bind:activeTab />
 
 			<!-- Main Area with Top Header -->
 			<div class="flex-1 flex flex-col min-w-0 bg-app-bg">
@@ -54,28 +75,40 @@
 					onOpenAddTask={() => (isAddTaskOpen = true)}
 				/>
 
-				<main class="flex-1 p-6 max-w-7xl w-full mx-auto overflow-y-auto">
+				<main class="flex-1 p-4 md:p-6 pb-24 md:pb-6 max-w-7xl w-full mx-auto">
 					{#key dataVersion}
-					{#if activeTab === "dashboard"}
-						<DashboardTab
-							{tasksRefreshTrigger}
-							onOpenAddTask={() => (isAddTaskOpen = true)}
-							onNavigate={(tab: string) => (activeTab = tab)}
-						/>
-					{:else if activeTab === "grades"}
-						<GradesTab />
-					{:else if activeTab === "timetable"}
-						<TimetableTab />
-					{:else if activeTab === "tasks"}
-						<TasksTab
-							{tasksRefreshTrigger}
-							onOpenAddTask={() => (isAddTaskOpen = true)}
-						/>
-					{:else if activeTab === "absences"}
-						<AbsencesTab />
-					{:else if activeTab === "settings"}
-						<SettingsTab />
-					{/if}
+						{#if visited.has("dashboard")}
+							<div class="tab-pane" class:hidden={activeTab !== "dashboard"}>
+								<DashboardTab
+									{tasksRefreshTrigger}
+									onOpenAddTask={() => (isAddTaskOpen = true)}
+									onNavigate={(tab: string) => (activeTab = tab)}
+								/>
+							</div>
+						{/if}
+						{#if visited.has("grades")}
+							<div class="tab-pane" class:hidden={activeTab !== "grades"}><GradesTab /></div>
+						{/if}
+						{#if visited.has("timetable")}
+							<div class="tab-pane" class:hidden={activeTab !== "timetable"}><TimetableTab /></div>
+						{/if}
+						{#if visited.has("tasks")}
+							<div class="tab-pane" class:hidden={activeTab !== "tasks"}>
+								<TasksTab {tasksRefreshTrigger} onOpenAddTask={() => (isAddTaskOpen = true)} />
+							</div>
+						{/if}
+						{#if visited.has("absences")}
+							<div class="tab-pane" class:hidden={activeTab !== "absences"}><AbsencesTab /></div>
+						{/if}
+						{#if visited.has("notifications")}
+							<div class="tab-pane" class:hidden={activeTab !== "notifications"}><NotificationsTab /></div>
+						{/if}
+						{#if visited.has("settings")}
+							<div class="tab-pane" class:hidden={activeTab !== "settings"}><SettingsTab /></div>
+						{/if}
+						{#if visited.has("admin") && auth.user?.is_admin}
+							<div class="tab-pane" class:hidden={activeTab !== "admin"}><AdminTab /></div>
+						{/if}
 					{/key}
 				</main>
 			</div>

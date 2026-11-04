@@ -1,14 +1,7 @@
 <script lang="ts">
 	import { auth } from "$lib/stores/auth.svelte";
-	import {
-		LayoutDashboard,
-		Calendar,
-		FileText,
-		GraduationCap,
-		Clock,
-		Settings,
-		LogOut
-	} from "lucide-svelte";
+	import { LogOut } from "lucide-svelte";
+	import { navItems } from "$lib/nav";
 
 	let {
 		activeTab = $bindable("dashboard"),
@@ -18,17 +11,10 @@
 		servicesStatus?: { scodoc?: boolean; moodle?: boolean; ical?: boolean };
 	} = $props();
 
-	const navItems = [
-		{ id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-		{ id: "timetable", label: "Emploi du temps", icon: Calendar },
-		{ id: "grades", label: "Notes", icon: FileText },
-		{ id: "tasks", label: "Devoirs", icon: GraduationCap },
-		{ id: "absences", label: "Absences", icon: Clock },
-		{ id: "settings", label: "Paramètres", icon: Settings }
-	];
+	let visibleItems = $derived(navItems.filter((i) => !i.adminOnly || auth.user?.is_admin));
 </script>
 
-<aside class="w-60 shrink-0 bg-app-bg border-r border-app-border flex flex-col justify-between min-h-screen select-none sticky top-0 h-screen z-20">
+<aside class="hidden md:flex w-60 shrink-0 bg-app-bg border-r border-app-border flex-col justify-between min-h-screen select-none sticky top-0 h-screen z-20 overflow-y-auto">
 	<div>
 		<!-- En-tete Logo Cisco avec icon.png -->
 		<div class="px-5 py-6 flex items-center gap-3">
@@ -43,7 +29,7 @@
 
 		<!-- Liens de navigation avec fond blanc transparent sans bordure sur l'onglet actif -->
 		<nav class="px-3 py-1 space-y-1">
-			{#each navItems as item}
+			{#each visibleItems as item}
 				{@const Icon = item.icon}
 				{@const isActive = activeTab === item.id}
 				<button

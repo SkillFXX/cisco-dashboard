@@ -246,6 +246,53 @@ export const api = {
 			method: "POST",
 			body: JSON.stringify(payload)
 		});
+	},
+	// Évolution moyenne / rang
+	async getGradeHistory() {
+		return await request<Array<{ day: string; moyenne: number | null; rang: number | null; total_promo: number | null }>>("/scodoc/history");
+	},
+
+	// Notifications
+	async getNotifications() {
+		return await request<any>("/notifications");
+	},
+	async updateNotificationChannels(webhook_url: string | null) {
+		return await request<any>("/notifications/channels", { method: "PUT", body: JSON.stringify({ webhook_url }) });
+	},
+	async createNotificationRule(rule: any) {
+		return await request<any>("/notifications/rules", { method: "POST", body: JSON.stringify(rule) });
+	},
+	async updateNotificationRule(id: number, rule: any) {
+		return await request<any>(`/notifications/rules/${id}`, { method: "PUT", body: JSON.stringify(rule) });
+	},
+	async deleteNotificationRule(id: number) {
+		return await request<any>(`/notifications/rules/${id}`, { method: "DELETE" });
+	},
+	async testNotificationChannel(channel: "email" | "webhook") {
+		return await request<any>("/notifications/test", { method: "POST", body: JSON.stringify({ channel }) });
+	},
+
+	// Administration
+	async adminListUsers() {
+		return await request<any[]>("/admin/users");
+	},
+	async adminUpdateUser(id: number, payload: { full_name?: string; email?: string }) {
+		return await request<any>(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+	},
+	async adminSetPassword(id: number, new_password: string) {
+		return await request<any>(`/admin/users/${id}/password`, { method: "POST", body: JSON.stringify({ new_password }) });
+	},
+	async adminDeleteUser(id: number) {
+		return await request<any>(`/admin/users/${id}`, { method: "DELETE" });
+	},
+	async adminGetSmtp() {
+		return await request<any>("/admin/smtp");
+	},
+	async adminUpdateSmtp(payload: any) {
+		return await request<any>("/admin/smtp", { method: "PUT", body: JSON.stringify(payload) });
+	},
+	async adminTestSmtp(to?: string) {
+		return await request<any>("/admin/smtp/test", { method: "POST", body: JSON.stringify(to ? { to } : {}) });
 	}
 };
 

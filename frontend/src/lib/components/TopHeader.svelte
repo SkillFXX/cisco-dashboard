@@ -16,7 +16,9 @@
 		grades: { category: "Notes", page: "Relevé" },
 		tasks: { category: "Devoirs", page: "Échéances" },
 		absences: { category: "Absences", page: "Bilan" },
-		settings: { category: "Paramètres", page: "Services" }
+		settings: { category: "Paramètres", page: "Services" },
+		notifications: { category: "Notifications", page: "Alertes personnalisées" },
+		admin: { category: "Administration", page: "Utilisateurs & serveur" }
 	};
 
 	let breadcrumb = $derived(breadcrumbsMap[activeTab] || { category: "Tableau de bord", page: "Vue d'ensemble" });
@@ -43,16 +45,19 @@
 	});
 </script>
 
-<header class="h-16 px-6 border-b border-app-border bg-app-bg flex items-center justify-between sticky top-0 z-20">
+<header class="h-14 md:h-16 px-4 md:px-6 border-b border-app-border bg-app-bg flex items-center justify-between sticky top-0 z-20">
 	<!-- Fil d'Ariane -->
-	<div class="flex items-center gap-2 text-xs">
-		<span class="text-zinc-500 font-medium">{breadcrumb.category}</span>
-		<span class="text-zinc-700">/</span>
-		<span class="text-zinc-200 font-semibold">{breadcrumb.page}</span>
+	<div class="flex items-center gap-2 text-xs min-w-0">
+		<img src="/icon.png" alt="" class="w-6 h-6 rounded-md object-contain md:hidden shrink-0" />
+		<span class="text-zinc-500 font-medium hidden md:inline">{breadcrumb.category}</span>
+		<span class="text-zinc-700 hidden md:inline">/</span>
+		<span class="text-zinc-200 font-semibold truncate">
+			<span class="md:hidden">{breadcrumb.category}</span><span class="hidden md:inline">{breadcrumb.page}</span>
+		</span>
 	</div>
 
 	<!-- Commandes a droite -->
-	<div class="flex items-center gap-3">
+	<div class="flex items-center gap-2 md:gap-3 shrink-0">
 		<!-- Bouton ajout direct de devoir / DS -->
 		{#if onOpenAddTask}
 			<button
@@ -61,6 +66,13 @@
 			>
 				<Plus class="w-3.5 h-3.5" />
 				<span>Nouveau DS / Devoir</span>
+			</button>
+			<button
+				onclick={onOpenAddTask}
+				class="md:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer"
+				aria-label="Nouveau devoir"
+			>
+				<Plus class="w-4 h-4" />
 			</button>
 		{/if}
 

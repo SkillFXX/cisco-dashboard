@@ -9,6 +9,7 @@ export interface UserProfile {
 	has_scodoc?: boolean;
 	has_moodle?: boolean;
 	has_ical?: boolean;
+	is_admin?: boolean;
 }
 
 class AuthStore {

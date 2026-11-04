@@ -29,3 +29,22 @@
 		color: #E2E8F0;
 	}
 }
+
+/* Transition douce à l'affichage d'un onglet */
+.tab-pane {
+	animation: tab-in 0.18s ease-out;
+}
+@keyframes tab-in {
+	from { opacity: 0; transform: translateY(4px); }
+	to { opacity: 1; transform: none; }
+}
+
+/* Mobile : pas de zoom auto sur les champs, pas de scroll horizontal, cibles tactiles confortables */
+html, body { overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+@media (max-width: 767px) {
+	input, select, textarea { font-size: 16px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.tab-pane { animation: none; }
+	* { scroll-behavior: auto !important; }
+}
