@@ -1,16 +1,14 @@
 <script lang="ts">
-	import Card from "./Card.svelte";
 	import { TrendingUp, TrendingDown, Minus } from "lucide-svelte";
 
 	type Point = { day: string; moyenne: number | null; rang: number | null; total_promo: number | null };
 
-	let { data = [] }: { data: Point[] } = $props();
+	let { data = [], metric = "moyenne" }: { data: Point[]; metric?: "moyenne" | "rang" } = $props();
 
 	const W = 600;
 	const H = 190;
 	const PAD = { left: 44, right: 14, top: 14, bottom: 30 };
 
-	let metric = $state<"moyenne" | "rang">("moyenne");
 	let hoverIndex = $state<number | null>(null);
 
 	let points = $derived(data.filter((d) => d[metric] !== null && d[metric] !== undefined));
@@ -49,6 +47,8 @@
 	// Pour le rang, une baisse du nombre est une amélioration
 	let delta = $derived(current !== null && first !== null ? current - first : 0);
 	let improved = $derived(isRank ? delta < 0 : delta > 0);
+	let best = $derived(points.length ? (isRank ? Math.min : Math.max)(...points.map((p) => p[metric] as number)) : null);
+	let worst = $derived(points.length ? (isRank ? Math.max : Math.min)(...points.map((p) => p[metric] as number)) : null);
 	let shown = $derived(hoverIndex !== null && layout ? layout.coords[hoverIndex] : null);
 
 	function formatDay(day: string) {
@@ -72,22 +72,7 @@
 	}
 </script>
 
-<Card class="space-y-3">
-	<div class="flex flex-wrap items-start justify-between gap-3">
-		<div>
-			<h2 class="text-sm font-semibold text-white">Évolution</h2>
-			<p class="text-xs text-zinc-400 mt-0.5">Un point par jour de connexion.</p>
-		</div>
-		<div class="flex p-0.5 bg-app-surface rounded-lg border border-app-border">
-			{#each [["moyenne", "Moyenne"], ["rang", "Rang"]] as [id, label]}
-				<button
-					onclick={() => { metric = id as "moyenne" | "rang"; hoverIndex = null; }}
-					class="px-3 py-1.5 text-xs font-semibold rounded-md cursor-pointer transition-all {metric === id ? 'bg-white/[0.1] text-white' : 'text-zinc-400 hover:text-zinc-200'}"
-				>{label}</button>
-			{/each}
-		</div>
-	</div>
-
+<div class="space-y-3">
 	{#if !layout}
 		<div class="py-10 text-center text-xs text-zinc-500 border border-dashed border-app-border rounded-lg">
 			Pas encore de données de {metric === "rang" ? "rang" : "moyenne"}.
@@ -134,8 +119,17 @@
 			{/if}
 		</svg>
 
+		<div class="grid grid-cols-3 gap-2 pt-1 text-center">
+			{#each [["Meilleur", best], ["Plus bas", worst], ["Relevés", points.length]] as [label, value]}
+				<div class="rounded-lg border border-app-border bg-app-surface py-2">
+					<div class="text-sm font-bold text-white">{value}</div>
+					<div class="text-[10px] text-zinc-500">{label}</div>
+				</div>
+			{/each}
+		</div>
+
 		{#if points.length < 2}
 			<p class="text-[11px] text-zinc-500">La courbe se dessinera au fil de vos prochaines connexions.</p>
 		{/if}
 	{/if}
-</Card>
+</div>

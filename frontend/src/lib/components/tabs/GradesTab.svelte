@@ -6,9 +6,22 @@
 	import Skeleton from "../Skeleton.svelte";
 	import EvaluationDetailModal from "../EvaluationDetailModal.svelte";
 	import GradeHistoryChart from "../GradeHistoryChart.svelte";
+	import Sparkline from "../Sparkline.svelte";
+	import Modal from "../Modal.svelte";
 
 	let gradesData = $state<any>(null);
 	let history = $state<any[]>([]);
+	let historyMetric = $state<"moyenne" | "rang" | null>(null);
+	let historyOpen = $state(false);
+
+	// Séries pour les mini-courbes (au moins 2 points pour tracer)
+	let moyenneSeries = $derived(history.filter((h) => h.moyenne != null).map((h) => h.moyenne as number));
+	let rangSeries = $derived(history.filter((h) => h.rang != null).map((h) => h.rang as number));
+
+	function openHistory(metric: "moyenne" | "rang") {
+		historyMetric = metric;
+		historyOpen = true;
+	}
 	let isLoading = $state(true);
 	let error = $state("");
 	let selectedMatiere = $state<string>("ALL");
@@ -152,7 +165,7 @@
 				{#each Array(3) as _}
 					<Card class="p-4 space-y-3">
 						<Skeleton class="h-3 w-28" />
-						<div class="flex items-baseline gap-2">
+						<div class="relative flex items-baseline gap-2">
 							<Skeleton class="h-8 w-24" />
 							<Skeleton class="h-4 w-8" />
 						</div>
@@ -239,9 +252,21 @@
 		<!-- 1. Top KPIs Majeurs (Sans icônes, chiffres en blanc) -->
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 			<!-- Carte 1 : Moyenne Générale -->
-			<Card class="p-4 space-y-2">
-				<span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Moyenne Générale</span>
-				<div class="flex items-baseline gap-1.5">
+			<Card
+				class="p-4 space-y-2 relative overflow-hidden {moyenneSeries.length > 1 ? 'cursor-pointer hover:border-zinc-600 group' : ''}"
+				role={moyenneSeries.length > 1 ? "button" : undefined}
+				tabindex={moyenneSeries.length > 1 ? 0 : undefined}
+				aria-label={moyenneSeries.length > 1 ? "Voir l'évolution de la moyenne" : undefined}
+				onclick={() => moyenneSeries.length > 1 && openHistory("moyenne")}
+				onkeydown={(e: KeyboardEvent) => e.key === "Enter" && moyenneSeries.length > 1 && openHistory("moyenne")}
+			>
+				{#if moyenneSeries.length > 1}
+					<div class="absolute top-3 right-3 bottom-12 w-[52%] pointer-events-none">
+						<Sparkline values={moyenneSeries} color="#22d3ee" />
+					</div>
+				{/if}
+				<span class="relative text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Moyenne Générale</span>
+				<div class="relative flex items-baseline gap-1.5">
 					<span class="text-2xl sm:text-3xl font-black text-white">
 						{formatGrade(gradesData.stats?.moyenne_generale)}
 					</span>
@@ -255,9 +280,21 @@
 			</Card>
 
 			<!-- Carte 2 : Rang dans la Promo (sans "Position officielle", chiffres en blanc) -->
-			<Card class="p-4 space-y-2">
-				<span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Classement Promo</span>
-				<div class="flex items-baseline gap-2">
+			<Card
+				class="p-4 space-y-2 relative overflow-hidden {rangSeries.length > 1 ? 'cursor-pointer hover:border-zinc-600 group' : ''}"
+				role={rangSeries.length > 1 ? "button" : undefined}
+				tabindex={rangSeries.length > 1 ? 0 : undefined}
+				aria-label={rangSeries.length > 1 ? "Voir l'évolution du classement" : undefined}
+				onclick={() => rangSeries.length > 1 && openHistory("rang")}
+				onkeydown={(e: KeyboardEvent) => e.key === "Enter" && rangSeries.length > 1 && openHistory("rang")}
+			>
+				{#if rangSeries.length > 1}
+					<div class="absolute top-3 right-3 bottom-12 w-[52%] pointer-events-none">
+						<Sparkline values={rangSeries} invert color="#a78bfa" />
+					</div>
+				{/if}
+				<span class="relative text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Classement Promo</span>
+				<div class="relative flex items-baseline gap-2">
 					<span class="text-2xl sm:text-3xl font-black text-white">
 						{gradesData.stats?.rang || "--"}
 					</span>
@@ -276,7 +313,7 @@
 			<!-- Carte 3 : Crédits ECTS (chiffres en blanc) -->
 			<Card class="p-4 space-y-2">
 				<span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Crédits ECTS</span>
-				<div class="flex items-baseline gap-1.5">
+				<div class="relative flex items-baseline gap-1.5">
 					<span class="text-2xl sm:text-3xl font-black text-white">
 						{ectsAcquis()}
 					</span>
@@ -287,9 +324,6 @@
 				</div>
 			</Card>
 		</div>
-
-		<!-- Courbe d'évolution moyenne / rang -->
-		<GradeHistoryChart data={history} />
 
 		<!-- 2. Section des UEs (jauge ultra-fine sans bordure, chiffres en blanc) -->
 		<div>
@@ -536,6 +570,18 @@
 		</Card>
 	{/if}
 </div>
+
+<!-- Évolution détaillée de la moyenne ou du rang -->
+<Modal
+	bind:open={historyOpen}
+	title={historyMetric === "rang" ? "Évolution du classement" : "Évolution de la moyenne générale"}
+	description="Un point par jour de connexion. Survolez la courbe pour voir chaque relevé."
+	class="max-w-2xl"
+>
+	{#if historyMetric}
+		<GradeHistoryChart data={history} metric={historyMetric} />
+	{/if}
+</Modal>
 
 <!-- Modal d'analyse et diagramme de repartition de la note -->
 <EvaluationDetailModal
