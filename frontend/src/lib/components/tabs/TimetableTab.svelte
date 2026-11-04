@@ -527,7 +527,7 @@
 									<!-- Ligne rouge de l'heure courante (jour actuel uniquement) -->
 									{#if currentTimeIndicator() && currentTimeIndicator()?.dayIdx === dayIdx}
 										<div
-											class="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
+											class="absolute left-0 right-0 z-30 pointer-events-none flex items-center -translate-y-1/2"
 											style="top: {currentTimeIndicator()?.topPercent}%;"
 										>
 											<div class="w-1.5 h-1.5 rounded-full bg-rose-500 -ml-1"></div>
