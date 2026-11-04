@@ -10,10 +10,10 @@ function getAuthHeader(): Record<string, string> {
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-	const headers = {
+	const headers: Record<string, string> = {
 		"Content-Type": "application/json",
 		...getAuthHeader(),
-		...(options.headers || {})
+		...(options.headers as Record<string, string> | undefined)
 	};
 
 	const res = await fetch(`${API_BASE}${endpoint}`, {

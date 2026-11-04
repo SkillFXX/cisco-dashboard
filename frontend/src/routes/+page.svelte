@@ -41,7 +41,12 @@
 		window.scrollTo({ top: 0 });
 	});
 
+	const TABS = ["dashboard", "timetable", "grades", "tasks", "absences", "notifications", "settings", "admin"];
+
 	onMount(async () => {
+		// Raccourcis de l'application installée (?tab=tasks)
+		const requested = new URLSearchParams(window.location.search).get("tab");
+		if (requested && TABS.includes(requested)) activeTab = requested;
 		await auth.init();
 	});
 
