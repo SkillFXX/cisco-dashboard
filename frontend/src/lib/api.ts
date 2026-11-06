@@ -119,6 +119,10 @@ export const api = {
 		return await request<any>(`/dashboard/overview?force_refresh=${forceRefresh}`);
 	},
 
+	async getServicesStatus() {
+		return await request<Record<"scodoc" | "moodle" | "ical", { state: "ok" | "error" | "unconfigured"; message: string | null }>>(`/dashboard/services-status`);
+	},
+
 	// ScoDoc
 	async getScoDocSummary(forceRefresh = false) {
 		return await request<any>(`/scodoc/summary?force_refresh=${forceRefresh}`);

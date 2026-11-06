@@ -13,6 +13,46 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
+def _service_state(configured: bool, data: dict) -> dict:
+    if not configured:
+        return {"state": "unconfigured", "message": "Non configuré"}
+    error = data.get("connection_error")
+    if error:
+        return {"state": "error", "message": error}
+    return {"state": "ok", "message": None}
+
+
+@router.get("/services-status")
+def get_services_status(current_user: User = Depends(get_current_user)):
+    """Etat reel de chaque service (identifiants renseignes + derniere reponse, servie depuis le cache)."""
+    import concurrent.futures
+    c = current_user.credentials
+    scodoc_cfg = bool(c and c.scodoc_username and c.scodoc_password)
+    moodle_cfg = bool(c and c.moodle_url and (c.moodle_token or (c.moodle_username and c.moodle_password)))
+    ical_cfg = bool(c and c.ical_url and c.ical_url.strip())
+
+    def run(configured, fn, **kwargs):
+        if not configured:
+            return {}
+        try:
+            return fn(**kwargs)
+        except Exception as e:
+            return {"connection_error": str(e)}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+        f_sc = ex.submit(run, scodoc_cfg, fetch_scodoc_data, user_id=current_user.id, url=c.scodoc_url if c else None,
+                         username=c.scodoc_username if c else None, password=c.scodoc_password if c else None)
+        f_mo = ex.submit(run, moodle_cfg, fetch_moodle_data, url=c.moodle_url if c else None,
+                         username=c.moodle_username if c else None, password=c.moodle_password if c else None,
+                         token=c.moodle_token if c else None)
+        f_ic = ex.submit(run, ical_cfg, fetch_timetable, ical_url=c.ical_url if c else None)
+        return {
+            "scodoc": _service_state(scodoc_cfg, f_sc.result()),
+            "moodle": _service_state(moodle_cfg, f_mo.result()),
+            "ical": _service_state(ical_cfg, f_ic.result()),
+        }
+
+
 @router.get("/overview")
 def get_dashboard_overview(
     force_refresh: bool = Query(False),

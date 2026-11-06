@@ -82,7 +82,7 @@
 	{:else}
 		<div class="flex min-h-screen">
 			<!-- Fixed Left Sidebar matching mockup -->
-			<Sidebar bind:activeTab />
+			<Sidebar bind:activeTab refreshKey={dataVersion} />
 			<MobileNav bind:activeTab />
 
 			<!-- Main Area with Top Header -->

@@ -3,14 +3,59 @@
 	import { auth } from "$lib/stores/auth.svelte";
 	import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-svelte";
 	import { navItems } from "$lib/nav";
+	import { api } from "$lib/api";
 
 	let {
 		activeTab = $bindable("dashboard"),
-		servicesStatus = { scodoc: true, moodle: true, ical: true }
+		refreshKey = 0
 	}: {
 		activeTab: string;
-		servicesStatus?: { scodoc?: boolean; moodle?: boolean; ical?: boolean };
+		refreshKey?: number;
 	} = $props();
+
+	type ServiceState = "ok" | "error" | "unconfigured" | "loading";
+	type ServiceInfo = { state: ServiceState; message: string | null };
+	const SERVICES = [
+		{ id: "scodoc", label: "ScoDoc" },
+		{ id: "moodle", label: "Moodle" },
+		{ id: "ical", label: "Emploi du temps" }
+	] as const;
+	const STATE_LABEL: Record<ServiceState, string> = { ok: "Connecté", error: "Erreur", unconfigured: "Non configuré", loading: "…" };
+	const STATE_BADGE: Record<ServiceState, string> = {
+		ok: "bg-emerald-600 text-white",
+		error: "bg-red-600/90 text-white",
+		unconfigured: "bg-zinc-800 text-zinc-400",
+		loading: "bg-zinc-800 text-zinc-500"
+	};
+	const STATE_DOT: Record<ServiceState, string> = { ok: "bg-emerald-500", error: "bg-red-500", unconfigured: "bg-zinc-600", loading: "bg-zinc-700" };
+
+	let services = $state<Record<string, ServiceInfo>>({
+		scodoc: { state: "loading", message: null },
+		moodle: { state: "loading", message: null },
+		ical: { state: "loading", message: null }
+	});
+
+	async function refreshServices() {
+		try {
+			services = await api.getServicesStatus();
+		} catch {
+			// on garde le dernier etat connu
+		}
+	}
+
+	$effect(() => {
+		refreshKey;
+		refreshServices();
+	});
+
+	onMount(() => {
+		const timer = setInterval(refreshServices, 5 * 60 * 1000);
+		return () => clearInterval(timer);
+	});
+
+	function serviceTitle(label: string, info: ServiceInfo) {
+		return `${label} : ${STATE_LABEL[info.state].toLowerCase()}${info.state === "error" && info.message ? ` (${info.message})` : ""}`;
+	}
 
 	let collapsed = $state(false);
 	let visibleItems = $derived(navItems.filter((i) => !i.adminOnly || auth.user?.is_admin));
@@ -86,26 +131,28 @@
 	<!-- Section basse : synchronisation des services et déconnexion -->
 	<div class="space-y-3 {collapsed ? 'p-2' : 'p-4'}">
 		{#if collapsed}
-			<div class="flex flex-col items-center gap-2 py-2" title="ScoDoc : {servicesStatus?.scodoc ? 'connecté' : 'déconnecté'} · Moodle : {servicesStatus?.moodle ? 'connecté' : 'déconnecté'}">
-				<span class="w-2 h-2 rounded-full {servicesStatus?.scodoc ? 'bg-emerald-500' : 'bg-zinc-600'}"></span>
-				<span class="w-2 h-2 rounded-full {servicesStatus?.moodle ? 'bg-emerald-500' : 'bg-zinc-600'}"></span>
+			<div class="flex flex-col items-center gap-2 py-2">
+				{#each SERVICES as svc}
+					<span class="w-2 h-2 rounded-full {STATE_DOT[services[svc.id].state]}" title={serviceTitle(svc.label, services[svc.id])}></span>
+				{/each}
 			</div>
 		{:else}
 			<div class="p-3 rounded-lg bg-app-card border border-app-border text-xs space-y-2">
-				<div class="font-semibold text-zinc-300 text-[11px] tracking-wide">Synchronisation des services</div>
+				<div class="font-semibold text-zinc-300 text-[11px] tracking-wide">Services connectés</div>
 				<div class="space-y-1.5 text-[11px]">
-					<div class="flex items-center justify-between">
-						<span class="text-zinc-400">ScoDoc & ADE</span>
-						<span class="px-2.5 py-0.5 rounded-full font-medium text-[10px] {servicesStatus?.scodoc ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}">
-							{servicesStatus?.scodoc ? "Connecté" : "Déconnecté"}
-						</span>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-zinc-400">Moodle</span>
-						<span class="px-2.5 py-0.5 rounded-full font-medium text-[10px] {servicesStatus?.moodle ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}">
-							{servicesStatus?.moodle ? "Connecté" : "Déconnecté"}
-						</span>
-					</div>
+					{#each SERVICES as svc}
+						<button
+							type="button"
+							onclick={() => services[svc.id].state !== "ok" && (activeTab = "settings")}
+							title={serviceTitle(svc.label, services[svc.id])}
+							class="w-full flex items-center justify-between gap-2 {services[svc.id].state === 'ok' ? 'cursor-default' : 'cursor-pointer'}"
+						>
+							<span class="text-zinc-400">{svc.label}</span>
+							<span class="px-2.5 py-0.5 rounded-full font-medium text-[10px] {STATE_BADGE[services[svc.id].state]}">
+								{STATE_LABEL[services[svc.id].state]}
+							</span>
+						</button>
+					{/each}
 				</div>
 			</div>
 		{/if}

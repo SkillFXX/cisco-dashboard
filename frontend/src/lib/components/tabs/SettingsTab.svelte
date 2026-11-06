@@ -53,6 +53,20 @@
 	let testingService = $state<string | null>(null);
 	let testFeedback = $state<{ service: string; success: boolean; message: string } | null>(null);
 
+	function statusOf(verified: boolean, configured: boolean, error: string) {
+		if (verified) return { label: "Connecté", cls: "bg-emerald-600 text-white" };
+		if (configured && error) return { label: "Erreur", cls: "bg-red-600 text-white" };
+		if (configured) return { label: "À vérifier", cls: "bg-amber-600 text-white" };
+		return { label: "Non configuré", cls: "bg-zinc-700 text-white" };
+	}
+
+	let serviceStatuses = $derived([
+		{ id: "scodoc", name: "ScoDoc", ...statusOf(scodoc_verified, scodoc_configured, scodoc_last_error) },
+		{ id: "moodle", name: "Moodle", ...statusOf(moodle_verified, moodle_configured, moodle_last_error) },
+		{ id: "ical", name: "Emploi du temps", ...statusOf(ical_verified, ical_configured, ical_last_error) }
+	]);
+	let connectedCount = $derived(serviceStatuses.filter((x) => x.label === "Connecté").length);
+
 	let isLoading = $state(true);
 	let isSavingServices = $state(false);
 	let servicesSuccessMsg = $state("");
@@ -235,6 +249,24 @@
 	});
 </script>
 
+{#snippet feedback(service: string, lastError: string)}
+	{#if testFeedback && testFeedback.service === service}
+		<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {testFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
+			{#if testFeedback.success}
+				<Check class="w-4 h-4 shrink-0" />
+			{:else}
+				<AlertCircle class="w-4 h-4 shrink-0" />
+			{/if}
+			<span>{testFeedback.message}</span>
+		</div>
+	{:else if lastError}
+		<div class="p-3 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
+			<AlertCircle class="w-4 h-4 shrink-0" />
+			<span>{lastError}</span>
+		</div>
+	{/if}
+{/snippet}
+
 <div class="max-w-4xl space-y-8 pb-10">
 	<!-- En-tête -->
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
@@ -244,7 +276,7 @@
 				<span>Paramètres</span>
 			</h1>
 			<p class="text-xs text-zinc-400 mt-0.5">
-				Gérez votre compte et vos services connectés.
+				Votre compte, puis les services (ScoDoc, Moodle, emploi du temps) dont le tableau de bord récupère les données.
 			</p>
 		</div>
 
@@ -402,8 +434,19 @@
 					</div>
 				{/if}
 
-				<!-- Card 1 : ScoDoc -->
-				<Card class="space-y-4 p-5">
+				<!-- Résumé : état des trois services -->
+				<div class="flex flex-wrap items-center gap-2 text-xs">
+					<span class="text-zinc-400 mr-1"><strong class="text-white">{connectedCount}</strong> service{connectedCount > 1 ? "s" : ""} sur 3 connecté{connectedCount > 1 ? "s" : ""}</span>
+					{#each serviceStatuses as svc}
+						<a href="#service-{svc.id}" class="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-surface px-2.5 py-1 text-[11px] text-zinc-300 hover:text-white">
+							<span class="w-1.5 h-1.5 rounded-full {svc.label === 'Connecté' ? 'bg-emerald-500' : svc.label === 'Erreur' ? 'bg-red-500' : svc.label === 'À vérifier' ? 'bg-amber-500' : 'bg-zinc-600'}"></span>
+							{svc.name}
+						</a>
+					{/each}
+				</div>
+
+				<!-- Carte ScoDoc -->
+				<Card class="space-y-4 p-5" id="service-scodoc">
 					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
 						<div class="flex items-center gap-2.5">
 							<div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0">
@@ -411,57 +454,33 @@
 							</div>
 							<div>
 								<h3 class="font-bold text-white text-sm">ScoDoc</h3>
-								<p class="text-xs text-zinc-400">Notes, Moyennes & Absences</p>
+								<p class="text-xs text-zinc-400">Notes, moyennes & absences</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
-							{#if scodoc_verified}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-									Vérifié & Connecté
-								</span>
-							{:else if scodoc_configured}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-600 text-white">
-									Identifiants invalides
-								</span>
-							{:else}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
-									Non configuré
-								</span>
-							{/if}
-
+							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {statusOf(scodoc_verified, scodoc_configured, scodoc_last_error).cls}">
+								{statusOf(scodoc_verified, scodoc_configured, scodoc_last_error).label}
+							</span>
 							<button
 								type="button"
 								onclick={() => testConnection("scodoc")}
 								disabled={testingService === "scodoc" || !scodoc_username}
+								title="Teste la connexion et l'enregistre si elle fonctionne"
 								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
 							>
 								{#if testingService === "scodoc"}
 									<RefreshCw class="w-3 h-3 animate-spin" />
 									<span>Vérification...</span>
 								{:else}
-									<span>Tester</span>
+									<span>Vérifier & enregistrer</span>
 								{/if}
 							</button>
 						</div>
 					</div>
 
-					{#if testFeedback && testFeedback.service === "scodoc"}
-						<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {testFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
-							{#if testFeedback.success}
-								<Check class="w-4 h-4 shrink-0" />
-							{:else}
-								<AlertCircle class="w-4 h-4 shrink-0" />
-							{/if}
-							<span>{testFeedback.message}</span>
-						</div>
-					{/if}
+					<p class="text-[11px] leading-relaxed text-zinc-500">Utilisez les mêmes identifiants que pour votre ENT (compte CAS de l'université). Ils sont chiffrés sur le serveur et servent uniquement à récupérer vos notes.</p>
 
-					{#if scodoc_last_error && (!testFeedback || testFeedback.service !== "scodoc")}
-						<div class="p-3 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
-							<AlertCircle class="w-4 h-4 shrink-0" />
-							<span>{scodoc_last_error}</span>
-						</div>
-					{/if}
+					{@render feedback("scodoc", scodoc_last_error)}
 
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
@@ -490,15 +509,15 @@
 								id="scodoc-pwd"
 								type="password"
 								bind:value={scodoc_password}
-								placeholder="••••••••••••"
+								placeholder={scodoc_configured ? "Enregistré — laisser vide pour le conserver" : "••••••••••••"}
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 					</div>
 				</Card>
 
-				<!-- Card 2 : Moodle -->
-				<Card class="space-y-4 p-5">
+				<!-- Carte Moodle -->
+				<Card class="space-y-4 p-5" id="service-moodle">
 					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
 						<div class="flex items-center gap-2.5">
 							<div class="w-8 h-8 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center shrink-0">
@@ -510,53 +529,29 @@
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
-							{#if moodle_verified}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-									Vérifié & Connecté
-								</span>
-							{:else if moodle_configured}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-600 text-white">
-									Identifiants invalides
-								</span>
-							{:else}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
-									Non configuré
-								</span>
-							{/if}
-
+							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {statusOf(moodle_verified, moodle_configured, moodle_last_error).cls}">
+								{statusOf(moodle_verified, moodle_configured, moodle_last_error).label}
+							</span>
 							<button
 								type="button"
 								onclick={() => testConnection("moodle")}
 								disabled={testingService === "moodle" || (!moodle_username && !moodle_token)}
+								title="Teste la connexion et l'enregistre si elle fonctionne"
 								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
 							>
 								{#if testingService === "moodle"}
 									<RefreshCw class="w-3 h-3 animate-spin" />
 									<span>Vérification...</span>
 								{:else}
-									<span>Tester</span>
+									<span>Vérifier & enregistrer</span>
 								{/if}
 							</button>
 						</div>
 					</div>
 
-					{#if testFeedback && testFeedback.service === "moodle"}
-						<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {testFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
-							{#if testFeedback.success}
-								<Check class="w-4 h-4 shrink-0" />
-							{:else}
-								<AlertCircle class="w-4 h-4 shrink-0" />
-							{/if}
-							<span>{testFeedback.message}</span>
-						</div>
-					{/if}
+					<p class="text-[11px] leading-relaxed text-zinc-500">Identifiant et mot de passe de votre compte Moodle. Le jeton personnel est une alternative facultative, à utiliser si la connexion par mot de passe ne fonctionne pas.</p>
 
-					{#if moodle_last_error && (!testFeedback || testFeedback.service !== "moodle")}
-						<div class="p-3 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
-							<AlertCircle class="w-4 h-4 shrink-0" />
-							<span>{moodle_last_error}</span>
-						</div>
-					{/if}
+					{@render feedback("moodle", moodle_last_error)}
 
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
@@ -585,28 +580,32 @@
 								id="moodle-pwd"
 								type="password"
 								bind:value={moodle_password}
-								placeholder="••••••••••••"
+								placeholder={moodle_configured ? "Enregistré — laisser vide pour le conserver" : "••••••••••••"}
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 					</div>
 
-					<div class="pt-2">
-						<label for="moodle-token" class="block text-xs font-medium text-zinc-400 mb-1">
-							Jeton personnel (optionnel)
-						</label>
-						<input
-							id="moodle-token"
-							type="text"
-							bind:value={moodle_token}
-							placeholder="Ex: 8f9b4c2e1a3d5e7f9a0b1c2d3e4f5a6b"
-							class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
-						/>
-					</div>
+					<details class="group">
+						<summary class="text-xs font-medium text-zinc-400 hover:text-white cursor-pointer select-none">
+							Avancé : utiliser un jeton personnel
+						</summary>
+						<div class="pt-2 space-y-1">
+							<input
+								id="moodle-token"
+								type="text"
+								bind:value={moodle_token}
+								aria-label="Jeton personnel Moodle"
+								placeholder="Ex: 8f9b4c2e1a3d5e7f9a0b1c2d3e4f5a6b"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+							/>
+							<p class="text-[11px] text-zinc-500">Sur Moodle : Préférences › Clés de sécurité › « Moodle mobile web service ».</p>
+						</div>
+					</details>
 				</Card>
 
-				<!-- Card 3 : Emploi du temps (iCal) -->
-				<Card class="space-y-4 p-5">
+				<!-- Carte Emploi du temps -->
+				<Card class="space-y-4 p-5" id="service-ical">
 					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
 						<div class="flex items-center gap-2.5">
 							<div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
@@ -618,53 +617,29 @@
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
-							{#if ical_verified}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-									Vérifié & Connecté
-								</span>
-							{:else if ical_configured}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-600 text-white">
-									Flux invalide
-								</span>
-							{:else}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
-									Non configuré
-								</span>
-							{/if}
-
+							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {statusOf(ical_verified, ical_configured, ical_last_error).cls}">
+								{statusOf(ical_verified, ical_configured, ical_last_error).label}
+							</span>
 							<button
 								type="button"
 								onclick={() => testConnection("ical")}
 								disabled={testingService === "ical" || !ical_url}
+								title="Teste la connexion et l'enregistre si elle fonctionne"
 								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
 							>
 								{#if testingService === "ical"}
 									<RefreshCw class="w-3 h-3 animate-spin" />
 									<span>Vérification...</span>
 								{:else}
-									<span>Tester</span>
+									<span>Vérifier & enregistrer</span>
 								{/if}
 							</button>
 						</div>
 					</div>
 
-					{#if testFeedback && testFeedback.service === "ical"}
-						<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {testFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
-							{#if testFeedback.success}
-								<Check class="w-4 h-4 shrink-0" />
-							{:else}
-								<AlertCircle class="w-4 h-4 shrink-0" />
-							{/if}
-							<span>{testFeedback.message}</span>
-						</div>
-					{/if}
+					<p class="text-[11px] leading-relaxed text-zinc-500">Dans ADE Campus / UM Net, exportez votre planning au format iCal (.ics) puis collez ici le lien obtenu.</p>
 
-					{#if ical_last_error && (!testFeedback || testFeedback.service !== "ical")}
-						<div class="p-3 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
-							<AlertCircle class="w-4 h-4 shrink-0" />
-							<span>{ical_last_error}</span>
-						</div>
-					{/if}
+					{@render feedback("ical", ical_last_error)}
 
 					<div>
 						<label for="ical-url" class="block text-xs font-medium text-zinc-400 mb-1">Lien iCal (.ics)</label>

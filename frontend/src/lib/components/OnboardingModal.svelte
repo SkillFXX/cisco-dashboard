@@ -228,6 +228,15 @@
 				</p>
 			</div>
 
+			<!-- Étape courante (lisible aussi sur mobile) -->
+			<p class="text-[11px] font-medium text-zinc-400 mb-2">
+				{#if currentStep < 4}
+					Étape {currentStep} sur 3 · <span class="text-white">{["ScoDoc", "Moodle", "Emploi du temps"][currentStep - 1]}</span>
+				{:else}
+					Récapitulatif
+				{/if}
+			</p>
+
 			<!-- Stepper Navigation -->
 			<div class="grid grid-cols-4 gap-2 mb-6 pb-4 border-b border-app-border">
 				<!-- Step 1 -->
@@ -333,6 +342,10 @@
 						</div>
 					</div>
 
+					<div class="p-3 rounded-lg bg-zinc-900 border border-app-border text-[11px] text-zinc-400 leading-relaxed">
+						Ce sont les mêmes identifiants que ceux de votre ENT (compte CAS de l'université). Ils sont chiffrés sur le serveur et servent uniquement à récupérer vos notes et absences.
+					</div>
+
 					<div class="flex items-center justify-between pt-5 border-t border-app-border">
 						<button
 							type="button"
@@ -397,7 +410,7 @@
 							</div>
 						</div>
 						<div>
-							<label for="onb-mdl-token" class="block text-xs font-medium text-zinc-400 mb-1">Jeton personnel (optionnel)</label>
+							<label for="onb-mdl-token" class="block text-xs font-medium text-zinc-400 mb-1">Jeton personnel (facultatif)</label>
 							<input
 								id="onb-mdl-token"
 								type="text"
@@ -406,6 +419,10 @@
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
+					</div>
+
+					<div class="p-3 rounded-lg bg-zinc-900 border border-app-border text-[11px] text-zinc-400 leading-relaxed">
+						Saisissez l'identifiant et le mot de passe de votre compte Moodle. Le jeton personnel ci-dessous est facultatif : il ne sert que si la connexion par mot de passe échoue (Moodle › Préférences › Clés de sécurité › « Moodle mobile web service ».)
 					</div>
 
 					<div class="flex items-center justify-between pt-5 border-t border-app-border">
@@ -463,7 +480,7 @@
 							</div>
 						</div>
 						<div class="p-3 rounded-lg bg-zinc-900 border border-app-border text-[11px] text-zinc-400 leading-relaxed">
-							Copiez l'adresse web de votre lien iCal (.ics) depuis votre ENT ou ADE Campus.
+							Dans ADE Campus / UM Net, exportez votre planning au format iCal (.ics), puis copiez ici le lien obtenu. Il alimente l'emploi du temps, les prochains cours et les DS.
 						</div>
 					</div>
 
@@ -499,9 +516,15 @@
 						<div class="w-12 h-12 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center mx-auto">
 							<Check class="w-6 h-6" />
 						</div>
-						<h3 class="font-bold text-white text-base">C'est tout bon !</h3>
+						<h3 class="font-bold text-white text-base">
+							{#if scodocSaved && moodleSaved && icalSaved}C'est tout bon !{:else if scodocSaved || moodleSaved || icalSaved}Configuration partielle{:else}Aucun service relié{/if}
+						</h3>
 						<p class="text-xs text-zinc-400 max-w-md mx-auto">
-							Vos services sont configurés. Voici le récapitulatif de vos connexions :
+							{#if scodocSaved && moodleSaved && icalSaved}
+								Vos trois services sont connectés.
+							{:else}
+								Les services « Non relié » n'afficheront pas de données tant qu'ils ne sont pas configurés.
+							{/if}
 						</p>
 					</div>
 
@@ -516,7 +539,7 @@
 							<div>
 								{#if scodocSaved}
 									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-										Vérifié & Connecté
+										Connecté
 									</span>
 								{:else}
 									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
@@ -535,7 +558,7 @@
 							<div>
 								{#if moodleSaved}
 									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-										Vérifié & Connecté
+										Connecté
 									</span>
 								{:else}
 									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
@@ -554,7 +577,7 @@
 							<div>
 								{#if icalSaved}
 									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
-										Vérifié & Connecté
+										Connecté
 									</span>
 								{:else}
 									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
@@ -576,7 +599,7 @@
 					{/if}
 
 					<p class="text-[11px] text-zinc-400 text-center">
-						Toutes ces connexions restent modifiables à tout moment dans l'onglet <strong>Paramètres</strong>.
+						Vous pourrez compléter ou modifier ces connexions à tout moment dans l'onglet <strong>Paramètres</strong>.
 					</p>
 
 					<div class="pt-3 border-t border-app-border">
