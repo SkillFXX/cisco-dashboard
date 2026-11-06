@@ -15,6 +15,8 @@
 	import Skeleton from "../Skeleton.svelte";
 	import CourseDetailModal from "../CourseDetailModal.svelte";
 
+	let { onAddTaskForCourse }: { onAddTaskForCourse?: (course: any) => void } = $props();
+
 	let timetableData = $state<any>(null);
 	let isLoading = $state(true);
 	let error = $state("");
@@ -699,4 +701,4 @@
 	{/if}
 </div>
 
-<CourseDetailModal course={selectedCourse} bind:open={isModalOpen} />
+<CourseDetailModal course={selectedCourse} bind:open={isModalOpen} events={timetableData?.all_events} onAddTask={onAddTaskForCourse} />

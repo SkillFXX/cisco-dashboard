@@ -7,11 +7,13 @@
 	let {
 		open = $bindable(false),
 		task = null,
+		prefill = null,
 		onTaskCreated,
 		onTaskSaved
 	}: {
 		open: boolean;
 		task?: any;
+		prefill?: { subject?: string; event_type?: string } | null;
 		onTaskCreated?: () => void;
 		onTaskSaved?: () => void;
 	} = $props();
@@ -45,6 +47,15 @@
 		"Autre"
 	];
 
+	// Rattache un intitule de cours ("R113 Maths du signal-TDB") a la matiere de la liste via son code.
+	function resolveSubject(raw: string): string {
+		const code = raw.match(/^(R\d{3}|SA[EÉ]\s*S?[\d.]+)/i)?.[1]?.toUpperCase().replace(/\s+/g, " ");
+		const found = code ? subjectsList.find((s) => s.toUpperCase().startsWith(code)) : undefined;
+		return found ?? raw;
+	}
+
+	let subjectOptions = $derived(subject && !subjectsList.includes(subject) ? [subject, ...subjectsList] : subjectsList);
+
 	function initDefaultDate() {
 		const tomorrow = new Date();
 		tomorrow.setDate(tomorrow.getDate() + 1);
@@ -73,8 +84,8 @@
 			} else {
 				title = "";
 				description = "";
-				subject = "R101 Réseaux";
-				event_type = "ds";
+				subject = prefill?.subject ? resolveSubject(prefill.subject) : "R101 Réseaux";
+				event_type = prefill?.event_type ?? "ds";
 				initDefaultDate();
 			}
 		}
@@ -170,7 +181,7 @@
 					bind:value={subject}
 					class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
 				>
-					{#each subjectsList as sub}
+					{#each subjectOptions as sub}
 						<option value={sub}>{sub}</option>
 					{/each}
 				</select>

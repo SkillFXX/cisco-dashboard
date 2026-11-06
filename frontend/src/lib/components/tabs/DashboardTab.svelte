@@ -22,8 +22,10 @@
 	let {
 		onOpenAddTask,
 		onNavigate,
+		onAddTaskForCourse,
 		tasksRefreshTrigger = 0
 	}: {
+		onAddTaskForCourse?: (course: any) => void;
 		onOpenAddTask?: () => void;
 		onNavigate?: (tab: string) => void;
 		tasksRefreshTrigger?: number;
@@ -761,4 +763,4 @@
 </div>
 {/if}
 
-<CourseDetailModal course={selectedCourse} bind:open={isCourseModalOpen} />
+<CourseDetailModal course={selectedCourse} bind:open={isCourseModalOpen} onAddTask={onAddTaskForCourse} />

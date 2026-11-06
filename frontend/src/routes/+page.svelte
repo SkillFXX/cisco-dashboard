@@ -20,6 +20,18 @@
 
 	let activeTab = $state("dashboard");
 	let isAddTaskOpen = $state(false);
+	let taskPrefill = $state<{ subject?: string; event_type?: string } | null>(null);
+
+	function openAddTask() {
+		taskPrefill = null;
+		isAddTaskOpen = true;
+	}
+
+	function openAddTaskForCourse(course: any) {
+		const type = String(course?.type || "").toLowerCase();
+		taskPrefill = { subject: course?.title || "", event_type: ["ds", "tp"].includes(type) ? type : "todo" };
+		isAddTaskOpen = true;
+	}
 	let tasksRefreshTrigger = $state(0);
 	// Incrémenté pour remonter les onglets et recharger leurs données (ex. fin de l'onboarding)
 	let dataVersion = $state(0);
@@ -77,7 +89,7 @@
 			<div class="flex-1 flex flex-col min-w-0 bg-app-bg">
 				<TopHeader
 					{activeTab}
-					onOpenAddTask={() => (isAddTaskOpen = true)}
+					onOpenAddTask={openAddTask}
 				/>
 
 				<main class="flex-1 p-4 md:p-6 pb-24 md:pb-6 max-w-7xl w-full mx-auto">
@@ -86,8 +98,9 @@
 							<div class="tab-pane" class:hidden={activeTab !== "dashboard"}>
 								<DashboardTab
 									{tasksRefreshTrigger}
-									onOpenAddTask={() => (isAddTaskOpen = true)}
+									onOpenAddTask={openAddTask}
 									onNavigate={(tab: string) => (activeTab = tab)}
+									onAddTaskForCourse={openAddTaskForCourse}
 								/>
 							</div>
 						{/if}
@@ -95,11 +108,11 @@
 							<div class="tab-pane" class:hidden={activeTab !== "grades"}><GradesTab /></div>
 						{/if}
 						{#if visited.has("timetable")}
-							<div class="tab-pane" class:hidden={activeTab !== "timetable"}><TimetableTab /></div>
+							<div class="tab-pane" class:hidden={activeTab !== "timetable"}><TimetableTab onAddTaskForCourse={openAddTaskForCourse} /></div>
 						{/if}
 						{#if visited.has("tasks")}
 							<div class="tab-pane" class:hidden={activeTab !== "tasks"}>
-								<TasksTab {tasksRefreshTrigger} onOpenAddTask={() => (isAddTaskOpen = true)} />
+								<TasksTab {tasksRefreshTrigger} onOpenAddTask={openAddTask} />
 							</div>
 						{/if}
 						{#if visited.has("absences")}
@@ -122,6 +135,7 @@
 		<!-- Modal d'ajout de DS & Évaluations -->
 		<TaskModal
 			bind:open={isAddTaskOpen}
+			prefill={taskPrefill}
 			onTaskCreated={handleTaskCreated}
 		/>
 
