@@ -4,22 +4,16 @@
 	import {
 		ChevronLeft,
 		ChevronRight,
-		RefreshCw,
-		Clock,
-		MapPin,
-		User as UserIcon,
-		Users
+		RefreshCw
 	} from "lucide-svelte";
 	import {
 		toLocalIsoDate,
 		getMondayOfDate,
-		getCourseColorStyle,
-		getCourseBadgeStyle,
-		getCourseTypeLabel
+		getCourseColorStyle
 	} from "$lib/utils";
 	import Card from "../Card.svelte";
 	import Skeleton from "../Skeleton.svelte";
-	import Modal from "../Modal.svelte";
+	import CourseDetailModal from "../CourseDetailModal.svelte";
 
 	let timetableData = $state<any>(null);
 	let isLoading = $state(true);
@@ -65,6 +59,55 @@
 
 	const now = new Date();
 	const todayIso = toLocalIsoDate(now);
+
+	// ----------------------------------------------------
+	// VUE MOBILE : un seul jour à la fois (week-ends ignorés)
+	// ----------------------------------------------------
+	function isoToDate(iso: string): Date {
+		const [y, m, d] = iso.split("-").map(Number);
+		return new Date(y, m - 1, d, 12, 0, 0);
+	}
+
+	function nextWorkingDay(from: Date, step: 1 | -1): Date {
+		const d = new Date(from);
+		do {
+			d.setDate(d.getDate() + step);
+		} while (d.getDay() === 0 || d.getDay() === 6);
+		return d;
+	}
+
+	const startDay = now.getDay() === 0 || now.getDay() === 6 ? nextWorkingDay(now, 1) : now;
+	let mobileDayIso = $state(toLocalIsoDate(startDay));
+
+	function setMobileDay(d: Date) {
+		mobileDayIso = toLocalIsoDate(d);
+		const diffDays = Math.round((getMondayOfDate(d, 0).getTime() - getMondayOfDate(now, 0).getTime()) / 86400000);
+		weekOffset = Math.round(diffDays / 7);
+	}
+
+	function stepMobileDay(step: 1 | -1) {
+		setMobileDay(nextWorkingDay(isoToDate(mobileDayIso), step));
+	}
+
+	let touchStartX = 0;
+	function onDayTouchStart(e: TouchEvent) {
+		touchStartX = e.changedTouches[0].clientX;
+	}
+	function onDayTouchEnd(e: TouchEvent) {
+		const dx = e.changedTouches[0].clientX - touchStartX;
+		if (Math.abs(dx) > 60) stepMobileDay(dx < 0 ? 1 : -1);
+	}
+
+	let mobileDayEvents = $derived(() =>
+		(timetableData?.all_events || [])
+			.filter((e: any) => e.date === mobileDayIso)
+			.sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
+			.map((e: any) => ({ ...e, colorStyle: getCourseColorStyle(e.type) }))
+	);
+
+	let mobileDayLabel = $derived(() =>
+		isoToDate(mobileDayIso).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+	);
 
 	// ----------------------------------------------------
 	// CALCULS DE LA VUE SEMAINE (Même logique robuste que le tableau de bord)
@@ -256,21 +299,7 @@
 		return matrix;
 	});
 
-	function formatDateFullFr(isoDate: string): string {
-		if (!isoDate) return "";
-		try {
-			const [y, m, d] = isoDate.split("-").map(Number);
-			const date = new Date(y, m - 1, d, 12, 0, 0);
-			return date.toLocaleDateString("fr-FR", {
-				weekday: "long",
-				day: "numeric",
-				month: "long",
-				year: "numeric"
-			});
-		} catch {
-			return isoDate;
-		}
-	}
+
 </script>
 
 <div class="space-y-6">
@@ -434,50 +463,69 @@
 					</div>
 				</div>
 
+				<!-- Mobile : agenda jour par jour (la grille horaire est illisible sur petit écran) -->
+				<div class="md:hidden space-y-3" role="group" aria-label="Emploi du temps du jour" ontouchstart={onDayTouchStart} ontouchend={onDayTouchEnd}>
+					<div class="flex items-center justify-between gap-2">
+						<button
+							type="button"
+							onclick={() => stepMobileDay(-1)}
+							aria-label="Jour précédent"
+							class="p-2 rounded-lg border border-app-border bg-app-surface text-zinc-300 hover:text-white cursor-pointer"
+						>
+							<ChevronLeft class="w-4 h-4" />
+						</button>
+						<div class="text-center min-w-0">
+							<div class="text-sm font-bold text-white capitalize truncate">{mobileDayLabel()}</div>
+							{#if mobileDayIso === todayIso}
+								<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-cyan-600 text-white">Aujourd'hui</span>
+							{:else}
+								<button type="button" onclick={() => setMobileDay(now.getDay() === 0 || now.getDay() === 6 ? nextWorkingDay(now, 1) : now)} class="text-[11px] font-medium text-cyan-400 cursor-pointer">
+									Revenir à aujourd'hui
+								</button>
+							{/if}
+						</div>
+						<button
+							type="button"
+							onclick={() => stepMobileDay(1)}
+							aria-label="Jour suivant"
+							class="p-2 rounded-lg border border-app-border bg-app-surface text-zinc-300 hover:text-white cursor-pointer"
+						>
+							<ChevronRight class="w-4 h-4" />
+						</button>
+					</div>
+
+					{#if mobileDayEvents().length === 0}
+						<div class="py-10 text-center border border-dashed border-app-border bg-app-surface rounded-lg text-xs text-zinc-400">
+							Aucun cours ce jour-là
+						</div>
+					{:else}
+						<div class="space-y-1.5">
+							{#each mobileDayEvents() as ev}
+								<button
+									type="button"
+									onclick={() => openCourseDetail(ev)}
+									class="w-full flex gap-3 text-left rounded-lg border p-3 cursor-pointer {ev.colorStyle}"
+								>
+									<div class="text-[11px] font-bold text-white shrink-0 leading-tight">
+										{ev.start_time}<br /><span class="font-medium opacity-70">{ev.end_time}</span>
+									</div>
+									<div class="min-w-0">
+										<div class="text-xs font-semibold text-white">{ev.title}</div>
+										<div class="text-[11px] opacity-80 truncate">{ev.location}{ev.teacher ? ` · ${ev.teacher}` : ""}</div>
+									</div>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
 				{#if weekEvents().length === 0}
-					<div class="py-16 text-center border border-dashed border-app-border bg-app-surface rounded-lg text-zinc-400 text-xs space-y-1">
+					<div class="max-md:hidden py-16 text-center border border-dashed border-app-border bg-app-surface rounded-lg text-zinc-400 text-xs space-y-1">
 						<p class="font-medium text-white">Aucun cours programmé pour cette semaine.</p>
 						<p class="text-zinc-500 text-[11px]">Utilisez les flèches en haut pour naviguer vers d'autres semaines.</p>
 					</div>
 				{:else}
 					<!-- Grille de la semaine avec axe des heures à gauche -->
-					<!-- Mobile : agenda jour par jour (la grille horaire est illisible sur petit écran) -->
-					<div class="md:hidden space-y-4">
-						{#each weekDays() as day}
-							{@const dayEvents = weekEvents()
-								.filter((e: any) => e.date === day.isoDate)
-								.sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))}
-							<div>
-								<div class="flex items-baseline gap-2 pb-1.5 text-xs">
-									<span class="font-bold {day.isToday ? 'text-cyan-400' : 'text-white'}">{day.fullName}</span>
-									<span class="text-zinc-500">{day.formattedDate}</span>
-									{#if day.isToday}<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-cyan-600 text-white">Aujourd'hui</span>{/if}
-								</div>
-								{#if dayEvents.length === 0}
-									<p class="text-[11px] text-zinc-600 pl-1">Aucun cours</p>
-								{:else}
-									<div class="space-y-1.5">
-										{#each dayEvents as ev}
-											<button
-												type="button"
-												onclick={() => openCourseDetail(ev)}
-												class="w-full flex gap-3 text-left rounded-lg border p-2.5 cursor-pointer {ev.colorStyle}"
-											>
-												<div class="text-[11px] font-bold text-white shrink-0 leading-tight">
-													{ev.start_time}<br /><span class="font-medium opacity-70">{ev.end_time}</span>
-												</div>
-												<div class="min-w-0">
-													<div class="text-xs font-semibold text-white truncate">{ev.title}</div>
-													<div class="text-[11px] opacity-80 truncate">{ev.type}{ev.location ? ` · ${ev.location}` : ""}</div>
-												</div>
-											</button>
-										{/each}
-									</div>
-								{/if}
-							</div>
-						{/each}
-					</div>
-
 					<div class="hidden md:block">
 						<!-- En-têtes des jours de la semaine -->
 						<div
@@ -651,104 +699,4 @@
 	{/if}
 </div>
 
-<!-- ==================================================== -->
-<!-- MODALE DE DÉTAIL D'UN COURS SÉLECTIONNÉ              -->
-<!-- ==================================================== -->
-<Modal bind:open={isModalOpen} title="" class="max-w-md">
-	{#if selectedCourse}
-		<div class="space-y-5">
-			<!-- En-tête de la modale -->
-			<div class="space-y-2 pb-4 border-b border-app-border">
-				<div class="flex items-center gap-2 flex-wrap">
-					<span class="text-xs font-bold px-2.5 py-0.5 rounded-full {getCourseBadgeStyle(selectedCourse.type)}">
-						{getCourseTypeLabel(selectedCourse.type)}
-					</span>
-
-					{#if selectedCourse.is_current}
-						<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cyan-600 text-white">
-							En cours actuellement
-						</span>
-					{/if}
-				</div>
-
-				<h2 class="text-base font-bold text-white">
-					{selectedCourse.title}
-				</h2>
-
-				<p class="text-xs text-zinc-400">
-					{formatDateFullFr(selectedCourse.date)}
-				</p>
-			</div>
-
-			<!-- Informations clés sous forme de grille sobre -->
-			<div class="grid grid-cols-2 gap-3 text-xs">
-				<!-- Horaires -->
-				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
-					<div class="flex items-center gap-1.5 text-zinc-400">
-						<Clock class="w-3.5 h-3.5 text-cyan-400" />
-						<span class="text-[11px] font-medium uppercase tracking-wider">Horaires</span>
-					</div>
-					<div class="text-sm font-bold text-white">
-						{selectedCourse.start_time} - {selectedCourse.end_time}
-					</div>
-					<div class="text-[10px] text-zinc-400">
-						Durée : <span class="text-white font-medium">{selectedCourse.duration_minutes} min</span>
-					</div>
-				</div>
-
-				<!-- Salle / Lieu -->
-				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
-					<div class="flex items-center gap-1.5 text-zinc-400">
-						<MapPin class="w-3.5 h-3.5 text-cyan-400" />
-						<span class="text-[11px] font-medium uppercase tracking-wider">Lieu / Salle</span>
-					</div>
-					<div class="text-sm font-bold text-white truncate" title={selectedCourse.location}>
-						{selectedCourse.location || "Non précisé"}
-					</div>
-					<div class="text-[10px] text-zinc-400">
-						Campus universitaire
-					</div>
-				</div>
-
-				<!-- Enseignant -->
-				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
-					<div class="flex items-center gap-1.5 text-zinc-400">
-						<UserIcon class="w-3.5 h-3.5 text-cyan-400" />
-						<span class="text-[11px] font-medium uppercase tracking-wider">Enseignant</span>
-					</div>
-					<div class="text-sm font-bold text-white break-words" title={selectedCourse.teacher}>
-						{selectedCourse.teacher || "Non spécifié"}
-					</div>
-					<div class="text-[10px] text-zinc-400">
-						Intervenant
-					</div>
-				</div>
-
-				<!-- Groupe / Promo -->
-				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
-					<div class="flex items-center gap-1.5 text-zinc-400">
-						<Users class="w-3.5 h-3.5 text-cyan-400" />
-						<span class="text-[11px] font-medium uppercase tracking-wider">Groupe</span>
-					</div>
-					<div class="text-sm font-bold text-white break-words" title={selectedCourse.group}>
-						{selectedCourse.group || "Promotion"}
-					</div>
-					<div class="text-[10px] text-zinc-400">
-						Effectif concerné
-					</div>
-				</div>
-			</div>
-
-			<!-- Bouton de fermeture -->
-			<div class="flex justify-end pt-2 border-t border-app-border">
-				<button
-					type="button"
-					onclick={() => (isModalOpen = false)}
-					class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-all cursor-pointer"
-				>
-					Fermer
-				</button>
-			</div>
-		</div>
-	{/if}
-</Modal>
+<CourseDetailModal course={selectedCourse} bind:open={isModalOpen} />

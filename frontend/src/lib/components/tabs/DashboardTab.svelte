@@ -4,6 +4,7 @@
 	import { formatGrade, formatDateFr, toLocalIsoDate, getMondayOfDate, getCourseColorStyle } from "$lib/utils";
 	import Card from "../Card.svelte";
 	import Skeleton from "../Skeleton.svelte";
+	import CourseDetailModal from "../CourseDetailModal.svelte";
 	import {
 		Plus,
 		Check,
@@ -98,11 +99,20 @@
 		return overview?.absences?.injustifiees_demi_journees ?? overview?.absences?.injustifiees_nb ?? 0;
 	});
 
+	// Detail d'un cours (modale partagee avec l'onglet Emploi du temps)
+	let selectedCourse = $state<any>(null);
+	let isCourseModalOpen = $state(false);
+	function openCourse(course: any) {
+		selectedCourse = course;
+		isCourseModalOpen = true;
+	}
+
 	// Prochain cours reel
 	let nextClassInfo = $derived(() => {
 		if (overview?.current_course) {
 			return {
 				isLive: true,
+				course: overview.current_course,
 				title: overview.current_course.title,
 				subtitle: `${overview.current_course.location || "Salle"} • ${overview.current_course.teacher || "Enseignant"}`,
 				statusText: "En ce moment",
@@ -112,6 +122,7 @@
 		if (overview?.next_course) {
 			return {
 				isLive: false,
+				course: overview.next_course,
 				title: overview.next_course.title,
 				subtitle: `${overview.next_course.location || "Salle"} • ${overview.next_course.teacher || "Enseignant"}`,
 				statusText: overview.next_course.day_name ? `${overview.next_course.day_name} à ${overview.next_course.start_time}` : `À ${overview.next_course.start_time}`,
@@ -427,14 +438,14 @@
 			</div>
 
 			{#if nextClassInfo()}
-				<div class="my-1.5 space-y-1">
+				<button type="button" onclick={() => openCourse(nextClassInfo()?.course)} class="my-1.5 space-y-1 text-left w-full min-w-0 cursor-pointer hover:opacity-80 transition-opacity">
 					<div class="text-sm font-bold text-white truncate" title={nextClassInfo()?.title}>
 						{nextClassInfo()?.title}
 					</div>
 					<div class="text-xs text-zinc-400 truncate">
 						{nextClassInfo()?.subtitle}
 					</div>
-				</div>
+				</button>
 
 				<div class="flex items-center justify-between text-xs text-zinc-400 border-t border-app-border pt-2.5">
 					<span class="font-medium text-cyan-400">{nextClassInfo()?.statusText}</span>
@@ -533,9 +544,11 @@
 
 								<!-- Cours reels de la journee -->
 								{#each weekEvents().filter((e: any) => e.dayIdx === dayIdx) as ev}
-									<div
+									<button
+										type="button"
+										onclick={() => openCourse(ev)}
 										style="top: {ev.topPercent}%; height: {ev.heightPercent}%;"
-										class="absolute left-1 right-1 rounded-md p-2 text-xs font-sans border overflow-hidden transition-all hover:brightness-125 cursor-pointer z-10 {ev.colorStyle}"
+										class="absolute left-1 right-1 rounded-md p-2 text-xs font-sans border overflow-hidden transition-all hover:brightness-125 cursor-pointer z-10 text-left {ev.colorStyle}"
 										title="{ev.title} ({ev.start_time} - {ev.end_time}) - {ev.location}"
 									>
 										<div class="font-semibold truncate text-[11px] leading-tight">
@@ -547,7 +560,7 @@
 										<div class="text-[9px] opacity-75 mt-0.5">
 											{ev.start_time} - {ev.end_time}
 										</div>
-									</div>
+									</button>
 								{/each}
 							</div>
 						{/each}
@@ -747,3 +760,5 @@
 	</Card>
 </div>
 {/if}
+
+<CourseDetailModal course={selectedCourse} bind:open={isCourseModalOpen} />
