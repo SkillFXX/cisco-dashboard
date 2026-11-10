@@ -8,5 +8,5 @@
 	} = $props();
 </script>
 
-<div class="animate-pulse bg-white/[0.06] rounded-md {className}" {...restProps}></div>
+<div class="animate-pulse bg-fg/[0.06] rounded-md {className}" {...restProps}></div>
 

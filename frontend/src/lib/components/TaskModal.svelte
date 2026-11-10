@@ -142,7 +142,7 @@
 		{/if}
 
 		<div>
-			<label for="task-type" class="block text-xs font-medium text-zinc-400 mb-1.5">Catégorie</label>
+			<label for="task-type" class="block text-xs font-medium text-muted mb-1.5">Catégorie</label>
 			<div class="grid grid-cols-4 gap-2">
 				{#each [
 					{ id: 'ds', label: 'DS' },
@@ -153,7 +153,7 @@
 					<button
 						type="button"
 						onclick={() => (event_type = item.id)}
-						class="rounded-lg px-2 py-2 text-xs font-medium text-center transition-all cursor-pointer {event_type === item.id ? 'bg-white/[0.08] text-white font-semibold shadow-xs' : 'border border-app-border bg-app-surface text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
+						class="rounded-lg px-2 py-2 text-xs font-medium text-center transition-all cursor-pointer {event_type === item.id ? 'bg-fg/[0.08] text-fg font-semibold shadow-xs' : 'border border-app-border bg-app-surface text-muted hover:text-fg hover:bg-fg/[0.03]'}"
 					>
 						{item.label}
 					</button>
@@ -162,24 +162,24 @@
 		</div>
 
 		<div>
-			<label for="task-title" class="block text-xs font-medium text-zinc-400 mb-1">Titre de l'épreuve / tâche *</label>
+			<label for="task-title" class="block text-xs font-medium text-muted mb-1">Titre de l'épreuve / tâche *</label>
 			<input
 				id="task-title"
 				type="text"
 				bind:value={title}
 				placeholder="Ex: DS 2 - Routage OSPF & Adressage VLSM"
 				required
-				class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+				class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 			/>
 		</div>
 
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 			<div>
-				<label for="task-subject" class="block text-xs font-medium text-zinc-400 mb-1">Matière associée</label>
+				<label for="task-subject" class="block text-xs font-medium text-muted mb-1">Matière associée</label>
 				<select
 					id="task-subject"
 					bind:value={subject}
-					class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+					class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg focus:border-cyan-500 focus:outline-none"
 				>
 					{#each subjectOptions as sub}
 						<option value={sub}>{sub}</option>
@@ -188,19 +188,19 @@
 			</div>
 
 			<div>
-				<label for="task-date" class="block text-xs font-medium text-zinc-400 mb-1">Date et heure limite *</label>
+				<label for="task-date" class="block text-xs font-medium text-muted mb-1">Date et heure limite *</label>
 				<DateTimePicker id="task-date" bind:value={due_date} />
 			</div>
 		</div>
 
 		<div>
-			<label for="task-desc" class="block text-xs font-medium text-zinc-400 mb-1">Consignes ou notes (facultatif)</label>
+			<label for="task-desc" class="block text-xs font-medium text-muted mb-1">Consignes ou notes (facultatif)</label>
 			<textarea
 				id="task-desc"
 				bind:value={description}
 				rows="3"
 				placeholder="Chapitres à réviser, calculatrice autorisée, salle de l'examen..."
-				class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none resize-none"
+				class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none resize-none"
 			></textarea>
 		</div>
 
@@ -209,7 +209,7 @@
 				type="button"
 				onclick={() => (open = false)}
 				disabled={isSubmitting}
-				class="px-3.5 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-white/[0.04] text-xs font-medium text-zinc-300 transition-colors cursor-pointer"
+				class="px-3.5 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-fg/[0.04] text-xs font-medium text-muted transition-colors cursor-pointer"
 			>
 				Annuler
 			</button>

@@ -5,6 +5,8 @@
 	import Card from "../Card.svelte";
 	import Skeleton from "../Skeleton.svelte";
 	import CourseDetailModal from "../CourseDetailModal.svelte";
+	import AverageCard from "../AverageCard.svelte";
+	import GradesTable from "../GradesTable.svelte";
 	import {
 		Plus,
 		Check,
@@ -40,6 +42,7 @@
 	});
 
 	let overview = $state<any>(null);
+	let gradeHistory = $state<number[]>([]);
 	let isLoading = $state(true);
 	let error = $state("");
 	let isRefreshing = $state(false);
@@ -51,6 +54,9 @@
 		error = "";
 		try {
 			overview = await api.getDashboardOverview(forceRefresh);
+			api.getGradeHistory()
+				.then((h) => (gradeHistory = h.filter((p) => p.moyenne != null).map((p) => p.moyenne as number)))
+				.catch(() => {});
 			if (overview?.user?.photo_base64 && auth.user) {
 				auth.user.photo_base64 = overview.user.photo_base64;
 				if (typeof window !== "undefined") {
@@ -80,21 +86,6 @@
 
 	onMount(() => {
 		loadOverview();
-	});
-
-	// Calcul jauge circulaire moyenne generale
-	let gpaValue = $derived(() => {
-		const val = overview?.stats?.moyenne_generale;
-		if (typeof val === "number" && !isNaN(val)) return val;
-		return 0;
-	});
-
-	const radius = 28;
-	const circumference = 2 * Math.PI * radius;
-	let strokeDashoffset = $derived(() => {
-		const score = gpaValue();
-		const ratio = Math.min(Math.max(score / 20, 0), 1);
-		return circumference * (1 - ratio);
 	});
 
 	let unjustifiedCount = $derived(() => {
@@ -241,7 +232,6 @@
 					</div>
 					<Skeleton class="h-3 w-36" />
 				</div>
-				<Skeleton class="w-16 h-16 rounded-full shrink-0" />
 			</Card>
 
 			<!-- KPI 2 Skeleton -->
@@ -286,7 +276,7 @@
 				{#each Array(5) as _}
 					<div class="space-y-3">
 						<Skeleton class="h-10 w-full rounded-lg" />
-						<div class="h-56 rounded-lg border border-app-border bg-app-surface/50 p-2 space-y-2">
+						<div class="h-56 space-y-2">
 							<Skeleton class="h-16 w-full rounded-md" />
 							<Skeleton class="h-20 w-full rounded-md" />
 						</div>
@@ -307,7 +297,7 @@
 				</div>
 				<div class="space-y-2.5">
 					{#each Array(3) as _}
-						<div class="flex items-center justify-between p-3 rounded-lg border border-app-border bg-app-surface/40">
+						<div class="flex items-center justify-between py-2">
 							<div class="flex items-center gap-3">
 								<Skeleton class="w-5 h-5 rounded-full shrink-0" />
 								<div class="space-y-1.5">
@@ -331,7 +321,7 @@
 				</div>
 				<div class="space-y-2.5">
 					{#each Array(3) as _}
-						<div class="flex items-center justify-between p-3 rounded-lg border border-app-border bg-app-surface/40">
+						<div class="flex items-center justify-between py-2">
 							<div class="space-y-1.5">
 								<Skeleton class="h-3.5 w-40" />
 								<Skeleton class="h-2.5 w-20" />
@@ -351,112 +341,38 @@
 	<div class="space-y-6">
 		<!-- Ligne 1 : 3 KPI Cards -->
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-		<!-- KPI 1 : Moyenne generale -->
-		<Card class="flex items-center justify-between relative">
-			<div class="space-y-2">
-				<div class="space-y-0.5">
-					<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Moyenne générale</h3>
-					<p class="text-xs text-zinc-500">Relevé ScoDoc</p>
-				</div>
-				<div class="flex items-baseline gap-1">
-					<span class="text-3xl font-extrabold text-white tracking-tight">
-						{gpaValue() > 0 ? gpaValue().toFixed(2) : "--"}
-					</span>
-					<span class="text-sm font-semibold text-zinc-500">/20</span>
-				</div>
-				<div class="flex items-center gap-1.5 text-xs text-zinc-400 font-medium">
-					{#if overview?.stats?.rang}
-						<span>Rang <span class="text-zinc-200">{overview.stats.rang}</span>{overview.stats.total_promo ? ` / ${overview.stats.total_promo}` : ""}</span>
-					{:else}
-						<span>Semestre en cours</span>
-					{/if}
-				</div>
-			</div>
+		<!-- KPI 1 : Moyenne générale (même carte que dans l'onglet Notes) -->
+		<AverageCard stats={overview?.stats} series={gradeHistory} onclick={onNavigate ? () => onNavigate("grades") : undefined} />
 
-			<!-- Jauge circulaire en cyan profond -->
-			<div class="relative w-18 h-18 flex items-center justify-center shrink-0">
-				<svg class="w-18 h-18 -rotate-90" viewBox="0 0 72 72">
-					<circle
-						cx="36"
-						cy="36"
-						r={radius}
-						fill="transparent"
-						stroke="var(--color-app-border)"
-						stroke-width="5"
-					/>
-					<circle
-						cx="36"
-						cy="36"
-						r={radius}
-						fill="transparent"
-						stroke="#0891B2"
-						stroke-width="5"
-						stroke-linecap="round"
-						stroke-dasharray={circumference}
-						stroke-dashoffset={strokeDashoffset()}
-						class="transition-all duration-700 ease-out"
-					/>
-				</svg>
-			</div>
-		</Card>
-
-		<!-- KPI 2 : Absences non justifiees -->
+		<!-- KPI 2 : Absences non justifiées -->
 		<Card
-			class="flex flex-col justify-between {onNavigate ? 'cursor-pointer hover:border-zinc-700 transition-colors' : ''}"
+			class="p-4 space-y-2 {onNavigate ? 'cursor-pointer hover:border-subtle transition-colors' : ''}"
 			onclick={() => onNavigate && onNavigate("absences")}
 		>
-			<div class="space-y-0.5">
-				<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Absences non justifiées</h3>
-				<p class="text-xs text-zinc-500">
-					{overview?.absences?.total_heures ? `${overview.absences.total_heures} h manquées au total` : "Relevé à jour"}
-				</p>
+			<span class="text-[11px] font-semibold uppercase tracking-wider text-muted">Absences non justifiées</span>
+			<div class="flex items-baseline gap-1.5">
+				<span class="text-2xl sm:text-3xl font-black text-fg">{unjustifiedCount()}</span>
+				<span class="text-xs text-subtle font-semibold">demi-journée{unjustifiedCount() > 1 ? "s" : ""}</span>
 			</div>
-
-			<div class="my-2 flex items-baseline gap-1.5">
-				<span class="text-3xl font-extrabold text-white tracking-tight">
-					{unjustifiedCount()}
-				</span>
-				<span class="text-xs text-zinc-400">demi-journée{unjustifiedCount() > 1 ? 's' : ''}</span>
-			</div>
-
-			<div>
-				{#if unjustifiedCount() > 0}
-					<span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-rose-600 text-white">
-						Justification requise
-					</span>
-				{:else}
-					<span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-emerald-600 text-white">
-						Toutes justifiées
-					</span>
-				{/if}
+			<div class="pt-1.5 border-t border-app-border text-[11px] {unjustifiedCount() > 0 ? 'text-rose-400' : 'text-emerald-400'}">
+				{unjustifiedCount() > 0 ? "À justifier" : "Tout est justifié"}
 			</div>
 		</Card>
 
 		<!-- KPI 3 : Prochain cours -->
-		<Card class="flex flex-col justify-between">
-			<div class="space-y-0.5">
-				<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Prochain cours</h3>
-				<p class="text-xs text-zinc-500">Emploi du temps</p>
-			</div>
-
+		<Card class="p-4 space-y-2">
+			<span class="text-[11px] font-semibold uppercase tracking-wider text-muted">Prochain cours</span>
 			{#if nextClassInfo()}
-				<button type="button" onclick={() => openCourse(nextClassInfo()?.course)} class="my-1.5 space-y-1 text-left w-full min-w-0 cursor-pointer hover:opacity-80 transition-opacity">
-					<div class="text-sm font-bold text-white truncate" title={nextClassInfo()?.title}>
-						{nextClassInfo()?.title}
-					</div>
-					<div class="text-xs text-zinc-400 truncate">
-						{nextClassInfo()?.subtitle}
-					</div>
+				<button type="button" onclick={() => openCourse(nextClassInfo()?.course)} class="block text-left w-full min-w-0 cursor-pointer hover:opacity-80 transition-opacity">
+					<div class="text-base font-bold text-fg truncate" title={nextClassInfo()?.title}>{nextClassInfo()?.title}</div>
+					<div class="text-xs text-muted truncate">{nextClassInfo()?.subtitle}</div>
 				</button>
-
-				<div class="flex items-center justify-between text-xs text-zinc-400 border-t border-app-border pt-2.5">
-					<span class="font-medium text-cyan-400">{nextClassInfo()?.statusText}</span>
-					<span class="text-zinc-500">{nextClassInfo()?.time}</span>
+				<div class="pt-1.5 border-t border-app-border flex items-center justify-between text-[11px] text-muted">
+					<span class="font-medium {nextClassInfo()?.isLive ? 'text-cyan-400' : ''}">{nextClassInfo()?.statusText}</span>
+					<span>{nextClassInfo()?.time}</span>
 				</div>
 			{:else}
-				<div class="my-auto py-2">
-					<p class="text-xs text-zinc-500">Aucun cours imminent programmé</p>
-				</div>
+				<p class="text-xs text-subtle pt-1">Aucun cours à venir</p>
 			{/if}
 		</Card>
 	</div>
@@ -467,10 +383,7 @@
 		<Card class="md:col-span-8 space-y-4">
 			<div class="flex items-center justify-between">
 				<div>
-					<h2 class="text-sm font-bold text-white">Emploi du temps</h2>
-					<p class="text-xs text-zinc-500">
-						Du {weekDays[0].formattedDate} au {weekDays[4].formattedDate}
-					</p>
+					<h2 class="text-sm font-bold text-fg">Cette semaine</h2>
 				</div>
 				{#if onNavigate}
 					<button
@@ -484,20 +397,20 @@
 
 			{#if weekEvents().length === 0}
 				<!-- Message clair sans faux template -->
-				<div class="py-16 text-center border border-dashed border-app-border bg-app-surface/50 rounded-lg text-zinc-500 text-xs space-y-1">
-					<p class="font-medium text-zinc-400">Aucun cours programmé pour cette semaine.</p>
+				<div class="py-16 text-center text-subtle text-xs space-y-1">
+					<p class="font-medium text-muted">Aucun cours programmé pour cette semaine.</p>
 					<p class="text-[11px]">Si l'emploi du temps devrait s'afficher, vérifiez votre lien iCal dans les Paramètres.</p>
 				</div>
 			{:else}
 				<!-- Grille directe sur le fond de la carte -->
 				<div>
 					<!-- En-tetes des jours -->
-					<div class="grid grid-cols-6 border-b border-app-border pb-2 text-center text-xs font-medium text-zinc-400">
-						<div class="text-left pl-1 text-zinc-500">Heure</div>
+					<div class="grid grid-cols-6 border-b border-app-border pb-2 text-center text-xs font-medium text-muted">
+						<div class="text-left pl-1 text-subtle">Heure</div>
 						{#each weekDays as day, i}
 							<div class="{currentWeekday === i ? 'text-cyan-400 font-bold' : ''}">
 								<span>{day.name}</span>
-								<span class="block text-[10px] text-zinc-500">{day.formattedDate}</span>
+								<span class="block text-[10px] text-subtle">{day.formattedDate}</span>
 							</div>
 						{/each}
 					</div>
@@ -505,7 +418,7 @@
 					<!-- Corps du calendrier : 5 colonnes de jours avec separateurs fins -->
 					<div class="relative h-88 grid grid-cols-6 divide-x divide-app-border">
 						<!-- Axe des heures a gauche -->
-						<div class="flex flex-col justify-between py-1 text-[10px] text-zinc-500 pr-2">
+						<div class="flex flex-col justify-between py-1 text-[10px] text-subtle pr-2">
 							<span>08:00</span>
 							<span>09:30</span>
 							<span>11:00</span>
@@ -521,13 +434,13 @@
 							<div class="relative h-full">
 								<!-- Lignes de repere horizontales discretes -->
 								<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
-									<div class="border-b border-zinc-700 w-full"></div>
-									<div class="border-b border-zinc-700 w-full"></div>
-									<div class="border-b border-zinc-700 w-full"></div>
-									<div class="border-b border-zinc-700 w-full"></div>
-									<div class="border-b border-zinc-700 w-full"></div>
-									<div class="border-b border-zinc-700 w-full"></div>
-									<div class="border-b border-zinc-700 w-full"></div>
+									<div class="border-b border-app-border w-full"></div>
+									<div class="border-b border-app-border w-full"></div>
+									<div class="border-b border-app-border w-full"></div>
+									<div class="border-b border-app-border w-full"></div>
+									<div class="border-b border-app-border w-full"></div>
+									<div class="border-b border-app-border w-full"></div>
+									<div class="border-b border-app-border w-full"></div>
 								</div>
 
 								<!-- Ligne horizontale de l'heure actuelle (uniquement sur le jour actuel) -->
@@ -550,7 +463,7 @@
 										type="button"
 										onclick={() => openCourse(ev)}
 										style="top: {ev.topPercent}%; height: {ev.heightPercent}%;"
-										class="absolute left-1 right-1 rounded-md p-2 text-xs font-sans border overflow-hidden transition-all hover:brightness-125 cursor-pointer z-10 text-left {ev.colorStyle}"
+										class="absolute left-1 right-1 rounded-md p-2 text-xs font-sans overflow-hidden shadow-sm transition-all hover:brightness-110 cursor-pointer z-10 text-left {ev.colorStyle}"
 										title="{ev.title} ({ev.start_time} - {ev.end_time}) - {ev.location}"
 									>
 										<div class="font-semibold truncate text-[11px] leading-tight">
@@ -575,10 +488,7 @@
 		<Card class="md:col-span-4 flex flex-col justify-between space-y-4">
 			<div>
 				<div class="flex items-center justify-between mb-3">
-					<div class="space-y-0.5">
-						<h2 class="text-sm font-bold text-white">Devoirs à venir</h2>
-						<p class="text-xs text-zinc-500">Devoirs et échéances</p>
-					</div>
+					<h2 class="text-sm font-bold text-fg">Devoirs à venir</h2>
 					{#if onNavigate}
 						<button
 							onclick={() => onNavigate("tasks")}
@@ -590,13 +500,13 @@
 				</div>
 
 				{#if upcomingTasks().length === 0}
-					<div class="py-12 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+					<div class="py-12 text-center text-subtle text-xs">
 						Aucun devoir à venir.
 					</div>
 				{:else}
-					<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+					<div class="divide-y divide-app-border">
 						{#each upcomingTasks() as item}
-							<div class="flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors gap-3 text-left">
+							<div class="flex items-center justify-between py-3 gap-3 text-left">
 								<!-- Checkbox + Titre & Description -->
 								<div class="flex items-center gap-3.5 min-w-0 flex-1">
 									<button
@@ -605,7 +515,7 @@
 											e.stopPropagation();
 											toggleTaskStatus(item);
 										}}
-										class="text-zinc-500 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
+										class="text-subtle hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
 										title="Marquer comme fait"
 									>
 										{#if item.status === "done" || item.done}
@@ -618,43 +528,15 @@
 									<div class="min-w-0 flex-1">
 										<!-- Titre du devoir mis en évidence -->
 										<div class="flex items-center gap-2">
-											<span class="font-bold text-xs text-white truncate {item.status === 'done' || item.done ? 'line-through text-zinc-500' : ''}">
+											<span class="font-bold text-xs text-fg truncate {item.status === 'done' || item.done ? 'line-through text-subtle' : ''}">
 												{item.title}
 											</span>
-											{#if item.source === "moodle"}
-												<span class="text-[10px] text-cyan-400 font-medium shrink-0">Moodle</span>
-											{:else if item.source === "timetable"}
-												<span class="text-[10px] text-rose-400 font-medium shrink-0">Calendrier</span>
-											{/if}
 										</div>
 										<!-- Salle ou consignes sous le titre -->
-										{#if item.description}
-											<p class="text-xs text-zinc-400 truncate mt-0.5">
-												{item.description}
-											</p>
-										{/if}
+										<p class="text-xs text-muted truncate mt-0.5">
+											{[item.type === "ds" || item.category === "DS" || item.source === "timetable" ? "DS" : item.type === "dm" || item.category === "DM" || item.source === "moodle" ? "DM" : item.type === "tp" || item.category === "TP" ? "TP" : "", item.description].filter(Boolean).join(" · ")}
+										</p>
 									</div>
-								</div>
-
-								<!-- Catégorie (au milieu) : badge rond en couleur pleine -->
-								<div class="shrink-0 hidden sm:flex items-center justify-center">
-									{#if item.type === 'ds' || item.category === 'DS' || item.source === 'timetable'}
-										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-600 text-white">
-											DS
-										</span>
-									{:else if item.type === 'dm' || item.category === 'DM' || item.source === 'moodle'}
-										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-cyan-600 text-white">
-											DM
-										</span>
-									{:else if item.type === 'tp' || item.category === 'TP'}
-										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-600 text-white">
-											TP
-										</span>
-									{:else}
-										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-100">
-											Autres
-										</span>
-									{/if}
 								</div>
 
 								<!-- Date et délai (à droite) -->
@@ -667,12 +549,12 @@
 										{:else if item.days_left === 1}
 											<span class="text-amber-200">Demain</span>
 										{:else if item.days_left <= 5}
-											<span class="text-zinc-200">Dans <span class="text-white font-bold">{item.days_left}</span> j</span>
+											<span class="text-fg">Dans <span class="text-fg font-bold">{item.days_left}</span> j</span>
 										{:else}
-											<span class="text-zinc-400">Dans <span class="text-white font-bold">{item.days_left}</span> j</span>
+											<span class="text-muted">Dans <span class="text-fg font-bold">{item.days_left}</span> j</span>
 										{/if}
 									</div>
-									<span class="text-[10px] text-zinc-500 mt-0.5">
+									<span class="text-[10px] text-subtle mt-0.5">
 										{formatDateFr(item.due_date)}
 									</span>
 								</div>
@@ -686,7 +568,7 @@
 			{#if onOpenAddTask}
 				<button
 					onclick={onOpenAddTask}
-					class="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-dashed border-app-border hover:border-cyan-500/50 bg-app-surface hover:bg-white/[0.04] text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
+					class="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-dashed border-app-border hover:border-cyan-500/50 bg-app-surface hover:bg-fg/[0.04] text-xs font-semibold text-muted hover:text-fg transition-all cursor-pointer"
 				>
 					<Plus class="w-4 h-4 text-cyan-400" />
 					<span>Ajouter un devoir</span>
@@ -695,70 +577,20 @@
 		</Card>
 	</div>
 
-	<!-- Ligne 3 : Dernieres notes de ScoDoc -->
-	<Card class="space-y-4">
+	<!-- Ligne 3 : Dernières notes -->
+	<Card class="space-y-2">
 		<div class="flex items-center justify-between">
-			<div>
-				<h2 class="text-sm font-bold text-white">Dernières notes</h2>
-				<p class="text-xs text-zinc-500">Évaluations synchronisées depuis ScoDoc</p>
-			</div>
+			<h2 class="text-sm font-bold text-fg">Dernières notes</h2>
 			{#if onNavigate}
 				<button
 					onclick={() => onNavigate("grades")}
 					class="text-xs text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
 				>
-					Voir toutes les notes <ArrowUpRight class="w-3 h-3" />
+					Toutes les notes <ArrowUpRight class="w-3 h-3" />
 				</button>
 			{/if}
 		</div>
-
-		{#if recentGrades().length === 0}
-			<div class="py-8 text-center text-zinc-500 text-xs">
-				Aucune note récente enregistrée sur votre compte ScoDoc.
-			</div>
-		{:else}
-			<div class="overflow-x-auto rounded-lg border border-app-border">
-				<table class="w-full text-left text-xs">
-					<thead class="bg-app-surface text-zinc-400 border-b border-app-border font-medium">
-						<tr>
-							<th class="py-3 px-4">Matière</th>
-							<th class="py-3 px-4">Type</th>
-							<th class="py-3 px-4">Date</th>
-							<th class="py-3 px-4 text-right">Note</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-app-border bg-app-card">
-						{#each recentGrades() as grade}
-							<tr class="hover:bg-app-hover transition-colors">
-								<td class="py-3 px-4 font-semibold text-zinc-200">
-									<div class="flex items-center gap-2">
-										{#if grade.code_matiere}
-											<span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 font-semibold">
-												{grade.code_matiere}
-											</span>
-										{/if}
-										<span class="truncate">{grade.titre_matiere || grade.matiere_nom || grade.matiere || grade.nom || "Évaluation"}</span>
-									</div>
-								</td>
-								<td class="py-3 px-4 text-zinc-400">
-									<span class="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[11px] font-medium">
-										{grade.description || grade.type || "Note"}
-									</span>
-								</td>
-								<td class="py-3 px-4 text-zinc-400 text-[11px]">
-									{grade.date ? formatDateFr(grade.date) : "Récent"}
-								</td>
-								<td class="py-3 px-4 text-right">
-									<span class="inline-block px-2.5 py-0.5 rounded-full font-bold text-xs bg-cyan-600 text-white">
-										{formatGrade(grade.note)}
-									</span>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		{/if}
+		<GradesTable rows={recentGrades()} onSelect={onNavigate ? () => onNavigate("grades") : undefined} emptyText="Aucune note récente." />
 	</Card>
 </div>
 {/if}

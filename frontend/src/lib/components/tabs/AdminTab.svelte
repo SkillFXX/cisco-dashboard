@@ -139,16 +139,12 @@
 		return iso ? new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "--";
 	}
 
-	const inputClass = "w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none";
+	const inputClass = "w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none";
 </script>
 
 <div class="space-y-6">
 	<div class="pb-2 border-b border-app-border">
-		<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-			<ShieldCheck class="w-5 h-5 text-cyan-400" />
-			<span>Administration</span>
-		</h1>
-		<p class="text-xs text-zinc-400 mt-0.5">Serveur d'envoi d'emails et gestion des comptes.</p>
+		<h1 class="text-xl font-bold tracking-tight text-fg">Administration</h1>
 	</div>
 
 	{#if error}
@@ -172,24 +168,24 @@
 			<div class="flex items-center justify-between gap-3 mb-4">
 				<div class="flex items-center gap-2.5">
 					<Server class="w-4 h-4 text-cyan-400" />
-					<h2 class="text-sm font-semibold text-white">Serveur SMTP</h2>
+					<h2 class="text-sm font-semibold text-fg">Serveur SMTP</h2>
 				</div>
-				<span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium {smtp.configured ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}">
+				<span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium {smtp.configured ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-muted'}">
 					{smtp.configured ? "Configuré" : "Non configuré"}
 				</span>
 			</div>
 			<form onsubmit={saveSmtp} class="space-y-3">
 				<div class="grid grid-cols-1 sm:grid-cols-6 gap-3">
 					<div class="sm:col-span-3">
-						<label for="smtp-host" class="block text-xs font-medium text-zinc-400 mb-1">Serveur</label>
+						<label for="smtp-host" class="block text-xs font-medium text-muted mb-1">Serveur</label>
 						<input id="smtp-host" bind:value={smtp.host} placeholder="smtp.example.com" class={inputClass} />
 					</div>
 					<div class="sm:col-span-1">
-						<label for="smtp-port" class="block text-xs font-medium text-zinc-400 mb-1">Port</label>
+						<label for="smtp-port" class="block text-xs font-medium text-muted mb-1">Port</label>
 						<input id="smtp-port" type="number" min="1" max="65535" bind:value={smtp.port} class={inputClass} />
 					</div>
 					<div class="sm:col-span-2">
-						<label for="smtp-sec" class="block text-xs font-medium text-zinc-400 mb-1">Sécurité</label>
+						<label for="smtp-sec" class="block text-xs font-medium text-muted mb-1">Sécurité</label>
 						<select id="smtp-sec" bind:value={smtp.security} class={inputClass}>
 							<option value="starttls">STARTTLS (587)</option>
 							<option value="ssl">SSL/TLS (465)</option>
@@ -197,30 +193,30 @@
 						</select>
 					</div>
 					<div class="sm:col-span-3">
-						<label for="smtp-user" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant</label>
+						<label for="smtp-user" class="block text-xs font-medium text-muted mb-1">Identifiant</label>
 						<input id="smtp-user" bind:value={smtp.username} autocomplete="off" class={inputClass} />
 					</div>
 					<div class="sm:col-span-3">
-						<label for="smtp-pwd" class="block text-xs font-medium text-zinc-400 mb-1">Mot de passe</label>
+						<label for="smtp-pwd" class="block text-xs font-medium text-muted mb-1">Mot de passe</label>
 						<input id="smtp-pwd" type="password" bind:value={smtpPassword} autocomplete="new-password" placeholder={smtp.has_password ? "Inchangé (laisser vide)" : ""} class={inputClass} />
 					</div>
 					<div class="sm:col-span-3">
-						<label for="smtp-from" class="block text-xs font-medium text-zinc-400 mb-1">Adresse d'expédition</label>
+						<label for="smtp-from" class="block text-xs font-medium text-muted mb-1">Adresse d'expédition</label>
 						<input id="smtp-from" type="email" bind:value={smtp.from_email} placeholder="noreply@example.com" class={inputClass} />
 					</div>
 					<div class="sm:col-span-3">
-						<label for="smtp-name" class="block text-xs font-medium text-zinc-400 mb-1">Nom d'expéditeur</label>
+						<label for="smtp-name" class="block text-xs font-medium text-muted mb-1">Nom d'expéditeur</label>
 						<input id="smtp-name" bind:value={smtp.from_name} class={inputClass} />
 					</div>
 					<div class="sm:col-span-6">
-						<label for="smtp-url" class="block text-xs font-medium text-zinc-400 mb-1">URL publique du site (liens « mot de passe oublié »)</label>
+						<label for="smtp-url" class="block text-xs font-medium text-muted mb-1">URL publique du site (liens « mot de passe oublié »)</label>
 						<input id="smtp-url" type="url" bind:value={smtp.public_url} placeholder="https://cisco.example.com" class={inputClass} />
 					</div>
 				</div>
 				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-app-border">
 					<div class="flex gap-2">
 						<input type="email" bind:value={testTarget} placeholder="Destinataire du test (vous par défaut)" aria-label="Destinataire du test" class={inputClass} />
-						<button type="button" onclick={testSmtp} disabled={!smtp.configured} class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-app-border bg-app-surface hover:bg-white/[0.04] disabled:opacity-40 text-xs text-zinc-300 cursor-pointer shrink-0">
+						<button type="button" onclick={testSmtp} disabled={!smtp.configured} class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-app-border bg-app-surface hover:bg-fg/[0.04] disabled:opacity-40 text-xs text-muted cursor-pointer shrink-0">
 							<Send class="w-3.5 h-3.5" />Tester
 						</button>
 					</div>
@@ -236,15 +232,15 @@
 			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
 				<div class="flex items-center gap-2.5">
 					<Users class="w-4 h-4 text-cyan-400" />
-					<h2 class="text-sm font-semibold text-white">Utilisateurs <span class="text-zinc-500 font-normal">({users.length})</span></h2>
+					<h2 class="text-sm font-semibold text-fg">Utilisateurs <span class="text-subtle font-normal">({users.length})</span></h2>
 				</div>
 				<div class="relative sm:w-64">
-					<Search class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-2.5" />
+					<Search class="w-3.5 h-3.5 text-subtle absolute left-3 top-2.5" />
 					<input bind:value={search} placeholder="Rechercher…" aria-label="Rechercher un utilisateur" class="{inputClass} pl-8" />
 				</div>
 			</div>
 
-			<div class="divide-y divide-white/5 -mx-1">
+			<div class="divide-y divide-app-border -mx-1">
 				{#each filteredUsers as user (user.id)}
 					<div class="px-1 py-3">
 						<button onclick={() => (managed?.id === user.id ? (managed = null) : manage(user))} class="w-full flex items-center gap-3 text-left cursor-pointer">
@@ -252,30 +248,30 @@
 								{(user.full_name || user.email).slice(0, 2).toUpperCase()}
 							</div>
 							<div class="min-w-0 flex-1">
-								<div class="text-xs font-bold text-white truncate">
+								<div class="text-xs font-bold text-fg truncate">
 									{user.full_name || user.email}
-									{#if user.is_admin}<span class="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-cyan-600 text-white">Admin</span>{/if}
+									{#if user.is_admin}<span class="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-cyan-600/15 text-cyan-400">Admin</span>{/if}
 								</div>
-								<div class="text-xs text-zinc-400 truncate">{user.email} · inscrit le {formatDate(user.created_at)}</div>
+								<div class="text-xs text-muted truncate">{user.email} · inscrit le {formatDate(user.created_at)}</div>
 							</div>
 							<div class="hidden sm:flex items-center gap-1.5 text-[10px] shrink-0">
-								<span class="px-2 py-0.5 rounded-full {user.has_scodoc ? 'bg-emerald-600/80 text-white' : 'bg-zinc-800 text-zinc-500'}">ScoDoc</span>
-								<span class="px-2 py-0.5 rounded-full {user.has_moodle ? 'bg-emerald-600/80 text-white' : 'bg-zinc-800 text-zinc-500'}">Moodle</span>
-								<span class="px-2 py-0.5 rounded-full {user.has_ical ? 'bg-emerald-600/80 text-white' : 'bg-zinc-800 text-zinc-500'}">ADE</span>
-								<span class="text-zinc-500 ml-1">{user.task_count} devoir{user.task_count > 1 ? "s" : ""}</span>
+								<span class="px-2 py-0.5 rounded-full {user.has_scodoc ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-subtle'}">ScoDoc</span>
+								<span class="px-2 py-0.5 rounded-full {user.has_moodle ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-subtle'}">Moodle</span>
+								<span class="px-2 py-0.5 rounded-full {user.has_ical ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-subtle'}">ADE</span>
+								<span class="text-subtle ml-1">{user.task_count} devoir{user.task_count > 1 ? "s" : ""}</span>
 							</div>
 						</button>
 
 						{#if managed?.id === user.id}
-							<div class="mt-3 ml-0 sm:ml-11 grid grid-cols-1 lg:grid-cols-2 gap-4 rounded-lg border border-app-border bg-app-surface p-4">
+							<div class="mt-3 ml-0 sm:ml-11 grid grid-cols-1 lg:grid-cols-2 gap-4 border-t border-app-border pt-4">
 								<div class="space-y-2">
-									<div class="flex items-center gap-1.5 text-xs font-semibold text-zinc-300"><Pencil class="w-3.5 h-3.5" />Profil</div>
+									<div class="flex items-center gap-1.5 text-xs font-semibold text-muted"><Pencil class="w-3.5 h-3.5" />Profil</div>
 									<input bind:value={editName} placeholder="Nom complet" aria-label="Nom complet" class={inputClass} />
 									<input type="email" bind:value={editEmail} disabled={user.is_admin} aria-label="Email" class="{inputClass} disabled:opacity-50" />
 									<button onclick={saveUser} disabled={isBusy} class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer">Enregistrer</button>
 								</div>
 								<div class="space-y-2">
-									<div class="flex items-center gap-1.5 text-xs font-semibold text-zinc-300"><KeyRound class="w-3.5 h-3.5" />Mot de passe</div>
+									<div class="flex items-center gap-1.5 text-xs font-semibold text-muted"><KeyRound class="w-3.5 h-3.5" />Mot de passe</div>
 									<input type="password" bind:value={newPassword} minlength="8" autocomplete="new-password" placeholder="Nouveau mot de passe (8 car. min.)" aria-label="Nouveau mot de passe" class={inputClass} />
 									<button onclick={savePassword} disabled={isBusy || newPassword.length < 8} class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white text-xs font-semibold cursor-pointer">Changer le mot de passe</button>
 								</div>
@@ -290,7 +286,7 @@
 						{/if}
 					</div>
 				{:else}
-					<div class="py-8 text-center text-xs text-zinc-500">Aucun utilisateur trouvé.</div>
+					<div class="py-8 text-center text-xs text-subtle">Aucun utilisateur trouvé.</div>
 				{/each}
 			</div>
 		</Card>

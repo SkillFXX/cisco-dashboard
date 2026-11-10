@@ -67,7 +67,7 @@
 		{id}
 		type="button"
 		onclick={() => (isOpen = !isOpen)}
-		class="w-full flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-left text-zinc-100 hover:border-zinc-600 focus:border-cyan-500 focus:outline-none cursor-pointer"
+		class="w-full flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-left text-fg hover:border-app-border focus:border-cyan-500 focus:outline-none cursor-pointer"
 	>
 		<Calendar class="w-3.5 h-3.5 text-cyan-400 shrink-0" />
 		<span class="truncate capitalize-first">{label}</span>
@@ -76,18 +76,18 @@
 	{#if isOpen}
 		<div class="mt-2 rounded-lg border border-app-border bg-app-card p-3 space-y-3">
 			<div class="flex items-center justify-between">
-				<button type="button" onclick={() => shiftMonth(-1)} class="p-1 rounded-md hover:bg-white/[0.06] text-zinc-300 cursor-pointer" aria-label="Mois précédent">
+				<button type="button" onclick={() => shiftMonth(-1)} class="p-1 rounded-md hover:bg-fg/[0.06] text-muted cursor-pointer" aria-label="Mois précédent">
 					<ChevronLeft class="w-4 h-4" />
 				</button>
-				<span class="text-xs font-semibold text-white">{MONTHS[viewMonth]} {viewYear}</span>
-				<button type="button" onclick={() => shiftMonth(1)} class="p-1 rounded-md hover:bg-white/[0.06] text-zinc-300 cursor-pointer" aria-label="Mois suivant">
+				<span class="text-xs font-semibold text-fg">{MONTHS[viewMonth]} {viewYear}</span>
+				<button type="button" onclick={() => shiftMonth(1)} class="p-1 rounded-md hover:bg-fg/[0.06] text-muted cursor-pointer" aria-label="Mois suivant">
 					<ChevronRight class="w-4 h-4" />
 				</button>
 			</div>
 
 			<div class="grid grid-cols-7 gap-1 text-center">
 				{#each WEEKDAYS as wd}
-					<span class="text-[10px] font-medium text-zinc-500 py-1">{wd}</span>
+					<span class="text-[10px] font-medium text-subtle py-1">{wd}</span>
 				{/each}
 				{#each cells as day}
 					{#if day === null}
@@ -97,7 +97,7 @@
 						<button
 							type="button"
 							onclick={() => pickDay(day)}
-							class="aspect-square rounded-md text-xs transition-colors cursor-pointer {key === datePart ? 'bg-cyan-600 text-white font-semibold' : key === todayKey ? 'border border-cyan-500/60 text-cyan-300 hover:bg-white/[0.06]' : 'text-zinc-200 hover:bg-white/[0.06]'}"
+							class="aspect-square rounded-md text-xs transition-colors cursor-pointer {key === datePart ? 'bg-cyan-600 text-white font-semibold' : key === todayKey ? 'border border-cyan-500/60 text-cyan-300 hover:bg-fg/[0.06]' : 'text-fg hover:bg-fg/[0.06]'}"
 						>
 							{day}
 						</button>
@@ -106,13 +106,13 @@
 			</div>
 
 			<div class="flex items-center justify-between gap-2 pt-2 border-t border-app-border">
-				<label class="flex items-center gap-2 text-xs text-zinc-400">
+				<label class="flex items-center gap-2 text-xs text-muted">
 					Heure
 					<input
 						type="time"
 						value={timePart}
 						oninput={setTime}
-						class="rounded-lg border border-app-border bg-app-surface px-2 py-1 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none"
+						class="rounded-lg border border-app-border bg-app-surface px-2 py-1 text-xs text-fg focus:border-cyan-500 focus:outline-none"
 					/>
 				</label>
 				<button type="button" onclick={() => (isOpen = false)} class="px-3 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer">

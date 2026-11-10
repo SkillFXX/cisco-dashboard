@@ -88,19 +88,13 @@
 	<!-- En-tête -->
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
 		<div>
-			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-				<Clock class="w-5 h-5 text-cyan-400" />
-				<span>Absences</span>
-			</h1>
-			<p class="text-xs text-zinc-400 mt-0.5">
-				Suivi de vos absences et retards.
-			</p>
+			<h1 class="text-xl font-bold tracking-tight text-fg">Absences</h1>
 		</div>
 
 		<button
 			onclick={() => loadAbsences(true)}
 			disabled={isLoading}
-			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-white/[0.04] border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-fg/[0.04] border border-app-border text-xs font-medium text-muted hover:text-fg transition-all cursor-pointer"
 		>
 			<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 			<span>Actualiser</span>
@@ -146,7 +140,7 @@
 					<Skeleton class="h-3 w-24" />
 				</div>
 
-				<div class="border border-app-border rounded-xl overflow-hidden divide-y divide-white/5">
+				<div class="border border-app-border rounded-xl overflow-hidden divide-y divide-app-border">
 					{#each Array(4) as _}
 						<div class="p-3.5 flex items-center justify-between bg-app-surface/30">
 							<div class="flex items-center gap-3">
@@ -175,22 +169,22 @@
 			<!-- KPI 1 : Absences justifiées (en demi-journées) -->
 			<Card class="flex flex-col justify-between py-4 px-5">
 				<div class="space-y-1">
-					<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Absences justifiées</h3>
+					<h3 class="text-xs font-semibold uppercase tracking-wider text-muted">Absences justifiées</h3>
 					<div class="flex items-baseline gap-1.5">
-						<span class="text-3xl font-extrabold text-white tracking-tight">
+						<span class="text-3xl font-extrabold text-fg tracking-tight">
 							{absencesData.justifiees_demi_journees ?? 0}
 						</span>
-						<span class="text-xs text-zinc-400">
+						<span class="text-xs text-muted">
 							demi-journée{(absencesData.justifiees_demi_journees ?? 0) > 1 ? 's' : ''}
 						</span>
 					</div>
 				</div>
 
 				<div class="flex items-center justify-between pt-3 border-t border-app-border mt-3 text-xs">
-					<span class="text-zinc-500">
-						Volume : <span class="text-white font-medium">{absencesData.justifiees_heures ?? 0}h</span> ({absencesData.justifiees_nb ?? 0} créneau{(absencesData.justifiees_nb ?? 0) > 1 ? 'x' : ''})
+					<span class="text-subtle">
+						Volume : <span class="text-fg font-medium">{absencesData.justifiees_heures ?? 0}h</span> ({absencesData.justifiees_nb ?? 0} créneau{(absencesData.justifiees_nb ?? 0) > 1 ? 'x' : ''})
 					</span>
-					<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
+					<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
 						Validées
 					</span>
 				</div>
@@ -199,27 +193,27 @@
 			<!-- KPI 2 : Absences non justifiées (en demi-journées) -->
 			<Card class="flex flex-col justify-between py-4 px-5">
 				<div class="space-y-1">
-					<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Absences non justifiées</h3>
+					<h3 class="text-xs font-semibold uppercase tracking-wider text-muted">Absences non justifiées</h3>
 					<div class="flex items-baseline gap-1.5">
-						<span class="text-3xl font-extrabold text-white tracking-tight">
+						<span class="text-3xl font-extrabold text-fg tracking-tight">
 							{absencesData.injustifiees_demi_journees ?? 0}
 						</span>
-						<span class="text-xs text-zinc-400">
+						<span class="text-xs text-muted">
 							demi-journée{(absencesData.injustifiees_demi_journees ?? 0) > 1 ? 's' : ''}
 						</span>
 					</div>
 				</div>
 
 				<div class="flex items-center justify-between pt-3 border-t border-app-border mt-3 text-xs">
-					<span class="text-zinc-500">
-						Volume : <span class="text-white font-medium">{absencesData.injustifiees_heures ?? 0}h</span>
+					<span class="text-subtle">
+						Volume : <span class="text-fg font-medium">{absencesData.injustifiees_heures ?? 0}h</span>
 					</span>
 					{#if (absencesData.injustifiees_demi_journees ?? 0) > 0}
-						<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-600 text-white">
+						<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-rose-600/15 text-rose-400">
 							Justification requise
 						</span>
 					{:else}
-						<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
+						<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
 							À jour
 						</span>
 					{/if}
@@ -229,25 +223,25 @@
 			<!-- KPI 3 : Retards (en nombre) -->
 			<Card class="flex flex-col justify-between py-4 px-5">
 				<div class="space-y-1">
-					<h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Retards</h3>
+					<h3 class="text-xs font-semibold uppercase tracking-wider text-muted">Retards</h3>
 					<div class="flex items-baseline gap-1.5">
-						<span class="text-3xl font-extrabold text-white tracking-tight">
+						<span class="text-3xl font-extrabold text-fg tracking-tight">
 							{absencesData.retards_nb ?? 0}
 						</span>
-						<span class="text-xs text-zinc-400">retard{(absencesData.retards_nb ?? 0) > 1 ? 's' : ''}</span>
+						<span class="text-xs text-muted">retard{(absencesData.retards_nb ?? 0) > 1 ? 's' : ''}</span>
 					</div>
 				</div>
 
 				<div class="flex items-center justify-between pt-3 border-t border-app-border mt-3 text-xs">
-					<span class="text-zinc-500">
-						Volume total manqué : <span class="text-white font-medium">{absencesData.total_heures ?? 0}h</span>
+					<span class="text-subtle">
+						Volume total manqué : <span class="text-fg font-medium">{absencesData.total_heures ?? 0}h</span>
 					</span>
 					{#if (absencesData.retards_nb ?? 0) > 0}
-						<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-600 text-white">
+						<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-amber-600/15 text-amber-400">
 							{absencesData.retards_nb} retard{(absencesData.retards_nb > 1 ? 's' : '')}
 						</span>
 					{:else}
-						<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-100">
+						<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
 							À l'heure
 						</span>
 					{/if}
@@ -265,11 +259,11 @@
 				<button
 					onclick={() => (filterStatus = f.id)}
 					class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 {filterStatus === f.id
-						? 'bg-white/[0.08] text-white shadow-xs'
-						: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
+						? 'bg-fg/[0.08] text-fg shadow-xs'
+						: 'text-muted hover:text-fg hover:bg-fg/[0.03]'}"
 				>
 					<span>{f.label}</span>
-					<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/[0.08] text-white">
+					<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-fg/[0.08] text-fg">
 						{f.count}
 					</span>
 				</button>
@@ -278,11 +272,11 @@
 				<button
 					onclick={() => (filterStatus = 'RETARD')}
 					class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 {filterStatus === 'RETARD'
-						? 'bg-white/[0.08] text-white shadow-xs'
-						: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
+						? 'bg-fg/[0.08] text-fg shadow-xs'
+						: 'text-muted hover:text-fg hover:bg-fg/[0.03]'}"
 				>
 					<span>Retards</span>
-					<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/[0.08] text-white">
+					<span class="px-1.5 py-0.2 rounded-full text-[10px] bg-fg/[0.08] text-fg">
 						{absencesData.retards_nb}
 					</span>
 				</button>
@@ -292,7 +286,7 @@
 		<!-- Tableau unifié des créneaux d'absence -->
 		<div class="space-y-2">
 			{#if creneauxList().length === 0}
-				<div class="py-12 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+				<div class="py-12 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-subtle text-xs">
 					{#if filterStatus === 'UNJUSTIFIED'}
 						Aucune absence non justifiée enregistrée. Votre assiduité est exemplaire.
 					{:else if filterStatus === 'JUSTIFIED'}
@@ -306,7 +300,7 @@
 			{:else}
 				<div class="border border-app-border rounded-xl bg-app-card overflow-hidden">
 					<!-- En-tête des colonnes -->
-					<div class="grid grid-cols-12 px-4 py-3 border-b border-app-border text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+					<div class="grid grid-cols-12 px-4 py-3 border-b border-app-border text-[11px] font-semibold text-muted uppercase tracking-wider">
 						<div class="col-span-6 sm:col-span-5">Matière & Horaires</div>
 						<div class="hidden sm:block col-span-3">Enseignant</div>
 						<div class="col-span-3 sm:col-span-2 text-right sm:text-center">Durée</div>
@@ -314,33 +308,33 @@
 					</div>
 
 					<!-- Liste avec séparateurs fins et survol doux -->
-					<div class="divide-y divide-white/5">
+					<div class="divide-y divide-app-border">
 						{#each creneauxList() as c}
 							<div
 								role="button"
 								tabindex="0"
 								onclick={() => (selectedAbsence = c)}
 								onkeydown={(e) => { if (e.key === 'Enter') selectedAbsence = c; }}
-								class="grid grid-cols-12 items-center px-4 py-3 hover:bg-white/[0.02] transition-colors cursor-pointer gap-2 text-left"
+								class="grid grid-cols-12 items-center px-4 py-3 hover:bg-fg/[0.02] transition-colors cursor-pointer gap-2 text-left"
 							>
 								<!-- Colonne 1 : Matière & Date/Heure -->
 								<div class="col-span-6 sm:col-span-5 min-w-0 pr-2">
-									<p class="font-bold text-xs text-white truncate">
+									<p class="font-bold text-xs text-fg truncate">
 										{c.matiere || "Module non précisé"}
 									</p>
-									<p class="text-[11px] text-zinc-400 mt-0.5 truncate">
+									<p class="text-[11px] text-muted mt-0.5 truncate">
 										{formatDateFr(c.date)} • {c.heure_debut} - {c.heure_fin}
 									</p>
 								</div>
 
 								<!-- Colonne 2 : Enseignant -->
-								<div class="hidden sm:block col-span-3 text-xs text-zinc-400 truncate">
+								<div class="hidden sm:block col-span-3 text-xs text-muted truncate">
 									{c.enseignant || "Non renseigné"}
 								</div>
 
 								<!-- Colonne 3 : Durée -->
 								<div class="col-span-3 sm:col-span-2 text-right sm:text-center">
-									<span class="text-xs font-semibold text-white">
+									<span class="text-xs font-semibold text-fg">
 										{formatDuration(c.duree_heures)}
 									</span>
 								</div>
@@ -348,15 +342,15 @@
 								<!-- Colonne 4 : Statut avec badge rond plein -->
 								<div class="col-span-3 sm:col-span-2 text-right">
 									{#if c.type === 'retard' || c.statut === 'Retard'}
-										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-600 text-white inline-block">
+										<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-amber-600/15 text-amber-400 inline-block">
 											Retard
 										</span>
 									{:else if c.justifie}
-										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white inline-block">
+										<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400 inline-block">
 											Justifiée
 										</span>
 									{:else}
-										<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-600 text-white inline-block">
+										<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-rose-600/15 text-rose-400 inline-block">
 											Injustifiée
 										</span>
 									{/if}
@@ -387,13 +381,13 @@
 				<!-- En-tête -->
 				<div class="flex items-center justify-between p-5 border-b border-app-border">
 					<div>
-						<h2 class="text-base font-bold text-white">Détail de l'absence</h2>
-						<p class="text-xs text-zinc-400 mt-0.5">{formatDateFr(selectedAbsence.date)}</p>
+						<h2 class="text-base font-bold text-fg">Détail de l'absence</h2>
+						<p class="text-xs text-muted mt-0.5">{formatDateFr(selectedAbsence.date)}</p>
 					</div>
 					<button
 						type="button"
 						onclick={() => (selectedAbsence = null)}
-						class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
+						class="p-1.5 rounded-lg text-muted hover:text-fg hover:bg-fg/[0.05] transition-colors cursor-pointer"
 						aria-label="Fermer"
 					>
 						<X class="w-5 h-5" />
@@ -406,21 +400,21 @@
 					<div class="space-y-2">
 						<div>
 							{#if selectedAbsence.type === 'retard' || selectedAbsence.statut === 'Retard'}
-								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-amber-600 text-white">
+								<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-amber-600/15 text-amber-400">
 									Retard
 								</span>
 							{:else if selectedAbsence.justifie}
-								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-600 text-white">
+								<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
 									Absence Justifiée
 								</span>
 							{:else}
-								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-rose-600 text-white">
+								<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-rose-600/15 text-rose-400">
 									Absence Injustifiée
 								</span>
 							{/if}
 						</div>
 
-						<h3 class="text-lg font-bold text-white leading-snug">
+						<h3 class="text-lg font-bold text-fg leading-snug">
 							{selectedAbsence.matiere || "Module non précisé"}
 						</h3>
 					</div>
@@ -428,38 +422,38 @@
 					<!-- Carte Informations sur le créneau -->
 					<div class="p-4 rounded-xl bg-app-surface border border-app-border space-y-3">
 						<div class="flex items-center justify-between text-xs">
-							<span class="text-zinc-400 flex items-center gap-1.5">
+							<span class="text-muted flex items-center gap-1.5">
 								<Calendar class="w-4 h-4 text-cyan-400" />
 								<span>Date</span>
 							</span>
-							<span class="font-bold text-white capitalize">
+							<span class="font-bold text-fg capitalize">
 								{formatFullDate(selectedAbsence.date)}
 							</span>
 						</div>
 
-						<div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
-							<span class="text-zinc-400 flex items-center gap-1.5">
+						<div class="flex items-center justify-between text-xs pt-2 border-t border-app-border">
+							<span class="text-muted flex items-center gap-1.5">
 								<Clock class="w-4 h-4 text-cyan-400" />
 								<span>Créneau horaire</span>
 							</span>
-							<span class="font-bold text-white">
+							<span class="font-bold text-fg">
 								{selectedAbsence.heure_debut} à {selectedAbsence.heure_fin}
 							</span>
 						</div>
 
-						<div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
-							<span class="text-zinc-400">Durée décomptée</span>
-							<span class="font-bold text-white">
+						<div class="flex items-center justify-between text-xs pt-2 border-t border-app-border">
+							<span class="text-muted">Durée décomptée</span>
+							<span class="font-bold text-fg">
 								{formatDuration(selectedAbsence.duree_heures)} ({selectedAbsence.duree_heures} h)
 							</span>
 						</div>
 
-						<div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
-							<span class="text-zinc-400 flex items-center gap-1.5">
+						<div class="flex items-center justify-between text-xs pt-2 border-t border-app-border">
+							<span class="text-muted flex items-center gap-1.5">
 								<UserIcon class="w-4 h-4 text-cyan-400" />
 								<span>Enseignant</span>
 							</span>
-							<span class="font-bold text-white">
+							<span class="font-bold text-fg">
 								{selectedAbsence.enseignant || "Non renseigné"}
 							</span>
 						</div>
@@ -470,18 +464,18 @@
 						<div class="flex items-center gap-2">
 							{#if selectedAbsence.justifie}
 								<CheckCircle2 class="w-4 h-4 text-emerald-400" />
-								<h4 class="text-xs font-bold text-white uppercase tracking-wider">
+								<h4 class="text-xs font-bold text-fg uppercase tracking-wider">
 									Justificatif validé
 								</h4>
 							{:else}
 								<AlertCircle class="w-4 h-4 text-rose-400" />
-								<h4 class="text-xs font-bold text-white uppercase tracking-wider">
+								<h4 class="text-xs font-bold text-fg uppercase tracking-wider">
 									Justificatif en attente ou manquant
 								</h4>
 							{/if}
 						</div>
 
-						<p class="text-xs text-zinc-300 leading-relaxed">
+						<p class="text-xs text-muted leading-relaxed">
 							{#if selectedAbsence.justifie}
 								Ce créneau d'absence a été officiellement régularisé sur ScoDoc par l'équipe pédagogique ou le secrétariat.
 							{:else}

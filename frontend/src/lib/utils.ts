@@ -53,34 +53,19 @@ export function getMondayOfDate(d: Date, weekOffset = 0): Date {
 	return copy;
 }
 
+/** Aplat de couleur d'un cours (texte blanc), identique dans les deux thèmes. */
 export function getCourseColorStyle(type: string): string {
 	const t = (type || "").toUpperCase();
-	if (t === "TP") {
-		return "bg-[#0E3242] border-[#155E75] text-[#67E8F9]";
-	}
-	if (t === "TD") {
-		return "bg-[#1E294B] border-[#2563EB] text-[#93C5FD]";
-	}
-	if (t === "CM") {
-		return "bg-[#281B45] border-[#6366F1] text-[#C7D2FE]";
-	}
-	if (t === "DS" || t === "EXAMEN") {
-		return "bg-[#3D1422] border-[#BE123C] text-[#FDA4AF]";
-	}
-	if (t === "SAE") {
-		return "bg-[#064E3B] border-[#059669] text-[#6EE7B7]";
-	}
-	return "bg-[#1C2333] border-[#384158] text-[#E2E8F0]";
+	if (t === "TP") return "bg-c-tp text-white";
+	if (t === "TD") return "bg-c-td text-white";
+	if (t === "CM") return "bg-c-cm text-white";
+	if (t === "DS" || t === "EXAMEN") return "bg-c-ds text-white";
+	if (t === "SAE") return "bg-c-sae text-white";
+	return "bg-c-other text-white";
 }
 
 export function getCourseBadgeStyle(type: string): string {
-	const t = (type || "").toUpperCase();
-	if (t === "TP") return "bg-cyan-600 text-white";
-	if (t === "TD") return "bg-blue-600 text-white";
-	if (t === "CM") return "bg-indigo-600 text-white";
-	if (t === "DS" || t === "EXAMEN") return "bg-rose-600 text-white";
-	if (t === "SAE") return "bg-emerald-600 text-white";
-	return "bg-zinc-700 text-white";
+	return getCourseColorStyle(type);
 }
 
 export function getCourseTypeLabel(type: string): string {

@@ -42,7 +42,7 @@
 	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
 		<div
 			class={cn(
-				"relative w-full max-w-lg rounded-xl border border-app-border bg-app-card p-6 text-zinc-100 shadow-2xl animate-in zoom-in-95 duration-200",
+				"relative w-full max-w-lg rounded-xl border border-app-border bg-app-card p-6 text-fg shadow-2xl animate-in zoom-in-95 duration-200",
 				className
 			)}
 			role="dialog"
@@ -50,7 +50,7 @@
 		>
 			<button
 				onclick={close}
-				class="absolute right-4 top-4 rounded-lg p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors cursor-pointer"
+				class="absolute right-4 top-4 rounded-lg p-1 text-muted hover:bg-app-raised hover:text-fg transition-colors cursor-pointer"
 				aria-label="Fermer"
 			>
 				<X class="w-5 h-5" />
@@ -58,9 +58,9 @@
 
 			{#if title}
 				<div class="mb-5">
-					<h3 class="text-lg font-semibold tracking-tight text-white">{title}</h3>
+					<h3 class="text-lg font-semibold tracking-tight text-fg">{title}</h3>
 					{#if description}
-						<p class="text-sm text-zinc-400 mt-1">{description}</p>
+						<p class="text-sm text-muted mt-1">{description}</p>
 					{/if}
 				</div>
 			{/if}

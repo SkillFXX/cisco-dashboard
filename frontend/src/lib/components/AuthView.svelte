@@ -99,15 +99,15 @@
 	}
 </script>
 
-<div class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-app-bg text-zinc-100 font-sans">
+<div class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-app-bg text-fg font-sans">
 	<div class="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
 		<div class="inline-flex items-center justify-center">
 			<img src="/icon.png" alt="Cisco" class="w-16 h-16 rounded-xl object-contain shadow-2xl" />
 		</div>
-		<h1 class="text-3xl font-extrabold tracking-tight text-white">
+		<h1 class="text-3xl font-extrabold tracking-tight text-fg">
 			CISCO DASHBOARD
 		</h1>
-		<p class="text-sm text-zinc-400">
+		<p class="text-sm text-muted">
 			Le tableau de bord unifié pour étudiants en <strong>BUT Réseaux & Télécoms</strong>
 		</p>
 		<div class="flex items-center justify-center gap-2 pt-1">
@@ -125,14 +125,14 @@
 				<button
 					type="button"
 					onclick={() => { mode = "login"; error = ""; }}
-					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'login' ? 'bg-white/[0.08] text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
+					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'login' ? 'bg-fg/[0.08] text-fg shadow-xs' : 'text-muted hover:text-fg'}"
 				>
 					Se connecter
 				</button>
 				<button
 					type="button"
 					onclick={() => { mode = "register"; error = ""; }}
-					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'register' ? 'bg-white/[0.08] text-white shadow-xs' : 'text-zinc-400 hover:text-zinc-200'}"
+					class="py-2 text-xs font-semibold rounded-md transition-all cursor-pointer {mode === 'register' ? 'bg-fg/[0.08] text-fg shadow-xs' : 'text-muted hover:text-fg'}"
 				>
 					Créer un compte
 				</button>
@@ -155,30 +155,30 @@
 				<!-- Formulaire Connexion -->
 				<form onsubmit={handleLogin} class="space-y-4">
 					<div>
-						<label for="l-email" class="block text-xs font-medium text-zinc-300 mb-1">Adresse email</label>
+						<label for="l-email" class="block text-xs font-medium text-muted mb-1">Adresse email</label>
 						<div class="relative">
-							<Mail class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+							<Mail class="w-4 h-4 text-subtle absolute left-3 top-2.5" />
 							<input
 								id="l-email"
 								type="email"
 								bind:value={loginEmail}
 								required
-								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								placeholder="votre.email@etu.umontpellier.fr"
 							/>
 						</div>
 					</div>
 
 					<div>
-						<label for="l-pwd" class="block text-xs font-medium text-zinc-300 mb-1">Mot de passe</label>
+						<label for="l-pwd" class="block text-xs font-medium text-muted mb-1">Mot de passe</label>
 						<div class="relative">
-							<Lock class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+							<Lock class="w-4 h-4 text-subtle absolute left-3 top-2.5" />
 							<input
 								id="l-pwd"
 								type="password"
 								bind:value={loginPassword}
 								required
-								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								placeholder="••••••••••••"
 							/>
 						</div>
@@ -192,7 +192,7 @@
 						<button
 							type="button"
 							onclick={() => { mode = "forgot"; error = ""; info = ""; }}
-							class="w-full text-center text-xs text-zinc-400 hover:text-cyan-400 transition-colors cursor-pointer"
+							class="w-full text-center text-xs text-muted hover:text-cyan-400 transition-colors cursor-pointer"
 						>
 							Mot de passe oublié ?
 						</button>
@@ -202,37 +202,37 @@
 				<!-- Formulaire Inscription minimaliste (Email + Mot de passe uniquement) -->
 				<form onsubmit={handleRegister} class="space-y-4">
 					<div>
-						<label for="r-email" class="block text-xs font-medium text-zinc-300 mb-1">Adresse email</label>
+						<label for="r-email" class="block text-xs font-medium text-muted mb-1">Adresse email</label>
 						<div class="relative">
-							<Mail class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+							<Mail class="w-4 h-4 text-subtle absolute left-3 top-2.5" />
 							<input
 								id="r-email"
 								type="email"
 								bind:value={regEmail}
 								required
-								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								placeholder="votre.email@etu.umontpellier.fr"
 							/>
 						</div>
 					</div>
 
 					<div>
-						<label for="r-pwd" class="block text-xs font-medium text-zinc-300 mb-1">Mot de passe</label>
+						<label for="r-pwd" class="block text-xs font-medium text-muted mb-1">Mot de passe</label>
 						<div class="relative">
-							<Lock class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+							<Lock class="w-4 h-4 text-subtle absolute left-3 top-2.5" />
 							<input
 								id="r-pwd"
 								type="password"
 								bind:value={regPassword}
 								required
 								minlength="8"
-								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								placeholder="••••••••••••"
 							/>
 						</div>
 					</div>
 
-					<p class="text-[11px] text-zinc-400 leading-relaxed pt-1">
+					<p class="text-[11px] text-muted leading-relaxed pt-1">
 						Votre nom, prénom et accès aux services (ScoDoc, Moodle, ADE) pourront être configurés ou modifiés à tout moment dans les Paramètres.
 					</p>
 
@@ -243,39 +243,39 @@
 				</form>
 			{:else if mode === "forgot"}
 				<form onsubmit={handleForgot} class="space-y-4">
-					<p class="text-xs text-zinc-400 leading-relaxed">
+					<p class="text-xs text-muted leading-relaxed">
 						Saisissez l'adresse email de votre compte : un lien de réinitialisation vous sera envoyé.
 					</p>
 					<div class="relative">
-						<Mail class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+						<Mail class="w-4 h-4 text-subtle absolute left-3 top-2.5" />
 						<input
 							type="email"
 							bind:value={forgotEmail}
 							required
 							aria-label="Adresse email"
-							class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+							class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							placeholder="votre.email@etu.umontpellier.fr"
 						/>
 					</div>
 					<Button variant="cisco" type="submit" class="w-full" disabled={isSubmitting}>
 						{isSubmitting ? "Envoi..." : "Envoyer le lien"}
 					</Button>
-					<button type="button" onclick={() => { mode = "login"; error = ""; info = ""; }} class="w-full text-center text-xs text-zinc-400 hover:text-white cursor-pointer">
+					<button type="button" onclick={() => { mode = "login"; error = ""; info = ""; }} class="w-full text-center text-xs text-muted hover:text-fg cursor-pointer">
 						Retour à la connexion
 					</button>
 				</form>
 			{:else if mode === "reset"}
 				<form onsubmit={handleReset} class="space-y-4">
-					<p class="text-xs text-zinc-400 leading-relaxed">Choisissez votre nouveau mot de passe (8 caractères minimum).</p>
+					<p class="text-xs text-muted leading-relaxed">Choisissez votre nouveau mot de passe (8 caractères minimum).</p>
 					<div class="relative">
-						<Lock class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+						<Lock class="w-4 h-4 text-subtle absolute left-3 top-2.5" />
 						<input
 							type="password"
 							bind:value={newPassword}
 							required
 							minlength="8"
 							aria-label="Nouveau mot de passe"
-							class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none"
+							class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							placeholder="Nouveau mot de passe"
 						/>
 					</div>

@@ -79,4 +79,5 @@ Lors de la création de votre compte (ou dans l'onglet **Services & Paramètres*
 - **Notifications** : alertes personnalisées (nouvelle note, rappel X heures avant un devoir fait ou non, récapitulatif quotidien) par email ou webhook Discord.
 - **Courbe d'évolution** de la moyenne et du rang (un point par jour), alimentée automatiquement.
 - **Préchargement en arrière-plan** : toutes les 5 minutes, les données ScoDoc, Moodle et emploi du temps de chaque utilisateur sont renouvelées avant l'expiration du cache (15 min), pour un affichage instantané à l'ouverture.
+- **Thème** clair, sombre ou automatique (réglable depuis l'en-tête et les Paramètres).
 - **PWA** : l'application est installable sur mobile et responsive.

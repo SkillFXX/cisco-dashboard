@@ -22,12 +22,12 @@
 	] as const;
 	const STATE_LABEL: Record<ServiceState, string> = { ok: "Connecté", error: "Erreur", unconfigured: "Non configuré", loading: "…" };
 	const STATE_BADGE: Record<ServiceState, string> = {
-		ok: "bg-emerald-600 text-white",
-		error: "bg-red-600/90 text-white",
-		unconfigured: "bg-zinc-800 text-zinc-400",
-		loading: "bg-zinc-800 text-zinc-500"
+		ok: "bg-emerald-600/15 text-emerald-400",
+		error: "bg-red-600/15 text-red-400",
+		unconfigured: "bg-app-raised text-muted",
+		loading: "bg-app-raised text-subtle"
 	};
-	const STATE_DOT: Record<ServiceState, string> = { ok: "bg-emerald-500", error: "bg-red-500", unconfigured: "bg-zinc-600", loading: "bg-zinc-700" };
+	const STATE_DOT: Record<ServiceState, string> = { ok: "bg-emerald-500", error: "bg-red-500", unconfigured: "bg-app-raised2", loading: "bg-app-raised2" };
 
 	let services = $state<Record<string, ServiceInfo>>({
 		scodoc: { state: "loading", message: null },
@@ -88,14 +88,14 @@
 				<img src="/icon.png" alt="Cisco Dashboard" class="w-8 h-8 rounded-lg object-contain shadow-sm shrink-0" />
 				{#if !collapsed}
 					<div class="flex items-center gap-2 min-w-0">
-						<span class="font-extrabold text-base tracking-tight text-white font-sans">Cisco</span>
-						<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">Dashboard</span>
+						<span class="font-extrabold text-base tracking-tight text-fg font-sans">Cisco</span>
+						<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-app-raised text-muted">Dashboard</span>
 					</div>
 				{/if}
 			</div>
 			<button
 				onclick={toggle}
-				class="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer shrink-0"
+				class="p-1.5 rounded-lg text-subtle hover:text-fg hover:bg-fg/[0.06] transition-colors cursor-pointer shrink-0"
 				aria-label={collapsed ? "Déplier le menu" : "Replier le menu"}
 				title={collapsed ? "Déplier le menu" : "Replier le menu"}
 			>
@@ -113,15 +113,15 @@
 					aria-label={item.label}
 					aria-current={isActive ? "page" : undefined}
 					class="w-full flex items-center rounded-lg text-xs font-medium transition-all group cursor-pointer {collapsed ? 'justify-center py-2.5' : 'justify-between px-3.5 py-2.5'} {isActive
-						? 'bg-white/[0.08] text-white'
-						: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
+						? 'bg-fg/[0.08] text-fg'
+						: 'text-muted hover:text-fg hover:bg-fg/[0.03]'}"
 				>
 					<div class="flex items-center gap-3">
-						<Icon class="w-4 h-4 shrink-0 transition-colors {isActive ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}" />
+						<Icon class="w-4 h-4 shrink-0 transition-colors {isActive ? 'text-fg' : 'text-muted group-hover:text-fg'}" />
 						{#if !collapsed}<span class="whitespace-nowrap">{item.label}</span>{/if}
 					</div>
 					{#if isActive && !collapsed}
-						<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+						<div class="w-1.5 h-1.5 rounded-full bg-fg"></div>
 					{/if}
 				</button>
 			{/each}
@@ -138,7 +138,7 @@
 			</div>
 		{:else}
 			<div class="p-3 rounded-lg bg-app-card border border-app-border text-xs space-y-2">
-				<div class="font-semibold text-zinc-300 text-[11px] tracking-wide">Services connectés</div>
+				<div class="font-semibold text-muted text-[11px] tracking-wide">Services connectés</div>
 				<div class="space-y-1.5 text-[11px]">
 					{#each SERVICES as svc}
 						<button
@@ -147,7 +147,7 @@
 							title={serviceTitle(svc.label, services[svc.id])}
 							class="w-full flex items-center justify-between gap-2 {services[svc.id].state === 'ok' ? 'cursor-default' : 'cursor-pointer'}"
 						>
-							<span class="text-zinc-400">{svc.label}</span>
+							<span class="text-muted">{svc.label}</span>
 							<span class="px-2.5 py-0.5 rounded-full font-medium text-[10px] {STATE_BADGE[services[svc.id].state]}">
 								{STATE_LABEL[services[svc.id].state]}
 							</span>
@@ -162,7 +162,7 @@
 				onclick={() => auth.logout()}
 				title={collapsed ? "Déconnexion" : undefined}
 				aria-label="Déconnexion"
-				class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-white/[0.04] transition-colors cursor-pointer"
+				class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium text-muted hover:text-red-400 hover:bg-fg/[0.04] transition-colors cursor-pointer"
 			>
 				<LogOut class="w-3.5 h-3.5" />
 				{#if !collapsed}<span>Déconnexion</span>{/if}

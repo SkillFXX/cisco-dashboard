@@ -1,6 +1,10 @@
 <script lang="ts">
 	import './layout.css';
 	import type { LayoutProps } from './$types';
+	import { onMount } from 'svelte';
+	import { theme } from '$lib/stores/theme.svelte';
+
+	onMount(() => theme.init());
 
 	let { children }: LayoutProps = $props();
 </script>

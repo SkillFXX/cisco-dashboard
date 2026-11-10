@@ -3,6 +3,7 @@
 	import Card from "../Card.svelte";
 	import Skeleton from "../Skeleton.svelte";
 	import Button from "../Button.svelte";
+	import ThemeToggle from "../ThemeToggle.svelte";
 	import { api } from "$lib/api";
 	import { auth } from "$lib/stores/auth.svelte";
 	import {
@@ -18,6 +19,7 @@
 		Calendar,
 		ShieldCheck,
 		Sparkles,
+		Palette,
 		RefreshCw
 	} from "lucide-svelte";
 
@@ -54,10 +56,10 @@
 	let testFeedback = $state<{ service: string; success: boolean; message: string } | null>(null);
 
 	function statusOf(verified: boolean, configured: boolean, error: string) {
-		if (verified) return { label: "Connecté", cls: "bg-emerald-600 text-white" };
-		if (configured && error) return { label: "Erreur", cls: "bg-red-600 text-white" };
-		if (configured) return { label: "À vérifier", cls: "bg-amber-600 text-white" };
-		return { label: "Non configuré", cls: "bg-zinc-700 text-white" };
+		if (verified) return { label: "Connecté", cls: "bg-emerald-600/15 text-emerald-400" };
+		if (configured && error) return { label: "Erreur", cls: "bg-red-600/15 text-red-400" };
+		if (configured) return { label: "À vérifier", cls: "bg-amber-600/15 text-amber-400" };
+		return { label: "Non configuré", cls: "bg-app-raised text-muted" };
 	}
 
 	let serviceStatuses = $derived([
@@ -271,13 +273,7 @@
 	<!-- En-tête -->
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
 		<div>
-			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-				<Settings class="w-5 h-5 text-cyan-400" />
-				<span>Paramètres</span>
-			</h1>
-			<p class="text-xs text-zinc-400 mt-0.5">
-				Votre compte, puis les services (ScoDoc, Moodle, emploi du temps) dont le tableau de bord récupère les données.
-			</p>
+			<h1 class="text-xl font-bold tracking-tight text-fg">Paramètres</h1>
 		</div>
 
 		<button
@@ -312,11 +308,23 @@
 			{/each}
 		</div>
 	{:else}
+		<!-- Apparence -->
+		<section class="space-y-3">
+			<div class="flex items-center gap-2 pb-1 border-b border-app-border">
+				<Palette class="w-4 h-4 text-cyan-400" />
+				<h2 class="text-sm font-bold text-fg uppercase tracking-wider">Apparence</h2>
+			</div>
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+				<p class="text-xs text-muted">Thème de l'interface. « Automatique » suit le réglage de votre appareil.</p>
+				<ThemeToggle />
+			</div>
+		</section>
+
 		<!-- Section 1 : Mon compte -->
 		<section class="space-y-4">
 			<div class="flex items-center gap-2 pb-1 border-b border-app-border">
 				<User class="w-4 h-4 text-cyan-400" />
-				<h2 class="text-sm font-bold text-white uppercase tracking-wider">Mon compte</h2>
+				<h2 class="text-sm font-bold text-fg uppercase tracking-wider">Mon compte</h2>
 			</div>
 
 			<form onsubmit={saveProfile} class="space-y-4">
@@ -341,63 +349,63 @@
 								<ShieldCheck class="w-4 h-4" />
 							</div>
 							<div>
-								<h3 class="font-bold text-white text-sm">Profil</h3>
-								<p class="text-xs text-zinc-400">Identité et adresse email</p>
+								<h3 class="font-bold text-fg text-sm">Profil</h3>
+								<p class="text-xs text-muted">Identité et adresse email</p>
 							</div>
 						</div>
 					</div>
 
 					<div class="space-y-3">
-						<div class="flex items-center justify-between p-3.5 rounded-xl border border-app-border bg-app-surface/50">
+						<div class="flex items-center justify-between">
 							<div>
-								<span class="text-[11px] font-medium text-zinc-400 block">Nom & Prénom</span>
-								<span class="text-sm font-bold text-white">
+								<span class="text-[11px] font-medium text-muted block">Nom & Prénom</span>
+								<span class="text-sm font-bold text-fg">
 									{auth.user?.full_name || "En attente de synchronisation"}
 								</span>
 							</div>
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {auth.user?.full_name ? 'bg-emerald-600 text-white' : 'bg-zinc-700 text-white'}">
+							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {auth.user?.full_name ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-muted'}">
 								{auth.user?.full_name ? "Automatique" : "Non détecté"}
 							</span>
 						</div>
 
 						<div>
-							<label for="p-email" class="block text-xs font-medium text-zinc-400 mb-1">Adresse email du compte</label>
+							<label for="p-email" class="block text-xs font-medium text-muted mb-1">Adresse email du compte</label>
 							<input
 								id="p-email"
 								type="email"
 								bind:value={email}
 								required
 								placeholder="prenom.nom@etu.umontpellier.fr"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 					</div>
 
 					<!-- Modification du mot de passe -->
 					<div class="pt-3 border-t border-app-border">
-						<h4 class="text-xs font-semibold text-zinc-300 mb-2 flex items-center gap-1.5">
-							<KeyRound class="w-3.5 h-3.5 text-zinc-500" />
+						<h4 class="text-xs font-semibold text-muted mb-2 flex items-center gap-1.5">
+							<KeyRound class="w-3.5 h-3.5 text-subtle" />
 							<span>Changement de mot de passe (optionnel)</span>
 						</h4>
 						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
-								<label for="p-curpwd" class="block text-[11px] text-zinc-400 mb-1">Mot de passe actuel</label>
+								<label for="p-curpwd" class="block text-[11px] text-muted mb-1">Mot de passe actuel</label>
 								<input
 									id="p-curpwd"
 									type="password"
 									bind:value={current_password}
 									placeholder="••••••••••••"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
-								<label for="p-newpwd" class="block text-[11px] text-zinc-400 mb-1">Nouveau mot de passe</label>
+								<label for="p-newpwd" class="block text-[11px] text-muted mb-1">Nouveau mot de passe</label>
 								<input
 									id="p-newpwd"
 									type="password"
 									bind:value={new_password}
 									placeholder="Minimum 8 caractères"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 						</div>
@@ -416,7 +424,7 @@
 		<section class="space-y-4">
 			<div class="flex items-center gap-2 pb-1 border-b border-app-border">
 				<Link2 class="w-4 h-4 text-cyan-400" />
-				<h2 class="text-sm font-bold text-white uppercase tracking-wider">Services</h2>
+				<h2 class="text-sm font-bold text-fg uppercase tracking-wider">Services</h2>
 			</div>
 
 			<form onsubmit={saveServices} class="space-y-5">
@@ -436,10 +444,10 @@
 
 				<!-- Résumé : état des trois services -->
 				<div class="flex flex-wrap items-center gap-2 text-xs">
-					<span class="text-zinc-400 mr-1"><strong class="text-white">{connectedCount}</strong> service{connectedCount > 1 ? "s" : ""} sur 3 connecté{connectedCount > 1 ? "s" : ""}</span>
+					<span class="text-muted mr-1"><strong class="text-fg">{connectedCount}</strong> service{connectedCount > 1 ? "s" : ""} sur 3 connecté{connectedCount > 1 ? "s" : ""}</span>
 					{#each serviceStatuses as svc}
-						<a href="#service-{svc.id}" class="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-surface px-2.5 py-1 text-[11px] text-zinc-300 hover:text-white">
-							<span class="w-1.5 h-1.5 rounded-full {svc.label === 'Connecté' ? 'bg-emerald-500' : svc.label === 'Erreur' ? 'bg-red-500' : svc.label === 'À vérifier' ? 'bg-amber-500' : 'bg-zinc-600'}"></span>
+						<a href="#service-{svc.id}" class="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-surface px-2.5 py-1 text-[11px] text-muted hover:text-fg">
+							<span class="w-1.5 h-1.5 rounded-full {svc.label === 'Connecté' ? 'bg-emerald-500' : svc.label === 'Erreur' ? 'bg-red-500' : svc.label === 'À vérifier' ? 'bg-amber-500' : 'bg-app-raised2'}"></span>
 							{svc.name}
 						</a>
 					{/each}
@@ -453,8 +461,8 @@
 								<FileText class="w-4 h-4" />
 							</div>
 							<div>
-								<h3 class="font-bold text-white text-sm">ScoDoc</h3>
-								<p class="text-xs text-zinc-400">Notes, moyennes & absences</p>
+								<h3 class="font-bold text-fg text-sm">ScoDoc</h3>
+								<p class="text-xs text-muted">Notes, moyennes & absences</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
@@ -466,7 +474,7 @@
 								onclick={() => testConnection("scodoc")}
 								disabled={testingService === "scodoc" || !scodoc_username}
 								title="Teste la connexion et l'enregistre si elle fonctionne"
-								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+								class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
 							>
 								{#if testingService === "scodoc"}
 									<RefreshCw class="w-3 h-3 animate-spin" />
@@ -478,39 +486,39 @@
 						</div>
 					</div>
 
-					<p class="text-[11px] leading-relaxed text-zinc-500">Utilisez les mêmes identifiants que pour votre ENT (compte CAS de l'université). Ils sont chiffrés sur le serveur et servent uniquement à récupérer vos notes.</p>
+					<p class="text-[11px] leading-relaxed text-subtle">Utilisez les mêmes identifiants que pour votre ENT (compte CAS de l'université). Ils sont chiffrés sur le serveur et servent uniquement à récupérer vos notes.</p>
 
 					{@render feedback("scodoc", scodoc_last_error)}
 
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
-							<label for="scodoc-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de ScoDoc</label>
+							<label for="scodoc-url" class="block text-xs font-medium text-muted mb-1">URL de ScoDoc</label>
 							<input
 								id="scodoc-url"
 								type="text"
 								bind:value={scodoc_url}
 								placeholder="https://wscodoc.iutbeziers.fr"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label for="scodoc-user" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant CAS</label>
+							<label for="scodoc-user" class="block text-xs font-medium text-muted mb-1">Identifiant CAS</label>
 							<input
 								id="scodoc-user"
 								type="text"
 								bind:value={scodoc_username}
 								placeholder="prenom.nom"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label for="scodoc-pwd" class="block text-xs font-medium text-zinc-400 mb-1">Mot de passe CAS</label>
+							<label for="scodoc-pwd" class="block text-xs font-medium text-muted mb-1">Mot de passe CAS</label>
 							<input
 								id="scodoc-pwd"
 								type="password"
 								bind:value={scodoc_password}
 								placeholder={scodoc_configured ? "Enregistré — laisser vide pour le conserver" : "••••••••••••"}
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 					</div>
@@ -524,8 +532,8 @@
 								<BookOpen class="w-4 h-4" />
 							</div>
 							<div>
-								<h3 class="font-bold text-white text-sm">Moodle</h3>
-								<p class="text-xs text-zinc-400">Devoirs et cours en ligne</p>
+								<h3 class="font-bold text-fg text-sm">Moodle</h3>
+								<p class="text-xs text-muted">Devoirs et cours en ligne</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
@@ -537,7 +545,7 @@
 								onclick={() => testConnection("moodle")}
 								disabled={testingService === "moodle" || (!moodle_username && !moodle_token)}
 								title="Teste la connexion et l'enregistre si elle fonctionne"
-								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+								class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
 							>
 								{#if testingService === "moodle"}
 									<RefreshCw class="w-3 h-3 animate-spin" />
@@ -549,45 +557,45 @@
 						</div>
 					</div>
 
-					<p class="text-[11px] leading-relaxed text-zinc-500">Identifiant et mot de passe de votre compte Moodle. Le jeton personnel est une alternative facultative, à utiliser si la connexion par mot de passe ne fonctionne pas.</p>
+					<p class="text-[11px] leading-relaxed text-subtle">Identifiant et mot de passe de votre compte Moodle. Le jeton personnel est une alternative facultative, à utiliser si la connexion par mot de passe ne fonctionne pas.</p>
 
 					{@render feedback("moodle", moodle_last_error)}
 
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 						<div>
-							<label for="moodle-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de Moodle</label>
+							<label for="moodle-url" class="block text-xs font-medium text-muted mb-1">URL de Moodle</label>
 							<input
 								id="moodle-url"
 								type="text"
 								bind:value={moodle_url}
 								placeholder="https://moodle-but.iutbeziers.fr/moodle"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label for="moodle-user" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant Moodle</label>
+							<label for="moodle-user" class="block text-xs font-medium text-muted mb-1">Identifiant Moodle</label>
 							<input
 								id="moodle-user"
 								type="text"
 								bind:value={moodle_username}
 								placeholder="prenom.nom"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label for="moodle-pwd" class="block text-xs font-medium text-zinc-400 mb-1">Mot de passe Moodle</label>
+							<label for="moodle-pwd" class="block text-xs font-medium text-muted mb-1">Mot de passe Moodle</label>
 							<input
 								id="moodle-pwd"
 								type="password"
 								bind:value={moodle_password}
 								placeholder={moodle_configured ? "Enregistré — laisser vide pour le conserver" : "••••••••••••"}
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 					</div>
 
 					<details class="group">
-						<summary class="text-xs font-medium text-zinc-400 hover:text-white cursor-pointer select-none">
+						<summary class="text-xs font-medium text-muted hover:text-fg cursor-pointer select-none">
 							Avancé : utiliser un jeton personnel
 						</summary>
 						<div class="pt-2 space-y-1">
@@ -597,9 +605,9 @@
 								bind:value={moodle_token}
 								aria-label="Jeton personnel Moodle"
 								placeholder="Ex: 8f9b4c2e1a3d5e7f9a0b1c2d3e4f5a6b"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
-							<p class="text-[11px] text-zinc-500">Sur Moodle : Préférences › Clés de sécurité › « Moodle mobile web service ».</p>
+							<p class="text-[11px] text-subtle">Sur Moodle : Préférences › Clés de sécurité › « Moodle mobile web service ».</p>
 						</div>
 					</details>
 				</Card>
@@ -612,8 +620,8 @@
 								<Calendar class="w-4 h-4" />
 							</div>
 							<div>
-								<h3 class="font-bold text-white text-sm">Emploi du temps</h3>
-								<p class="text-xs text-zinc-400">Planning des cours et évaluations</p>
+								<h3 class="font-bold text-fg text-sm">Emploi du temps</h3>
+								<p class="text-xs text-muted">Planning des cours et évaluations</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
@@ -625,7 +633,7 @@
 								onclick={() => testConnection("ical")}
 								disabled={testingService === "ical" || !ical_url}
 								title="Teste la connexion et l'enregistre si elle fonctionne"
-								class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+								class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
 							>
 								{#if testingService === "ical"}
 									<RefreshCw class="w-3 h-3 animate-spin" />
@@ -637,20 +645,20 @@
 						</div>
 					</div>
 
-					<p class="text-[11px] leading-relaxed text-zinc-500">Dans ADE Campus / UM Net, exportez votre planning au format iCal (.ics) puis collez ici le lien obtenu.</p>
+					<p class="text-[11px] leading-relaxed text-subtle">Dans ADE Campus / UM Net, exportez votre planning au format iCal (.ics) puis collez ici le lien obtenu.</p>
 
 					{@render feedback("ical", ical_last_error)}
 
 					<div>
-						<label for="ical-url" class="block text-xs font-medium text-zinc-400 mb-1">Lien iCal (.ics)</label>
+						<label for="ical-url" class="block text-xs font-medium text-muted mb-1">Lien iCal (.ics)</label>
 						<div class="flex items-center gap-2">
-							<Link2 class="w-4 h-4 text-zinc-500 shrink-0" />
+							<Link2 class="w-4 h-4 text-subtle shrink-0" />
 							<input
 								id="ical-url"
 								type="url"
 								bind:value={ical_url}
 								placeholder="https://edt.umontpellier.fr/.../export.ics"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 					</div>

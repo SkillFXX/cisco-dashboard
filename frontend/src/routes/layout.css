@@ -1,32 +1,114 @@
 @import 'tailwindcss';
 
-@theme {
+@theme inline {
 	--font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-	/* Palette sémantique globale Cisco Dashboard */
-	--color-app-bg: #0A0A10;
-	--color-app-card: #121318;
-	--color-app-surface: #0A0A10;
-	--color-app-border: #1E202B;
-	--color-app-hover: #161820;
+	/* Palette sémantique : les valeurs réelles dépendent du thème (voir plus bas) */
+	--color-app-bg: var(--app-bg);
+	--color-app-card: var(--app-card);
+	--color-app-surface: var(--app-surface);
+	--color-app-border: var(--app-border);
+	--color-app-hover: var(--app-hover);
+	--color-app-raised: var(--app-raised);
+	--color-app-raised2: var(--app-raised2);
+	--color-fg: var(--fg);
+	--color-muted: var(--fg-muted);
+	--color-subtle: var(--fg-subtle);
+
+	/* Couleurs des types de cours (aplats lisibles dans les deux thèmes) */
+	--color-c-cm: #6d5bd0;
+	--color-c-td: #2f6fd6;
+	--color-c-tp: #0f8aa6;
+	--color-c-ds: #d1385b;
+	--color-c-sae: #1f9d6b;
+	--color-c-other: #5b6678;
+}
+
+/* ---------- Thème sombre (par défaut) ---------- */
+:root {
+	color-scheme: dark;
+	--app-bg: #0b0c11;
+	--app-card: #13141a;
+	--app-surface: #0e0f14;
+	--app-border: #22242e;
+	--app-hover: #191b23;
+	--app-raised: #23252f;
+	--app-raised2: #343746;
+	--fg: #f4f4f6;
+	--fg-muted: #a3a6b4;
+	--fg-subtle: #70738a;
+}
+
+/* ---------- Thème clair ---------- */
+:root[data-theme='light'] {
+	color-scheme: light;
+	--app-bg: #f4f5f8;
+	--app-card: #ffffff;
+	--app-surface: #f1f3f7;
+	--app-border: #e2e5ec;
+	--app-hover: #f3f4f8;
+	--app-raised: #e8ebf1;
+	--app-raised2: #d9dde6;
+	--fg: #12141c;
+	--fg-muted: #4b5163;
+	--fg-subtle: #747a8c;
+}
+
+/* ---------- Automatique : suit le système quand aucun thème n'est forcé ---------- */
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme='dark']):not([data-theme='light']) {
+		color-scheme: light;
+		--app-bg: #f4f5f8;
+		--app-card: #ffffff;
+		--app-surface: #f1f3f7;
+		--app-border: #e2e5ec;
+		--app-hover: #f3f4f8;
+		--app-raised: #e8ebf1;
+		--app-raised2: #d9dde6;
+		--fg: #12141c;
+		--fg-muted: #4b5163;
+		--fg-subtle: #747a8c;
+	}
+}
+
+/* Textes colorés (nuances 300/400 pensées pour le sombre) : on les fonce en thème clair pour garder le contraste */
+:root[data-theme='light'] {
+	--color-cyan-300: #0e7490; --color-cyan-400: #0e7490;
+	--color-emerald-300: #047857; --color-emerald-400: #047857;
+	--color-rose-300: #be123c; --color-rose-400: #be123c; --color-rose-200: #9f1239;
+	--color-red-300: #b91c1c; --color-red-400: #b91c1c;
+	--color-amber-200: #92400e; --color-amber-300: #b45309; --color-amber-400: #b45309;
+	--color-blue-300: #1d4ed8; --color-blue-400: #1d4ed8;
+	--color-violet-300: #6d28d9; --color-violet-400: #6d28d9;
+	--color-purple-300: #7e22ce; --color-purple-400: #7e22ce;
+	--color-indigo-300: #4338ca; --color-indigo-400: #4338ca;
+	--color-orange-300: #c2410c; --color-orange-400: #c2410c;
+	--color-sky-300: #0369a1; --color-sky-400: #0369a1;
+}
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme='dark']):not([data-theme='light']) {
+		--color-cyan-300: #0e7490; --color-cyan-400: #0e7490;
+		--color-emerald-300: #047857; --color-emerald-400: #047857;
+		--color-rose-300: #be123c; --color-rose-400: #be123c; --color-rose-200: #9f1239;
+		--color-red-300: #b91c1c; --color-red-400: #b91c1c;
+		--color-amber-200: #92400e; --color-amber-300: #b45309; --color-amber-400: #b45309;
+		--color-blue-300: #1d4ed8; --color-blue-400: #1d4ed8;
+		--color-violet-300: #6d28d9; --color-violet-400: #6d28d9;
+		--color-purple-300: #7e22ce; --color-purple-400: #7e22ce;
+		--color-indigo-300: #4338ca; --color-indigo-400: #4338ca;
+		--color-orange-300: #c2410c; --color-orange-400: #c2410c;
+		--color-sky-300: #0369a1; --color-sky-400: #0369a1;
+	}
 }
 
 @layer base {
-	:root {
-		--app-bg: #0A0A10;
-		--app-card: #121318;
-		--app-surface: #0A0A10;
-		--app-border: #1E202B;
-		--app-hover: #161820;
-	}
-
 	*, *::before, *::after, input, button, select, textarea {
 		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	}
 	html, body {
 		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 		background-color: var(--app-bg);
-		color: #E2E8F0;
+		color: var(--fg);
 	}
 }
 

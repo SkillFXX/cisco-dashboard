@@ -201,14 +201,14 @@
 	<!-- Modal Container -->
 	<div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
 		<div
-			class="relative w-full max-w-2xl rounded-2xl border border-app-border bg-app-card p-6 sm:p-8 text-zinc-100 shadow-2xl animate-in zoom-in-95 duration-200 my-8"
+			class="relative w-full max-w-2xl rounded-2xl border border-app-border bg-app-card p-6 sm:p-8 text-fg shadow-2xl animate-in zoom-in-95 duration-200 my-8"
 			role="dialog"
 			aria-modal="true"
 		>
 			<!-- Close button -->
 			<button
 				onclick={handleClose}
-				class="absolute right-5 top-5 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer"
+				class="absolute right-5 top-5 rounded-lg p-1.5 text-muted hover:bg-app-raised hover:text-fg transition-colors cursor-pointer"
 				aria-label="Fermer"
 			>
 				<X class="w-5 h-5" />
@@ -220,18 +220,18 @@
 					<Sparkles class="w-3.5 h-3.5" />
 					<span>Assistant de configuration</span>
 				</div>
-				<h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">
+				<h2 class="text-xl sm:text-2xl font-black text-fg tracking-tight">
 					Connexion de vos services
 				</h2>
-				<p class="text-xs text-zinc-400">
+				<p class="text-xs text-muted">
 					Reliez vos services un par un pour synchroniser vos données.
 				</p>
 			</div>
 
 			<!-- Étape courante (lisible aussi sur mobile) -->
-			<p class="text-[11px] font-medium text-zinc-400 mb-2">
+			<p class="text-[11px] font-medium text-muted mb-2">
 				{#if currentStep < 4}
-					Étape {currentStep} sur 3 · <span class="text-white">{["ScoDoc", "Moodle", "Emploi du temps"][currentStep - 1]}</span>
+					Étape {currentStep} sur 3 · <span class="text-fg">{["ScoDoc", "Moodle", "Emploi du temps"][currentStep - 1]}</span>
 				{:else}
 					Récapitulatif
 				{/if}
@@ -241,46 +241,46 @@
 			<div class="grid grid-cols-4 gap-2 mb-6 pb-4 border-b border-app-border">
 				<!-- Step 1 -->
 				<div class="flex items-center gap-2 text-xs">
-					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 1 ? 'bg-cyan-600 text-white' : scodocSaved ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}">
+					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 1 ? 'bg-cyan-600 text-white' : scodocSaved ? 'bg-emerald-600 text-white' : 'bg-app-raised text-muted'}">
 						{#if scodocSaved}
 							<Check class="w-3.5 h-3.5" />
 						{:else}
 							<span>1</span>
 						{/if}
 					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 1 ? 'text-white' : 'text-zinc-500'}">ScoDoc</span>
+					<span class="hidden sm:inline font-medium text-xs {currentStep === 1 ? 'text-fg' : 'text-subtle'}">ScoDoc</span>
 				</div>
 
 				<!-- Step 2 -->
 				<div class="flex items-center gap-2 text-xs">
-					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 2 ? 'bg-cyan-600 text-white' : moodleSaved ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}">
+					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 2 ? 'bg-cyan-600 text-white' : moodleSaved ? 'bg-emerald-600 text-white' : 'bg-app-raised text-muted'}">
 						{#if moodleSaved}
 							<Check class="w-3.5 h-3.5" />
 						{:else}
 							<span>2</span>
 						{/if}
 					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 2 ? 'text-white' : 'text-zinc-500'}">Moodle</span>
+					<span class="hidden sm:inline font-medium text-xs {currentStep === 2 ? 'text-fg' : 'text-subtle'}">Moodle</span>
 				</div>
 
 				<!-- Step 3 -->
 				<div class="flex items-center gap-2 text-xs">
-					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 3 ? 'bg-cyan-600 text-white' : icalSaved ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}">
+					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 3 ? 'bg-cyan-600 text-white' : icalSaved ? 'bg-emerald-600 text-white' : 'bg-app-raised text-muted'}">
 						{#if icalSaved}
 							<Check class="w-3.5 h-3.5" />
 						{:else}
 							<span>3</span>
 						{/if}
 					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 3 ? 'text-white' : 'text-zinc-500'}">Emploi du temps</span>
+					<span class="hidden sm:inline font-medium text-xs {currentStep === 3 ? 'text-fg' : 'text-subtle'}">Emploi du temps</span>
 				</div>
 
 				<!-- Step 4 -->
 				<div class="flex items-center gap-2 text-xs">
-					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 4 ? 'bg-cyan-600 text-white' : 'bg-zinc-800 text-zinc-400'}">
+					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 4 ? 'bg-cyan-600 text-white' : 'bg-app-raised text-muted'}">
 						<span>4</span>
 					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 4 ? 'text-white' : 'text-zinc-500'}">Prêt</span>
+					<span class="hidden sm:inline font-medium text-xs {currentStep === 4 ? 'text-fg' : 'text-subtle'}">Prêt</span>
 				</div>
 			</div>
 
@@ -300,8 +300,8 @@
 							<FileText class="w-5 h-5" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-sm">ScoDoc</h3>
-							<p class="text-xs text-zinc-400 mt-0.5">
+							<h3 class="font-bold text-fg text-sm">ScoDoc</h3>
+							<p class="text-xs text-muted mt-0.5">
 								Notes, moyennes et absences
 							</p>
 						</div>
@@ -309,40 +309,40 @@
 
 					<div class="space-y-3 pt-2">
 						<div>
-							<label for="onb-sco-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de ScoDoc</label>
+							<label for="onb-sco-url" class="block text-xs font-medium text-muted mb-1">URL de ScoDoc</label>
 							<input
 								id="onb-sco-url"
 								type="text"
 								bind:value={scodoc_url}
 								placeholder="https://wscodoc.iutbeziers.fr"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
-								<label for="onb-sco-u" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant CAS</label>
+								<label for="onb-sco-u" class="block text-xs font-medium text-muted mb-1">Identifiant CAS</label>
 								<input
 									id="onb-sco-u"
 									type="text"
 									bind:value={scodoc_username}
 									placeholder="ex: prenom.nom"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
-								<label for="onb-sco-p" class="block text-xs font-medium text-zinc-400 mb-1">Mot de passe CAS</label>
+								<label for="onb-sco-p" class="block text-xs font-medium text-muted mb-1">Mot de passe CAS</label>
 								<input
 									id="onb-sco-p"
 									type="password"
 									bind:value={scodoc_password}
 									placeholder="••••••••••••"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 						</div>
 					</div>
 
-					<div class="p-3 rounded-lg bg-zinc-900 border border-app-border text-[11px] text-zinc-400 leading-relaxed">
+					<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
 						Ce sont les mêmes identifiants que ceux de votre ENT (compte CAS de l'université). Ils sont chiffrés sur le serveur et servent uniquement à récupérer vos notes et absences.
 					</div>
 
@@ -350,7 +350,7 @@
 						<button
 							type="button"
 							onclick={() => { stepError = ""; currentStep = 2; }}
-							class="text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+							class="text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
 						>
 							Passer cette étape
 						</button>
@@ -369,8 +369,8 @@
 							<BookOpen class="w-5 h-5" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-sm">Moodle</h3>
-							<p class="text-xs text-zinc-400 mt-0.5">
+							<h3 class="font-bold text-fg text-sm">Moodle</h3>
+							<p class="text-xs text-muted mt-0.5">
 								Devoirs et cours en ligne
 							</p>
 						</div>
@@ -378,50 +378,50 @@
 
 					<div class="space-y-3 pt-2">
 						<div>
-							<label for="onb-mdl-url" class="block text-xs font-medium text-zinc-400 mb-1">URL de Moodle</label>
+							<label for="onb-mdl-url" class="block text-xs font-medium text-muted mb-1">URL de Moodle</label>
 							<input
 								id="onb-mdl-url"
 								type="text"
 								bind:value={moodle_url}
 								placeholder="https://moodle-but.iutbeziers.fr/moodle"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
-								<label for="onb-mdl-u" class="block text-xs font-medium text-zinc-400 mb-1">Identifiant Moodle</label>
+								<label for="onb-mdl-u" class="block text-xs font-medium text-muted mb-1">Identifiant Moodle</label>
 								<input
 									id="onb-mdl-u"
 									type="text"
 									bind:value={moodle_username}
 									placeholder="ex: prenom.nom"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 							<div>
-								<label for="onb-mdl-p" class="block text-xs font-medium text-zinc-400 mb-1">Mot de passe Moodle</label>
+								<label for="onb-mdl-p" class="block text-xs font-medium text-muted mb-1">Mot de passe Moodle</label>
 								<input
 									id="onb-mdl-p"
 									type="password"
 									bind:value={moodle_password}
 									placeholder="••••••••••••"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 						</div>
 						<div>
-							<label for="onb-mdl-token" class="block text-xs font-medium text-zinc-400 mb-1">Jeton personnel (facultatif)</label>
+							<label for="onb-mdl-token" class="block text-xs font-medium text-muted mb-1">Jeton personnel (facultatif)</label>
 							<input
 								id="onb-mdl-token"
 								type="text"
 								bind:value={moodle_token}
 								placeholder="Ex: 8f9b4c2e1a3d5e7f9a0b1c2d3e4f5a6b"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
 					</div>
 
-					<div class="p-3 rounded-lg bg-zinc-900 border border-app-border text-[11px] text-zinc-400 leading-relaxed">
+					<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
 						Saisissez l'identifiant et le mot de passe de votre compte Moodle. Le jeton personnel ci-dessous est facultatif : il ne sert que si la connexion par mot de passe échoue (Moodle › Préférences › Clés de sécurité › « Moodle mobile web service ».)
 					</div>
 
@@ -429,7 +429,7 @@
 						<button
 							type="button"
 							onclick={() => { stepError = ""; currentStep = 1; }}
-							class="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+							class="flex items-center gap-1 text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
 						>
 							<ArrowLeft class="w-3.5 h-3.5" />
 							<span>Précédent</span>
@@ -438,7 +438,7 @@
 							<button
 								type="button"
 								onclick={() => { stepError = ""; currentStep = 3; }}
-								class="text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+								class="text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
 							>
 								Passer cette étape
 							</button>
@@ -458,8 +458,8 @@
 							<Calendar class="w-5 h-5" />
 						</div>
 						<div>
-							<h3 class="font-bold text-white text-sm">Emploi du temps</h3>
-							<p class="text-xs text-zinc-400 mt-0.5">
+							<h3 class="font-bold text-fg text-sm">Emploi du temps</h3>
+							<p class="text-xs text-muted mt-0.5">
 								Planning des cours et évaluations
 							</p>
 						</div>
@@ -467,19 +467,19 @@
 
 					<div class="space-y-3 pt-2">
 						<div>
-							<label for="onb-ical" class="block text-xs font-medium text-zinc-400 mb-1">Lien iCal (.ics)</label>
+							<label for="onb-ical" class="block text-xs font-medium text-muted mb-1">Lien iCal (.ics)</label>
 							<div class="flex items-center gap-2">
-								<Link2 class="w-4 h-4 text-zinc-500 shrink-0" />
+								<Link2 class="w-4 h-4 text-subtle shrink-0" />
 								<input
 									id="onb-ical"
 									type="url"
 									bind:value={ical_url}
 									placeholder="https://edt.umontpellier.fr/.../export.ics"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:border-cyan-500 focus:outline-none"
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 						</div>
-						<div class="p-3 rounded-lg bg-zinc-900 border border-app-border text-[11px] text-zinc-400 leading-relaxed">
+						<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
 							Dans ADE Campus / UM Net, exportez votre planning au format iCal (.ics), puis copiez ici le lien obtenu. Il alimente l'emploi du temps, les prochains cours et les DS.
 						</div>
 					</div>
@@ -488,7 +488,7 @@
 						<button
 							type="button"
 							onclick={() => { stepError = ""; currentStep = 2; }}
-							class="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+							class="flex items-center gap-1 text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
 						>
 							<ArrowLeft class="w-3.5 h-3.5" />
 							<span>Précédent</span>
@@ -497,7 +497,7 @@
 							<button
 								type="button"
 								onclick={() => { stepError = ""; currentStep = 4; }}
-								class="text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+								class="text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
 							>
 								Passer cette étape
 							</button>
@@ -516,10 +516,10 @@
 						<div class="w-12 h-12 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center mx-auto">
 							<Check class="w-6 h-6" />
 						</div>
-						<h3 class="font-bold text-white text-base">
+						<h3 class="font-bold text-fg text-base">
 							{#if scodocSaved && moodleSaved && icalSaved}C'est tout bon !{:else if scodocSaved || moodleSaved || icalSaved}Configuration partielle{:else}Aucun service relié{/if}
 						</h3>
-						<p class="text-xs text-zinc-400 max-w-md mx-auto">
+						<p class="text-xs text-muted max-w-md mx-auto">
 							{#if scodocSaved && moodleSaved && icalSaved}
 								Vos trois services sont connectés.
 							{:else}
@@ -534,15 +534,15 @@
 						<div class="p-4 rounded-xl border border-app-border bg-app-surface flex flex-col justify-between space-y-3">
 							<div class="flex items-center gap-2">
 								<FileText class="w-4 h-4 text-emerald-400" />
-								<span class="text-xs font-bold text-white">ScoDoc</span>
+								<span class="text-xs font-bold text-fg">ScoDoc</span>
 							</div>
 							<div>
 								{#if scodocSaved}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
+									<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
 										Connecté
 									</span>
 								{:else}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
+									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
 										Non relié
 									</span>
 								{/if}
@@ -553,15 +553,15 @@
 						<div class="p-4 rounded-xl border border-app-border bg-app-surface flex flex-col justify-between space-y-3">
 							<div class="flex items-center gap-2">
 								<BookOpen class="w-4 h-4 text-amber-400" />
-								<span class="text-xs font-bold text-white">Moodle</span>
+								<span class="text-xs font-bold text-fg">Moodle</span>
 							</div>
 							<div>
 								{#if moodleSaved}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
+									<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
 										Connecté
 									</span>
 								{:else}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
+									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
 										Non relié
 									</span>
 								{/if}
@@ -572,15 +572,15 @@
 						<div class="p-4 rounded-xl border border-app-border bg-app-surface flex flex-col justify-between space-y-3">
 							<div class="flex items-center gap-2">
 								<Calendar class="w-4 h-4 text-blue-400" />
-								<span class="text-xs font-bold text-white">Emploi du temps</span>
+								<span class="text-xs font-bold text-fg">Emploi du temps</span>
 							</div>
 							<div>
 								{#if icalSaved}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-600 text-white">
+									<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
 										Connecté
 									</span>
 								{:else}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-white">
+									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
 										Non relié
 									</span>
 								{/if}
@@ -592,13 +592,13 @@
 						<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-950/20 flex items-center justify-between">
 							<div class="flex items-center gap-2">
 								<Sparkles class="w-4 h-4 text-cyan-400" />
-								<span class="text-xs text-zinc-300">Identité :</span>
+								<span class="text-xs text-muted">Identité :</span>
 							</div>
-							<span class="text-xs font-bold text-white">{auth.user.full_name}</span>
+							<span class="text-xs font-bold text-fg">{auth.user.full_name}</span>
 						</div>
 					{/if}
 
-					<p class="text-[11px] text-zinc-400 text-center">
+					<p class="text-[11px] text-muted text-center">
 						Vous pourrez compléter ou modifier ces connexions à tout moment dans l'onglet <strong>Paramètres</strong>.
 					</p>
 

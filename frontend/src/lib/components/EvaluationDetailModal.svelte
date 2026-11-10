@@ -140,78 +140,78 @@
 			<!-- En-tête épuré et sans boîtes imbriquées -->
 			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-app-border">
 				<div class="space-y-1 min-w-0">
-					<div class="flex items-center gap-2 flex-wrap text-xs text-zinc-400">
+					<div class="flex items-center gap-2 flex-wrap text-xs text-muted">
 						<span class="font-bold text-white bg-cyan-600 px-2.5 py-0.5 rounded-full text-xs shrink-0">
 							{evaluation.code_matiere}
 						</span>
-						<span class="font-medium text-zinc-300">Coef. {evaluation.coefficient ?? 1.0}</span>
+						<span class="font-medium text-muted">Coef. {evaluation.coefficient ?? 1.0}</span>
 						{#if evaluation.date}
-							<span class="text-zinc-600">•</span>
-							<span class="text-zinc-400">{new Date(evaluation.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+							<span class="text-subtle">•</span>
+							<span class="text-muted">{new Date(evaluation.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
 						{/if}
 					</div>
-					<h2 class="text-base font-bold text-white truncate">
+					<h2 class="text-base font-bold text-fg truncate">
 						{evaluation.description || "Évaluation"}
 					</h2>
-					<p class="text-xs text-zinc-400 truncate">
+					<p class="text-xs text-muted truncate">
 						{evaluation.titre_matiere}
 					</p>
 				</div>
 
 				<!-- Note de l'étudiant en blanc -->
 				<div class="self-start sm:self-center shrink-0">
-					<div class="inline-flex items-baseline gap-1.5 bg-zinc-800 text-white px-4 py-1.5 rounded-full font-bold">
-						<span class="text-xs text-zinc-400 uppercase font-medium">Note</span>
-						<span class="text-xl sm:text-2xl font-black text-white">{formatVal(evaluation.note)}</span>
-						<span class="text-xs text-zinc-400 font-normal">/ 20</span>
+					<div class="inline-flex items-baseline gap-1.5 bg-app-raised text-fg px-4 py-1.5 rounded-full font-bold">
+						<span class="text-xs text-muted uppercase font-medium">Note</span>
+						<span class="text-xl sm:text-2xl font-black text-fg">{formatVal(evaluation.note)}</span>
+						<span class="text-xs text-muted font-normal">/ 20</span>
 					</div>
 				</div>
 			</div>
 
 			<!-- Indicateurs statistiques essentiels (chiffres en blanc) -->
-			<div class="grid grid-cols-4 divide-x divide-zinc-800 py-3 bg-app-surface rounded-xl border border-app-border text-center">
+			<div class="grid grid-cols-4 divide-x divide-app-border py-3 bg-app-surface rounded-xl border border-app-border text-center">
 				<div class="px-2">
-					<span class="block text-[11px] text-zinc-400 font-medium uppercase tracking-wider">Note Min</span>
-					<span class="block text-base sm:text-lg font-bold text-white mt-0.5">{formatVal(minPromoNum())}</span>
+					<span class="block text-[11px] text-muted font-medium uppercase tracking-wider">Note Min</span>
+					<span class="block text-base sm:text-lg font-bold text-fg mt-0.5">{formatVal(minPromoNum())}</span>
 				</div>
 
 				<div class="px-2">
-					<span class="block text-[11px] text-zinc-400 font-medium uppercase tracking-wider">Moyenne</span>
-					<span class="block text-base sm:text-lg font-bold text-white mt-0.5">{formatVal(moyPromoNum())}</span>
+					<span class="block text-[11px] text-muted font-medium uppercase tracking-wider">Moyenne</span>
+					<span class="block text-base sm:text-lg font-bold text-fg mt-0.5">{formatVal(moyPromoNum())}</span>
 				</div>
 
 				<div class="px-2">
-					<span class="block text-[11px] text-zinc-400 font-medium uppercase tracking-wider">Note Max</span>
-					<span class="block text-base sm:text-lg font-bold text-white mt-0.5">{formatVal(maxPromoNum())}</span>
+					<span class="block text-[11px] text-muted font-medium uppercase tracking-wider">Note Max</span>
+					<span class="block text-base sm:text-lg font-bold text-fg mt-0.5">{formatVal(maxPromoNum())}</span>
 				</div>
 
 				<div class="px-2">
-					<span class="block text-[11px] text-zinc-400 font-medium uppercase tracking-wider">Effectif</span>
-					<span class="block text-base sm:text-lg font-bold text-white mt-0.5">{distData?.count || totalPromo}</span>
+					<span class="block text-[11px] text-muted font-medium uppercase tracking-wider">Effectif</span>
+					<span class="block text-base sm:text-lg font-bold text-fg mt-0.5">{distData?.count || totalPromo}</span>
 				</div>
 			</div>
 
 			<!-- Distribution des notes dans la promo -->
 			<div class="space-y-3 pt-1">
 				<div class="flex items-center justify-between">
-					<h3 class="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+					<h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
 						Répartition des Notes
 					</h3>
 
 					<div class="flex items-center gap-3 text-xs">
 						<div class="flex items-center gap-1.5">
 							<span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
-							<span class="text-zinc-300">Votre tranche</span>
+							<span class="text-muted">Votre tranche</span>
 						</div>
 						<div class="flex items-center gap-1.5">
-							<span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
-							<span class="text-zinc-400">Promotion</span>
+							<span class="w-2.5 h-2.5 rounded-full bg-app-raised2"></span>
+							<span class="text-muted">Promotion</span>
 						</div>
 					</div>
 				</div>
 
 				{#if isLoadingDist}
-					<div class="py-12 flex flex-col items-center justify-center text-zinc-400 text-xs gap-2">
+					<div class="py-12 flex flex-col items-center justify-center text-muted text-xs gap-2">
 						<RefreshCw class="w-5 h-5 animate-spin text-cyan-400" />
 						<span>Chargement de la répartition...</span>
 					</div>
@@ -228,13 +228,13 @@
 								{@const hPercent = Math.max(6, Math.round((b.count / maxH) * 100))}
 								<div class="flex-1 flex flex-col items-center h-full justify-end group relative">
 									<!-- Info-bulle au survol -->
-									<div class="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute -top-8 bg-zinc-900 border border-app-border text-white text-[10px] rounded-md px-2 py-1 shadow-md whitespace-nowrap z-20">
+									<div class="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute -top-8 bg-app-surface border border-app-border text-fg text-[10px] rounded-md px-2 py-1 shadow-md whitespace-nowrap z-20">
 										<span class="font-bold">{b.min} à {b.max} : </span>
 										<span>{b.count} étud. ({b.percent}%)</span>
 									</div>
 
 									<!-- Effectif au dessus de la barre (en blanc) -->
-									<span class="text-[10px] text-zinc-400 group-hover:text-white transition-colors mb-1 {b.isUserBin ? 'text-white font-bold' : ''}">
+									<span class="text-[10px] text-muted group-hover:text-fg transition-colors mb-1 {b.isUserBin ? 'text-fg font-bold' : ''}">
 										{b.count}
 									</span>
 
@@ -242,12 +242,12 @@
 									<div
 										class="w-full rounded-t-sm transition-all duration-200 {b.isUserBin
 											? 'bg-cyan-500'
-											: 'bg-zinc-700 hover:bg-zinc-600'}"
+											: 'bg-app-raised2 hover:bg-app-raised2'}"
 										style="height: {hPercent}%"
 									></div>
 
 									<!-- Tranche de notes en bas -->
-									<span class="text-[9px] text-zinc-400 mt-2 whitespace-nowrap {b.isUserBin ? 'text-white font-bold' : ''}">
+									<span class="text-[9px] text-muted mt-2 whitespace-nowrap {b.isUserBin ? 'text-fg font-bold' : ''}">
 										{b.label}
 									</span>
 								</div>
@@ -262,7 +262,7 @@
 				<button
 					type="button"
 					onclick={() => (open = false)}
-					class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-all cursor-pointer"
+					class="px-4 py-2 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-semibold text-fg transition-all cursor-pointer"
 				>
 					Fermer
 				</button>

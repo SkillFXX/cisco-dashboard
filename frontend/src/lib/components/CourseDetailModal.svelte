@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Clock, MapPin, User as UserIcon, Users, Plus, CalendarClock } from "lucide-svelte";
 	import { api } from "$lib/api";
-	import { getCourseBadgeStyle, getCourseTypeLabel } from "$lib/utils";
+	import { getCourseColorStyle, getCourseTypeLabel } from "$lib/utils";
 	import Modal from "./Modal.svelte";
 
 	let {
@@ -78,95 +78,48 @@
 <Modal bind:open={open} title="" class="max-w-md">
 	{#if course}
 		<div class="space-y-5">
-			<!-- En-tête de la modale -->
-			<div class="space-y-2 pb-4 border-b border-app-border">
+			<div class="space-y-1.5">
 				<div class="flex items-center gap-2 flex-wrap">
-					<span class="text-xs font-bold px-2.5 py-0.5 rounded-full {getCourseBadgeStyle(course.type)}">
+					<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md {getCourseColorStyle(course.type)}">
 						{getCourseTypeLabel(course.type)}
 					</span>
-
 					{#if course.is_current}
-						<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cyan-600 text-white">
-							En cours actuellement
-						</span>
+						<span class="text-[11px] font-semibold text-cyan-400">En cours</span>
 					{/if}
 				</div>
-
-				<h2 class="text-base font-bold text-white">
-					{course.title}
-				</h2>
-
-				<p class="text-xs text-zinc-400">
-					{formatDateFullFr(course.date)}
-				</p>
+				<h2 class="text-base font-bold text-fg leading-snug">{course.title}</h2>
+				<p class="text-xs text-muted capitalize">{formatDateFullFr(course.date)}</p>
 			</div>
 
-			<!-- Informations clés sous forme de grille sobre -->
-			<div class="grid grid-cols-2 gap-3 text-xs">
-				<!-- Horaires -->
-				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
-					<div class="flex items-center gap-1.5 text-zinc-400">
-						<Clock class="w-3.5 h-3.5 text-cyan-400" />
-						<span class="text-[11px] font-medium uppercase tracking-wider">Horaires</span>
-					</div>
-					<div class="text-sm font-bold text-white">
-						{course.start_time} - {course.end_time}
-					</div>
-					<div class="text-[10px] text-zinc-400">
-						Durée : <span class="text-white font-medium">{course.duration_minutes} min</span>
-					</div>
+			<dl class="divide-y divide-app-border text-xs border-y border-app-border">
+				<div class="flex items-start gap-3 py-2.5">
+					<Clock class="w-4 h-4 text-subtle mt-0.5 shrink-0" />
+					<dt class="sr-only">Horaires</dt>
+					<dd class="text-fg font-medium">{course.start_time} – {course.end_time} <span class="text-muted font-normal">· {course.duration_minutes} min</span></dd>
 				</div>
-
-				<!-- Salle / Lieu -->
-				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
-					<div class="flex items-center gap-1.5 text-zinc-400">
-						<MapPin class="w-3.5 h-3.5 text-cyan-400" />
-						<span class="text-[11px] font-medium uppercase tracking-wider">Lieu / Salle</span>
-					</div>
-					<div class="text-sm font-bold text-white truncate" title={course.location}>
-						{course.location || "Non précisé"}
-					</div>
-					<div class="text-[10px] text-zinc-400">
-						Campus universitaire
-					</div>
+				<div class="flex items-start gap-3 py-2.5">
+					<MapPin class="w-4 h-4 text-subtle mt-0.5 shrink-0" />
+					<dt class="sr-only">Salle</dt>
+					<dd class="text-fg font-medium">{course.location || "Salle non précisée"}</dd>
 				</div>
-
-				<!-- Enseignant -->
-				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
-					<div class="flex items-center gap-1.5 text-zinc-400">
-						<UserIcon class="w-3.5 h-3.5 text-cyan-400" />
-						<span class="text-[11px] font-medium uppercase tracking-wider">Enseignant</span>
-					</div>
-					<div class="text-sm font-bold text-white break-words" title={course.teacher}>
-						{course.teacher || "Non spécifié"}
-					</div>
-					<div class="text-[10px] text-zinc-400">
-						Intervenant
-					</div>
+				<div class="flex items-start gap-3 py-2.5">
+					<UserIcon class="w-4 h-4 text-subtle mt-0.5 shrink-0" />
+					<dt class="sr-only">Enseignant</dt>
+					<dd class="text-fg font-medium break-words">{course.teacher || "Enseignant non précisé"}</dd>
 				</div>
-
-				<!-- Groupe / Promo -->
-				<div class="p-3 rounded-xl bg-app-surface border border-app-border space-y-1">
-					<div class="flex items-center gap-1.5 text-zinc-400">
-						<Users class="w-3.5 h-3.5 text-cyan-400" />
-						<span class="text-[11px] font-medium uppercase tracking-wider">Groupe</span>
-					</div>
-					<div class="text-sm font-bold text-white break-words" title={course.group}>
-						{course.group || "Promotion"}
-					</div>
-					<div class="text-[10px] text-zinc-400">
-						Effectif concerné
-					</div>
+				<div class="flex items-start gap-3 py-2.5">
+					<Users class="w-4 h-4 text-subtle mt-0.5 shrink-0" />
+					<dt class="sr-only">Groupe</dt>
+					<dd class="text-fg font-medium break-words">{course.group || "Promotion"}</dd>
 				</div>
-			</div>
+			</dl>
 
-			<!-- Actions liées au cours -->
 			<div class="flex flex-wrap gap-2">
 				{#if onAddTask}
 					<button
 						type="button"
 						onclick={addTask}
-						class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold text-white transition-all cursor-pointer"
+						class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold text-white transition-colors cursor-pointer"
 					>
 						<Plus class="w-3.5 h-3.5" /> Ajouter un devoir
 					</button>
@@ -175,40 +128,29 @@
 					type="button"
 					onclick={toggleUpcoming}
 					aria-expanded={showUpcoming}
-					class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-app-border bg-app-surface hover:bg-white/[0.04] text-xs font-semibold text-zinc-200 transition-all cursor-pointer"
+					class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-semibold text-fg transition-colors cursor-pointer"
 				>
-					<CalendarClock class="w-3.5 h-3.5 text-cyan-400" /> Prochaines séances
+					<CalendarClock class="w-3.5 h-3.5 text-subtle" /> Prochaines séances
 				</button>
 			</div>
 
 			{#if showUpcoming}
-				<div class="rounded-xl border border-app-border bg-app-surface divide-y divide-app-border">
+				<div class="divide-y divide-app-border text-xs">
 					{#if loadingEvents}
-						<p class="p-3 text-xs text-zinc-400">Chargement…</p>
+						<p class="py-2 text-muted">Chargement…</p>
 					{:else if upcoming().length === 0}
-						<p class="p-3 text-xs text-zinc-400">Aucune autre séance prévue pour ce cours.</p>
+						<p class="py-2 text-muted">Aucune autre séance prévue pour ce cours.</p>
 					{:else}
 						{#each upcoming() as s}
-							<div class="flex items-center gap-3 p-2.5 text-xs">
-								<div class="w-20 shrink-0 font-semibold text-white capitalize">{shortDate(s.date)}</div>
-								<div class="text-zinc-300 shrink-0">{s.start_time} - {s.end_time}</div>
-								<div class="text-zinc-500 truncate">{s.location}</div>
+							<div class="flex items-center gap-3 py-2">
+								<div class="w-24 shrink-0 font-semibold text-fg capitalize">{shortDate(s.date)}</div>
+								<div class="text-muted shrink-0">{s.start_time} – {s.end_time}</div>
+								<div class="text-subtle truncate">{s.location}</div>
 							</div>
 						{/each}
 					{/if}
 				</div>
 			{/if}
-
-			<!-- Bouton de fermeture -->
-			<div class="flex justify-end pt-2 border-t border-app-border">
-				<button
-					type="button"
-					onclick={() => (open = false)}
-					class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-all cursor-pointer"
-				>
-					Fermer
-				</button>
-			</div>
 		</div>
 	{/if}
 </Modal>

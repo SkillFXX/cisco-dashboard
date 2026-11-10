@@ -26,7 +26,7 @@
 		{@const Icon = item.icon}
 		<button
 			onclick={() => go(item.id)}
-			class="flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors cursor-pointer {activeTab === item.id ? 'text-cyan-400' : 'text-zinc-500'}"
+			class="flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors cursor-pointer {activeTab === item.id ? 'text-cyan-400' : 'text-subtle'}"
 			aria-current={activeTab === item.id ? "page" : undefined}
 		>
 			<Icon class="w-5 h-5" />
@@ -35,7 +35,7 @@
 	{/each}
 	<button
 		onclick={() => (isMenuOpen = !isMenuOpen)}
-		class="flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors cursor-pointer {isMoreActive || isMenuOpen ? 'text-cyan-400' : 'text-zinc-500'}"
+		class="flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors cursor-pointer {isMoreActive || isMenuOpen ? 'text-cyan-400' : 'text-subtle'}"
 		aria-expanded={isMenuOpen}
 	>
 		<MoreHorizontal class="w-5 h-5" />
@@ -48,8 +48,8 @@
 		<button class="absolute inset-0 bg-black/70" onclick={() => (isMenuOpen = false)} aria-label="Fermer le menu"></button>
 		<div class="absolute bottom-0 inset-x-0 rounded-t-2xl bg-app-card border-t border-app-border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-1 animate-in slide-in-from-bottom duration-200">
 			<div class="flex items-center justify-between pb-2">
-				<span class="text-xs font-semibold text-zinc-300">Menu</span>
-				<button onclick={() => (isMenuOpen = false)} class="p-1 text-zinc-400 cursor-pointer" aria-label="Fermer">
+				<span class="text-xs font-semibold text-muted">Menu</span>
+				<button onclick={() => (isMenuOpen = false)} class="p-1 text-muted cursor-pointer" aria-label="Fermer">
 					<X class="w-4 h-4" />
 				</button>
 			</div>
@@ -57,7 +57,7 @@
 				{@const Icon = item.icon}
 				<button
 					onclick={() => go(item.id)}
-					class="w-full flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium cursor-pointer {activeTab === item.id ? 'bg-white/[0.08] text-white' : 'text-zinc-300 hover:bg-white/[0.04]'}"
+					class="w-full flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium cursor-pointer {activeTab === item.id ? 'bg-fg/[0.08] text-fg' : 'text-muted hover:bg-fg/[0.04]'}"
 				>
 					<Icon class="w-4 h-4" />
 					<span>{item.label}</span>
@@ -65,7 +65,7 @@
 			{/each}
 			<button
 				onclick={() => auth.logout()}
-				class="w-full flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-white/[0.04] cursor-pointer"
+				class="w-full flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-fg/[0.04] cursor-pointer"
 			>
 				<LogOut class="w-4 h-4" />
 				<span>Déconnexion</span>

@@ -74,17 +74,17 @@
 
 <div class="space-y-3">
 	{#if !layout}
-		<div class="py-10 text-center text-xs text-zinc-500 border border-dashed border-app-border rounded-lg">
+		<div class="py-10 text-center text-xs text-subtle border border-dashed border-app-border rounded-lg">
 			Pas encore de données de {metric === "rang" ? "rang" : "moyenne"}.
 		</div>
 	{:else}
 		<div class="flex items-end gap-3">
-			<div class="text-2xl font-bold text-white leading-none">
-				{shown ? shown.v : current}{#if isRank}<span class="text-sm text-zinc-400 font-medium">{(shown?.total ?? points[points.length - 1].total_promo) ? ` / ${shown?.total ?? points[points.length - 1].total_promo}` : ""}</span>{:else}<span class="text-sm text-zinc-400 font-medium"> /20</span>{/if}
+			<div class="text-2xl font-bold text-fg leading-none">
+				{shown ? shown.v : current}{#if isRank}<span class="text-sm text-muted font-medium">{(shown?.total ?? points[points.length - 1].total_promo) ? ` / ${shown?.total ?? points[points.length - 1].total_promo}` : ""}</span>{:else}<span class="text-sm text-muted font-medium"> /20</span>{/if}
 			</div>
-			<div class="text-xs text-zinc-500 pb-0.5">{shown ? formatDay(shown.day) : "Dernier relevé"}</div>
+			<div class="text-xs text-subtle pb-0.5">{shown ? formatDay(shown.day) : "Dernier relevé"}</div>
 			{#if points.length > 1 && !shown}
-				<div class="ml-auto flex items-center gap-1 text-xs font-semibold pb-0.5 {delta === 0 ? 'text-zinc-400' : improved ? 'text-emerald-400' : 'text-rose-400'}">
+				<div class="ml-auto flex items-center gap-1 text-xs font-semibold pb-0.5 {delta === 0 ? 'text-muted' : improved ? 'text-emerald-400' : 'text-rose-400'}">
 					{#if delta === 0}<Minus class="w-3.5 h-3.5" />{:else if improved}<TrendingUp class="w-3.5 h-3.5" />{:else}<TrendingDown class="w-3.5 h-3.5" />{/if}
 					{delta > 0 ? "+" : ""}{Math.round(delta * 100) / 100} depuis le {formatDay(points[0].day)}
 				</div>
@@ -101,35 +101,35 @@
 			onpointerleave={() => (hoverIndex = null)}
 		>
 			{#each layout.ticks as t}
-				<line x1={PAD.left} x2={W - PAD.right} y1={t.y} y2={t.y} stroke="currentColor" class="text-white/[0.06]" />
-				<text x={PAD.left - 8} y={t.y + 5} text-anchor="end" class="fill-zinc-500" font-size="15">{t.v}</text>
+				<line x1={PAD.left} x2={W - PAD.right} y1={t.y} y2={t.y} stroke="currentColor" class="text-fg/[0.06]" />
+				<text x={PAD.left - 8} y={t.y + 5} text-anchor="end" class="fill-subtle" font-size="15">{t.v}</text>
 			{/each}
 
 			<path d={layout.path} fill="none" stroke="rgb(34 211 238)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
 			{#each layout.coords as c, i}
-				<circle cx={c.x} cy={c.y} r={hoverIndex === i ? 5 : layout.coords.length > 40 ? 0 : 3} fill="rgb(34 211 238)" stroke="#0A0A10" stroke-width="1.5" />
+				<circle cx={c.x} cy={c.y} r={hoverIndex === i ? 5 : layout.coords.length > 40 ? 0 : 3} fill="#0891b2" stroke="var(--app-card)" stroke-width="1.5" />
 			{/each}
 			{#if shown}
-				<line x1={shown.x} x2={shown.x} y1={PAD.top} y2={H - PAD.bottom} stroke="rgb(34 211 238)" stroke-opacity="0.35" stroke-dasharray="3 3" />
+				<line x1={shown.x} x2={shown.x} y1={PAD.top} y2={H - PAD.bottom} stroke="#0891b2" stroke-opacity="0.35" stroke-dasharray="3 3" />
 			{/if}
 
-			<text x={PAD.left} y={H - 8} class="fill-zinc-500" font-size="15">{formatDay(points[0].day)}</text>
+			<text x={PAD.left} y={H - 8} class="fill-subtle" font-size="15">{formatDay(points[0].day)}</text>
 			{#if points.length > 1}
-				<text x={W - PAD.right} y={H - 8} text-anchor="end" class="fill-zinc-500" font-size="15">{formatDay(points[points.length - 1].day)}</text>
+				<text x={W - PAD.right} y={H - 8} text-anchor="end" class="fill-subtle" font-size="15">{formatDay(points[points.length - 1].day)}</text>
 			{/if}
 		</svg>
 
-		<div class="grid grid-cols-3 gap-2 pt-1 text-center">
+		<div class="grid grid-cols-3 divide-x divide-app-border border-t border-app-border pt-3 text-center">
 			{#each [["Meilleur", best], ["Plus bas", worst], ["Relevés", points.length]] as [label, value]}
-				<div class="rounded-lg border border-app-border bg-app-surface py-2">
-					<div class="text-sm font-bold text-white">{value}</div>
-					<div class="text-[10px] text-zinc-500">{label}</div>
+				<div class="py-1">
+					<div class="text-sm font-bold text-fg">{value}</div>
+					<div class="text-[10px] text-subtle">{label}</div>
 				</div>
 			{/each}
 		</div>
 
 		{#if points.length < 2}
-			<p class="text-[11px] text-zinc-500">La courbe se dessinera au fil de vos prochaines connexions.</p>
+			<p class="text-[11px] text-subtle">La courbe se dessinera au fil de vos prochaines connexions.</p>
 		{/if}
 	{/if}
 </div>

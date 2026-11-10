@@ -72,7 +72,7 @@
 	<title>Cisco Dashboard</title>
 </svelte:head>
 
-<div class="min-h-screen bg-app-bg text-zinc-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+<div class="min-h-screen bg-app-bg text-fg font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
 	{#if auth.isLoading}
 		<div class="min-h-screen flex items-center justify-center">
 			<div class="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin"></div>

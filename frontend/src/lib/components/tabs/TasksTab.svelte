@@ -298,20 +298,14 @@
 	<!-- En-tête de la page -->
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-app-border">
 		<div>
-			<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-				<ListTodo class="w-5 h-5 text-cyan-400" />
-				<span>Devoirs</span>
-			</h1>
-			<p class="text-xs text-zinc-400 mt-0.5">
-				Vos devoirs, travaux à rendre et devoirs surveillés.
-			</p>
+			<h1 class="text-xl font-bold tracking-tight text-fg">Devoirs</h1>
 		</div>
 
 		<div class="flex items-center gap-2">
 			<button
 				onclick={() => loadAllData(true)}
 				disabled={isLoading}
-				class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-white/[0.04] border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+				class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-fg/[0.04] border border-app-border text-xs font-medium text-muted hover:text-fg transition-all cursor-pointer"
 			>
 				<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 				<span>Actualiser</span>
@@ -341,8 +335,8 @@
 			<button
 				onclick={() => (activeCategory = cat.id)}
 				class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer {activeCategory === cat.id
-					? 'bg-white/[0.08] text-white shadow-xs'
-					: 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'}"
+					? 'bg-fg/[0.08] text-fg shadow-xs'
+					: 'text-muted hover:text-fg hover:bg-fg/[0.03]'}"
 			>
 				{cat.label}
 			</button>
@@ -362,7 +356,7 @@
 					<Skeleton class="h-3 w-32" />
 				</div>
 
-				<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+				<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-app-border">
 					{#each Array(4) as _}
 						<div class="p-3.5 flex items-center justify-between gap-3">
 							<div class="flex items-center gap-3.5 flex-1 min-w-0">
@@ -392,7 +386,7 @@
 					<Skeleton class="h-3 w-32" />
 				</div>
 
-				<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+				<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-app-border">
 					{#each Array(2) as _}
 						<div class="p-3.5 flex items-center justify-between gap-3">
 							<div class="flex items-center gap-3.5 flex-1 min-w-0">
@@ -422,29 +416,29 @@
 				<button
 					type="button"
 					onclick={() => (isTodoOpen = !isTodoOpen)}
-					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.02] text-left transition-colors cursor-pointer"
+					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-fg/[0.02] text-left transition-colors cursor-pointer"
 				>
 					<div class="flex items-center gap-2">
 						{#if isTodoOpen}
-							<ChevronDown class="w-4 h-4 text-zinc-400" />
+							<ChevronDown class="w-4 h-4 text-muted" />
 						{:else}
-							<ChevronRight class="w-4 h-4 text-zinc-400" />
+							<ChevronRight class="w-4 h-4 text-muted" />
 						{/if}
-						<span class="text-sm font-bold text-white">À faire</span>
+						<span class="text-sm font-bold text-fg">À faire</span>
 						<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-cyan-600 text-white">
 							{todoItems().length}
 						</span>
 					</div>
-					<span class="text-xs text-zinc-500">Échéance d'ici 30 jours</span>
+					<span class="text-xs text-subtle">Échéance d'ici 30 jours</span>
 				</button>
 
 				{#if isTodoOpen}
 					{#if todoItems().length === 0}
-						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-subtle text-xs">
 							Aucun devoir à faire dans les 30 prochains jours.
 						</div>
 					{:else}
-						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-app-border">
 							{#each todoItems() as item}
 								<!-- Ligne du tableau -->
 								<div
@@ -452,7 +446,7 @@
 									tabindex="0"
 									onclick={() => (selectedTask = item)}
 									onkeydown={(e) => { if (e.key === 'Enter') selectedTask = item; }}
-									class="flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer gap-3 text-left"
+									class="flex items-center justify-between p-3.5 hover:bg-fg/[0.02] transition-colors cursor-pointer gap-3 text-left"
 								>
 									<!-- Checkbox + Matière & Titre -->
 									<div class="flex items-center gap-3.5 min-w-0 flex-1">
@@ -462,7 +456,7 @@
 												e.stopPropagation();
 												toggleTask(item);
 											}}
-											class="text-zinc-500 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
+											class="text-subtle hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
 											title="Marquer comme fait"
 										>
 											<Circle class="w-5 h-5" />
@@ -472,20 +466,20 @@
 											<!-- Titre du devoir mis en évidence -->
 											<div class="flex items-center gap-2">
 												{#if item.subject && !["Moodle", "DS", "Personnel"].includes(item.subject)}
-													<span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-zinc-300 shrink-0 max-w-[40%] truncate">{item.subject}</span>
+													<span class="rounded-md bg-fg/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-muted shrink-0 max-w-[40%] truncate">{item.subject}</span>
 												{/if}
-												<span class="font-bold text-xs text-white truncate">
+												<span class="font-bold text-xs text-fg truncate">
 													{item.title}
 												</span>
 												{#if item.source === "moodle"}
-													<span class="text-[10px] text-cyan-400 font-medium shrink-0">Moodle</span>
+													<span class="text-[10px] text-subtle font-medium shrink-0">Moodle</span>
 												{:else if item.source === "timetable"}
-													<span class="text-[10px] text-rose-400 font-medium shrink-0">Calendrier</span>
+													<span class="text-[10px] text-subtle font-medium shrink-0">Calendrier</span>
 												{/if}
 											</div>
 											<!-- Salle ou consignes sous le titre -->
 											{#if item.description}
-												<p class="text-xs text-zinc-400 truncate mt-0.5">
+												<p class="text-xs text-muted truncate mt-0.5">
 													{item.description}
 												</p>
 											{/if}
@@ -495,19 +489,19 @@
 									<!-- Catégorie (au milieu) : badge rond en couleur pleine -->
 									<div class="shrink-0 hidden sm:flex items-center justify-center">
 										{#if item.category === 'DS'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-600 text-white">
+											<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-ds/15 text-c-ds">
 												DS
 											</span>
 										{:else if item.category === 'DM'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-cyan-600 text-white">
+											<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-td/15 text-c-td">
 												DM
 											</span>
 										{:else if item.category === 'TP'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-600 text-white">
+											<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-tp/15 text-c-tp">
 												TP
 											</span>
 										{:else}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-100">
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
 												Autres
 											</span>
 										{/if}
@@ -523,12 +517,12 @@
 											{:else if item.days_left === 1}
 												<span class="text-amber-200">Demain</span>
 											{:else if item.days_left <= 5}
-												<span class="text-zinc-200">Dans <span class="text-white font-bold">{item.days_left}</span> jours</span>
+												<span class="text-fg">Dans <span class="text-fg font-bold">{item.days_left}</span> jours</span>
 											{:else}
-												<span class="text-zinc-400">Dans <span class="text-white font-bold">{item.days_left}</span> jours</span>
+												<span class="text-muted">Dans <span class="text-fg font-bold">{item.days_left}</span> jours</span>
 											{/if}
 										</div>
-										<span class="text-[11px] text-zinc-500 mt-0.5">
+										<span class="text-[11px] text-subtle mt-0.5">
 											{formatDateFr(item.due_date)}
 										</span>
 									</div>
@@ -544,29 +538,29 @@
 				<button
 					type="button"
 					onclick={() => (isLongTermOpen = !isLongTermOpen)}
-					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.02] text-left transition-colors cursor-pointer"
+					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-fg/[0.02] text-left transition-colors cursor-pointer"
 				>
 					<div class="flex items-center gap-2">
 						{#if isLongTermOpen}
-							<ChevronDown class="w-4 h-4 text-zinc-400" />
+							<ChevronDown class="w-4 h-4 text-muted" />
 						{:else}
-							<ChevronRight class="w-4 h-4 text-zinc-400" />
+							<ChevronRight class="w-4 h-4 text-muted" />
 						{/if}
-						<span class="text-sm font-bold text-white">Dans longtemps</span>
-						<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-zinc-700 text-white">
+						<span class="text-sm font-bold text-fg">Dans longtemps</span>
+						<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-app-raised2 text-fg">
 							{longTermItems().length}
 						</span>
 					</div>
-					<span class="text-xs text-zinc-500">Échéance à plus d'1 mois</span>
+					<span class="text-xs text-subtle">Échéance à plus d'1 mois</span>
 				</button>
 
 				{#if isLongTermOpen}
 					{#if longTermItems().length === 0}
-						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-subtle text-xs">
 							Aucun devoir prévu à plus d'un mois.
 						</div>
 					{:else}
-						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5">
+						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-app-border">
 							{#each longTermItems() as item}
 								<!-- Ligne du tableau -->
 								<div
@@ -574,7 +568,7 @@
 									tabindex="0"
 									onclick={() => (selectedTask = item)}
 									onkeydown={(e) => { if (e.key === 'Enter') selectedTask = item; }}
-									class="flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer gap-3 text-left"
+									class="flex items-center justify-between p-3.5 hover:bg-fg/[0.02] transition-colors cursor-pointer gap-3 text-left"
 								>
 									<!-- Checkbox + Matière & Titre -->
 									<div class="flex items-center gap-3.5 min-w-0 flex-1">
@@ -584,7 +578,7 @@
 												e.stopPropagation();
 												toggleTask(item);
 											}}
-											class="text-zinc-500 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
+											class="text-subtle hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
 											title="Marquer comme fait"
 										>
 											<Circle class="w-5 h-5" />
@@ -593,19 +587,19 @@
 										<div class="min-w-0 flex-1">
 											<div class="flex items-center gap-2">
 												{#if item.subject && !["Moodle", "DS", "Personnel"].includes(item.subject)}
-													<span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-zinc-300 shrink-0 max-w-[40%] truncate">{item.subject}</span>
+													<span class="rounded-md bg-fg/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-muted shrink-0 max-w-[40%] truncate">{item.subject}</span>
 												{/if}
-												<span class="font-bold text-xs text-white truncate">
+												<span class="font-bold text-xs text-fg truncate">
 													{item.title}
 												</span>
 												{#if item.source === "moodle"}
-													<span class="text-[10px] text-cyan-400 font-medium shrink-0">Moodle</span>
+													<span class="text-[10px] text-subtle font-medium shrink-0">Moodle</span>
 												{:else if item.source === "timetable"}
-													<span class="text-[10px] text-rose-400 font-medium shrink-0">Calendrier</span>
+													<span class="text-[10px] text-subtle font-medium shrink-0">Calendrier</span>
 												{/if}
 											</div>
 											{#if item.description}
-												<p class="text-xs text-zinc-400 truncate mt-0.5">
+												<p class="text-xs text-muted truncate mt-0.5">
 													{item.description}
 												</p>
 											{/if}
@@ -615,19 +609,19 @@
 									<!-- Catégorie (au milieu) -->
 									<div class="shrink-0 hidden sm:flex items-center justify-center">
 										{#if item.category === 'DS'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-600 text-white">
+											<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-ds/15 text-c-ds">
 												DS
 											</span>
 										{:else if item.category === 'DM'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-cyan-600 text-white">
+											<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-td/15 text-c-td">
 												DM
 											</span>
 										{:else if item.category === 'TP'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-600 text-white">
+											<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-tp/15 text-c-tp">
 												TP
 											</span>
 										{:else}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-700 text-zinc-100">
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
 												Autres
 											</span>
 										{/if}
@@ -635,10 +629,10 @@
 
 									<!-- Date et délai (à droite) -->
 									<div class="flex flex-col items-end shrink-0 text-right">
-										<div class="text-xs font-semibold text-zinc-400">
-											Dans <span class="text-white font-bold">{item.days_left}</span> jours
+										<div class="text-xs font-semibold text-muted">
+											Dans <span class="text-fg font-bold">{item.days_left}</span> jours
 										</div>
-										<span class="text-[11px] text-zinc-500 mt-0.5">
+										<span class="text-[11px] text-subtle mt-0.5">
 											{formatDateFr(item.due_date)}
 										</span>
 									</div>
@@ -654,29 +648,29 @@
 				<button
 					type="button"
 					onclick={() => (isDoneOpen = !isDoneOpen)}
-					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.02] text-left transition-colors cursor-pointer"
+					class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-fg/[0.02] text-left transition-colors cursor-pointer"
 				>
 					<div class="flex items-center gap-2">
 						{#if isDoneOpen}
-							<ChevronDown class="w-4 h-4 text-zinc-400" />
+							<ChevronDown class="w-4 h-4 text-muted" />
 						{:else}
-							<ChevronRight class="w-4 h-4 text-zinc-400" />
+							<ChevronRight class="w-4 h-4 text-muted" />
 						{/if}
-						<span class="text-sm font-bold text-white">Fait</span>
-						<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-zinc-700 text-white">
+						<span class="text-sm font-bold text-fg">Fait</span>
+						<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-app-raised2 text-fg">
 							{doneItems().length}
 						</span>
 					</div>
-					<span class="text-xs text-zinc-500">Devoirs et épreuves validés</span>
+					<span class="text-xs text-subtle">Devoirs et épreuves validés</span>
 				</button>
 
 				{#if isDoneOpen}
 					{#if doneItems().length === 0}
-						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-zinc-500 text-xs">
+						<div class="py-8 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-subtle text-xs">
 							Aucun devoir marqué comme fait.
 						</div>
 					{:else}
-						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-white/5 opacity-70">
+						<div class="border border-app-border rounded-xl bg-app-card overflow-hidden divide-y divide-app-border opacity-70">
 							{#each doneItems() as item}
 								<!-- Ligne du tableau -->
 								<div
@@ -684,7 +678,7 @@
 									tabindex="0"
 									onclick={() => (selectedTask = item)}
 									onkeydown={(e) => { if (e.key === 'Enter') selectedTask = item; }}
-									class="flex items-center justify-between p-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer gap-3 text-left"
+									class="flex items-center justify-between p-3.5 hover:bg-fg/[0.02] transition-colors cursor-pointer gap-3 text-left"
 								>
 									<!-- Checkbox + Matière & Titre -->
 									<div class="flex items-center gap-3.5 min-w-0 flex-1">
@@ -694,7 +688,7 @@
 												e.stopPropagation();
 												toggleTask(item);
 											}}
-											class="text-emerald-400 hover:text-zinc-400 transition-colors cursor-pointer shrink-0"
+											class="text-emerald-400 hover:text-muted transition-colors cursor-pointer shrink-0"
 											title="Marquer comme non fait"
 										>
 											<CheckCircle2 class="w-5 h-5" />
@@ -703,19 +697,19 @@
 										<div class="min-w-0 flex-1">
 											<div class="flex items-center gap-2">
 												{#if item.subject && !["Moodle", "DS", "Personnel"].includes(item.subject)}
-													<span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 shrink-0 max-w-[40%] truncate">{item.subject}</span>
+													<span class="rounded-md bg-fg/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-subtle shrink-0 max-w-[40%] truncate">{item.subject}</span>
 												{/if}
-												<span class="font-bold text-xs text-zinc-400 line-through truncate">
+												<span class="font-bold text-xs text-muted line-through truncate">
 													{item.title}
 												</span>
 												{#if item.source === "moodle"}
-													<span class="text-[10px] text-zinc-500 font-medium shrink-0">Moodle</span>
+													<span class="text-[10px] text-subtle font-medium shrink-0">Moodle</span>
 												{:else if item.source === "timetable"}
-													<span class="text-[10px] text-zinc-500 font-medium shrink-0">Calendrier</span>
+													<span class="text-[10px] text-subtle font-medium shrink-0">Calendrier</span>
 												{/if}
 											</div>
 											{#if item.description}
-												<p class="text-xs text-zinc-500 line-through truncate mt-0.5">
+												<p class="text-xs text-subtle line-through truncate mt-0.5">
 													{item.description}
 												</p>
 											{/if}
@@ -725,19 +719,19 @@
 									<!-- Catégorie (au milieu) -->
 									<div class="shrink-0 hidden sm:flex items-center justify-center">
 										{#if item.category === 'DS'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-800 text-zinc-400">
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised text-muted">
 												DS
 											</span>
 										{:else if item.category === 'DM'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-800 text-zinc-400">
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised text-muted">
 												DM
 											</span>
 										{:else if item.category === 'TP'}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-800 text-zinc-400">
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised text-muted">
 												TP
 											</span>
 										{:else}
-											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-800 text-zinc-400">
+											<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised text-muted">
 												Autres
 											</span>
 										{/if}
@@ -748,7 +742,7 @@
 										<span class="text-xs font-semibold text-emerald-400">
 											Terminé
 										</span>
-										<span class="text-[11px] text-zinc-500 mt-0.5">
+										<span class="text-[11px] text-subtle mt-0.5">
 											{formatDateFr(item.due_date)}
 										</span>
 									</div>
@@ -779,13 +773,13 @@
 				<!-- En-tête du volet -->
 				<div class="flex items-center justify-between p-5 border-b border-app-border">
 					<div>
-						<h2 class="text-base font-bold text-white">Détail du devoir</h2>
-						<p class="text-xs text-zinc-400 mt-0.5">{selectedTask.subject}</p>
+						<h2 class="text-base font-bold text-fg">Détail du devoir</h2>
+						<p class="text-xs text-muted mt-0.5">{selectedTask.subject}</p>
 					</div>
 					<button
 						type="button"
 						onclick={() => (selectedTask = null)}
-						class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
+						class="p-1.5 rounded-lg text-muted hover:text-fg hover:bg-fg/[0.05] transition-colors cursor-pointer"
 						aria-label="Fermer"
 					>
 						<X class="w-5 h-5" />
@@ -798,35 +792,35 @@
 					<div class="space-y-3">
 						<div class="flex items-center gap-2">
 							{#if selectedTask.category === 'DS'}
-								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-rose-600 text-white">
+								<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-ds/15 text-c-ds">
 									DS
 								</span>
 							{:else if selectedTask.category === 'DM'}
-								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-cyan-600 text-white">
+								<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-td/15 text-c-td">
 									DM
 								</span>
 							{:else if selectedTask.category === 'TP'}
-								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-purple-600 text-white">
+								<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold bg-c-tp/15 text-c-tp">
 									TP
 								</span>
 							{:else}
-								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-zinc-700 text-zinc-100">
+								<span class="rounded-full px-3 py-1 text-xs font-semibold bg-app-raised2 text-fg">
 									Autres
 								</span>
 							{/if}
 
 							{#if selectedTask.source === "moodle"}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-800 text-cyan-400">
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-medium bg-app-raised text-cyan-400">
 									Moodle
 								</span>
 							{:else if selectedTask.source === "timetable"}
-								<span class="rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-800 text-rose-400">
+								<span class="rounded-full px-2.5 py-0.5 text-xs font-medium bg-app-raised text-rose-400">
 									Calendrier
 								</span>
 							{/if}
 						</div>
 
-						<h3 class="text-lg font-bold text-white leading-snug">
+						<h3 class="text-lg font-bold text-fg leading-snug">
 							{selectedTask.title}
 						</h3>
 					</div>
@@ -834,7 +828,7 @@
 					<!-- Statut actuel et bouton de bascule -->
 					<div class="p-4 rounded-xl bg-app-surface border border-app-border flex items-center justify-between">
 						<div>
-							<div class="text-[11px] text-zinc-400 uppercase font-semibold">Statut actuel</div>
+							<div class="text-[11px] text-muted uppercase font-semibold">Statut actuel</div>
 							<div class="text-xs font-bold mt-0.5 {selectedTask.status === 'done' ? 'text-emerald-400' : 'text-amber-400'}">
 								{selectedTask.status === 'done' ? 'Terminé' : 'À faire'}
 							</div>
@@ -842,7 +836,7 @@
 						<button
 							type="button"
 							onclick={() => toggleTask(selectedTask)}
-							class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer {selectedTask.status === 'done' ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}"
+							class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer {selectedTask.status === 'done' ? 'bg-app-raised hover:bg-app-raised2 text-muted' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}"
 						>
 							{#if selectedTask.status === 'done'}
 								Marquer à faire
@@ -855,30 +849,30 @@
 					<!-- Carte Date et Délai -->
 					<div class="p-4 rounded-xl bg-app-surface border border-app-border space-y-3">
 						<div class="flex items-center justify-between text-xs">
-							<span class="text-zinc-400 flex items-center gap-1.5">
+							<span class="text-muted flex items-center gap-1.5">
 								<Calendar class="w-4 h-4 text-cyan-400" />
 								<span>Date limite</span>
 							</span>
-							<span class="font-bold text-white capitalize">
+							<span class="font-bold text-fg capitalize">
 								{formatFullDate(selectedTask.due_date)}
 							</span>
 						</div>
 
 						{#if formatTime(selectedTask.due_date)}
-							<div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
-								<span class="text-zinc-400 flex items-center gap-1.5">
+							<div class="flex items-center justify-between text-xs pt-2 border-t border-app-border">
+								<span class="text-muted flex items-center gap-1.5">
 									<Clock class="w-4 h-4 text-cyan-400" />
 									<span>Heure d'échéance</span>
 								</span>
-								<span class="font-bold text-white">
+								<span class="font-bold text-fg">
 									{formatTime(selectedTask.due_date)}
 								</span>
 							</div>
 						{/if}
 
-						<div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
-							<span class="text-zinc-400">Temps restant</span>
-							<span class="font-bold text-white">
+						<div class="flex items-center justify-between text-xs pt-2 border-t border-app-border">
+							<span class="text-muted">Temps restant</span>
+							<span class="font-bold text-fg">
 								{#if selectedTask.status === 'done'}
 									<span class="text-emerald-400">Validé</span>
 								{:else if selectedTask.days_left < 0}
@@ -897,10 +891,10 @@
 					<!-- Consignes / Description -->
 					{#if selectedTask.description}
 						<div class="space-y-1.5">
-							<h4 class="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+							<h4 class="text-xs font-bold text-muted uppercase tracking-wider">
 								{selectedTask.source === "timetable" ? "Salle" : "Consignes / Détails"}
 							</h4>
-							<div class="p-4 rounded-xl bg-app-surface border border-app-border text-xs text-zinc-300 whitespace-pre-line leading-relaxed max-h-60 overflow-y-auto">
+							<div class="p-4 rounded-xl bg-app-surface border border-app-border text-xs text-muted whitespace-pre-line leading-relaxed max-h-60 overflow-y-auto">
 								{selectedTask.description}
 							</div>
 						</div>
@@ -918,7 +912,7 @@
 								<ExternalLink class="w-4 h-4" />
 								<span>Ouvrir sur Moodle</span>
 							</a>
-							<p class="text-[11px] text-zinc-500 text-center">
+							<p class="text-[11px] text-subtle text-center">
 								Ouvre directement la page de dépôt ou le cours correspondant sur Moodle.
 							</p>
 						</div>
@@ -933,7 +927,7 @@
 									taskToEdit = selectedTask;
 									isEditModalOpen = true;
 								}}
-								class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white font-semibold text-xs transition-all border border-app-border cursor-pointer"
+								class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-fg/[0.06] hover:bg-fg/[0.1] text-fg font-semibold text-xs transition-all border border-app-border cursor-pointer"
 							>
 								<Pencil class="w-4 h-4 text-cyan-400" />
 								<span>Modifier ce devoir</span>
@@ -942,7 +936,7 @@
 							<button
 								type="button"
 								onclick={() => deleteTask(selectedTask.task_id)}
-								class="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl hover:bg-red-600/10 text-zinc-400 hover:text-red-400 font-medium text-xs transition-all cursor-pointer"
+								class="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl hover:bg-red-600/10 text-muted hover:text-red-400 font-medium text-xs transition-all cursor-pointer"
 							>
 								<Trash2 class="w-4 h-4" />
 								<span>Supprimer cette épreuve / tâche</span>

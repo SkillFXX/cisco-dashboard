@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { auth } from "$lib/stores/auth.svelte";
-	import { Plus } from "lucide-svelte";
+	import { Plus, Sun, Moon, SunMoon } from "lucide-svelte";
+	import { theme, type ThemeMode } from "$lib/stores/theme.svelte";
+
+	const NEXT_MODE: Record<ThemeMode, ThemeMode> = { auto: "light", light: "dark", dark: "auto" };
+	const MODE_LABEL: Record<ThemeMode, string> = { auto: "automatique", light: "clair", dark: "sombre" };
 
 	let {
 		activeTab = "dashboard",
@@ -49,9 +53,9 @@
 	<!-- Fil d'Ariane -->
 	<div class="flex items-center gap-2 text-xs min-w-0">
 		<img src="/icon.png" alt="" class="w-6 h-6 rounded-md object-contain md:hidden shrink-0" />
-		<span class="text-zinc-500 font-medium hidden md:inline">{breadcrumb.category}</span>
-		<span class="text-zinc-700 hidden md:inline">/</span>
-		<span class="text-zinc-200 font-semibold truncate">
+		<span class="text-subtle font-medium hidden md:inline">{breadcrumb.category}</span>
+		<span class="text-subtle hidden md:inline">/</span>
+		<span class="text-fg font-semibold truncate">
 			<span class="md:hidden">{breadcrumb.category}</span><span class="hidden md:inline">{breadcrumb.page}</span>
 		</span>
 	</div>
@@ -76,13 +80,24 @@
 			</button>
 		{/if}
 
+		<!-- Thème : automatique, clair, sombre -->
+		<button
+			type="button"
+			onclick={() => theme.set(NEXT_MODE[theme.mode])}
+			title="Thème {MODE_LABEL[theme.mode]} (cliquer pour changer)"
+			aria-label="Changer de thème (actuellement {MODE_LABEL[theme.mode]})"
+			class="flex items-center justify-center w-8 h-8 rounded-lg text-muted hover:text-fg hover:bg-app-raised transition-colors cursor-pointer"
+		>
+			{#if theme.mode === "light"}<Sun class="w-4 h-4" />{:else if theme.mode === "dark"}<Moon class="w-4 h-4" />{:else}<SunMoon class="w-4 h-4" />{/if}
+		</button>
+
 		<!-- Profil etudiant -->
 		<div class="flex items-center gap-2.5 pl-2 border-l border-app-border">
 			<div class="text-right hidden sm:block">
-				<div class="text-xs font-semibold text-zinc-200 leading-none">
+				<div class="text-xs font-semibold text-fg leading-none">
 					{userDisplayName()}
 				</div>
-				<div class="text-[10px] text-zinc-500 leading-none mt-1">
+				<div class="text-[10px] text-subtle leading-none mt-1">
 					IUT Béziers
 				</div>
 			</div>

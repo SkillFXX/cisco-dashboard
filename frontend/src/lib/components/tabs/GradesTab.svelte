@@ -7,6 +7,8 @@
 	import EvaluationDetailModal from "../EvaluationDetailModal.svelte";
 	import GradeHistoryChart from "../GradeHistoryChart.svelte";
 	import Sparkline from "../Sparkline.svelte";
+	import AverageCard from "../AverageCard.svelte";
+	import GradesTable from "../GradesTable.svelte";
 	import Modal from "../Modal.svelte";
 
 	let gradesData = $state<any>(null);
@@ -140,18 +142,15 @@
 	<!-- En-tête de la page -->
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-app-border">
 		<div>
-			<h1 class="text-xl font-bold text-white tracking-tight">
+			<h1 class="text-xl font-bold text-fg tracking-tight">
 				Notes
 			</h1>
-			<p class="text-xs text-zinc-400 mt-0.5">
-				Moyennes par UE, matières et classements.
-			</p>
 		</div>
 
 		<button
 			onclick={() => loadGrades(true)}
 			disabled={isLoading}
-			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-zinc-800 border border-app-border text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+			class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-app-card hover:bg-app-raised border border-app-border text-xs font-medium text-muted hover:text-fg transition-all cursor-pointer"
 		>
 			<RefreshCw class="w-3.5 h-3.5 {isLoading ? 'animate-spin text-cyan-400' : ''}" />
 			<span>Actualiser</span>
@@ -185,7 +184,7 @@
 				</div>
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					{#each Array(6) as _}
-						<div class="p-3.5 rounded-xl border border-app-border bg-app-surface/50 space-y-3">
+						<div class="space-y-3">
 							<div class="flex items-start justify-between">
 								<Skeleton class="h-4 w-32" />
 								<Skeleton class="h-5 w-12 rounded-full" />
@@ -208,7 +207,7 @@
 				</div>
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					{#each Array(6) as _}
-						<div class="p-3 rounded-lg border border-app-border bg-app-surface/40 space-y-2">
+						<div class="space-y-2">
 							<div class="flex justify-between items-center">
 								<Skeleton class="h-3.5 w-28" />
 								<Skeleton class="h-5 w-12 rounded-full" />
@@ -225,7 +224,7 @@
 					<Skeleton class="h-4 w-48" />
 					<Skeleton class="h-3 w-52" />
 				</div>
-				<div class="border border-app-border rounded-lg overflow-hidden divide-y divide-white/5">
+				<div class="border border-app-border rounded-lg overflow-hidden divide-y divide-app-border">
 					{#each Array(5) as _}
 						<div class="p-3.5 flex items-center justify-between bg-app-surface/30">
 							<div class="flex items-center gap-3">
@@ -252,36 +251,11 @@
 		<!-- 1. Top KPIs Majeurs (Sans icônes, chiffres en blanc) -->
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 			<!-- Carte 1 : Moyenne Générale -->
-			<Card
-				class="p-4 space-y-2 relative overflow-hidden {moyenneSeries.length > 1 ? 'cursor-pointer hover:border-zinc-600 group' : ''}"
-				role={moyenneSeries.length > 1 ? "button" : undefined}
-				tabindex={moyenneSeries.length > 1 ? 0 : undefined}
-				aria-label={moyenneSeries.length > 1 ? "Voir l'évolution de la moyenne" : undefined}
-				onclick={() => moyenneSeries.length > 1 && openHistory("moyenne")}
-				onkeydown={(e: KeyboardEvent) => e.key === "Enter" && moyenneSeries.length > 1 && openHistory("moyenne")}
-			>
-				{#if moyenneSeries.length > 1}
-					<div class="absolute top-3 right-3 bottom-12 w-[52%] pointer-events-none">
-						<Sparkline values={moyenneSeries} color="#22d3ee" />
-					</div>
-				{/if}
-				<span class="relative text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Moyenne Générale</span>
-				<div class="relative flex items-baseline gap-1.5">
-					<span class="text-2xl sm:text-3xl font-black text-white">
-						{formatGrade(gradesData.stats?.moyenne_generale)}
-					</span>
-					<span class="text-xs text-zinc-500 font-semibold">/ 20</span>
-				</div>
-				<div class="pt-1.5 border-t border-app-border flex items-center justify-between text-[11px] text-zinc-400">
-					<span>Min <strong class="text-white font-medium">{formatGrade(gradesData.stats?.min_promo)}</strong></span>
-					<span>Moy <strong class="text-white font-medium">{formatGrade(gradesData.stats?.moy_promo)}</strong></span>
-					<span>Max <strong class="text-white font-medium">{formatGrade(gradesData.stats?.max_promo)}</strong></span>
-				</div>
-			</Card>
+			<AverageCard stats={gradesData.stats} series={moyenneSeries} onclick={moyenneSeries.length > 1 ? () => openHistory("moyenne") : undefined} />
 
-			<!-- Carte 2 : Rang dans la Promo (sans "Position officielle", chiffres en blanc) -->
+			<!-- Carte 2 : Rang dans la Promo -->
 			<Card
-				class="p-4 space-y-2 relative overflow-hidden {rangSeries.length > 1 ? 'cursor-pointer hover:border-zinc-600 group' : ''}"
+				class="p-4 space-y-2 relative overflow-hidden {rangSeries.length > 1 ? 'cursor-pointer hover:border-app-border group' : ''}"
 				role={rangSeries.length > 1 ? "button" : undefined}
 				tabindex={rangSeries.length > 1 ? 0 : undefined}
 				aria-label={rangSeries.length > 1 ? "Voir l'évolution du classement" : undefined}
@@ -290,20 +264,20 @@
 			>
 				{#if rangSeries.length > 1}
 					<div class="absolute top-3 right-3 bottom-12 w-[52%] pointer-events-none">
-						<Sparkline values={rangSeries} invert color="#a78bfa" />
+						<Sparkline values={rangSeries} invert color="#7c5cd6" />
 					</div>
 				{/if}
-				<span class="relative text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Classement Promo</span>
+				<span class="relative text-[11px] font-semibold uppercase tracking-wider text-muted">Classement Promo</span>
 				<div class="relative flex items-baseline gap-2">
-					<span class="text-2xl sm:text-3xl font-black text-white">
+					<span class="text-2xl sm:text-3xl font-black text-fg">
 						{gradesData.stats?.rang || "--"}
 					</span>
-					<span class="text-xs text-zinc-400 font-medium">/ <span class="text-white">{gradesData.stats?.total_promo || "--"}</span> étudiants</span>
+					<span class="text-xs text-muted font-medium">/ <span class="text-fg">{gradesData.stats?.total_promo || "--"}</span> étudiants</span>
 				</div>
-				<div class="pt-1.5 border-t border-app-border text-[11px] text-zinc-400">
+				<div class="pt-1.5 border-t border-app-border text-[11px] text-muted">
 					{#if gradesData.stats?.rang && gradesData.stats?.total_promo}
 						{@const pct = Math.round((gradesData.stats.rang / gradesData.stats.total_promo) * 100)}
-						<span>Top <strong class="text-white font-medium">{pct}%</strong> de la promotion</span>
+						<span>Top <strong class="text-fg font-medium">{pct}%</strong> de la promotion</span>
 					{:else}
 						<span>En attente de clôture</span>
 					{/if}
@@ -312,15 +286,12 @@
 
 			<!-- Carte 3 : Crédits ECTS (chiffres en blanc) -->
 			<Card class="p-4 space-y-2">
-				<span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Crédits ECTS</span>
+				<span class="text-[11px] font-semibold uppercase tracking-wider text-muted">Crédits ECTS</span>
 				<div class="relative flex items-baseline gap-1.5">
-					<span class="text-2xl sm:text-3xl font-black text-white">
+					<span class="text-2xl sm:text-3xl font-black text-fg">
 						{ectsAcquis()}
 					</span>
-					<span class="text-xs text-zinc-400 font-medium">/ <span class="text-white">{ectsTotal()}</span> ECTS</span>
-				</div>
-				<div class="pt-1.5 border-t border-app-border text-[11px] text-zinc-400">
-					<span>Total requis pour l'année : <span class="text-white">60</span> ECTS</span>
+					<span class="text-xs text-muted font-medium">/ <span class="text-fg">{ectsTotal()}</span> ECTS</span>
 				</div>
 			</Card>
 		</div>
@@ -328,12 +299,9 @@
 		<!-- 2. Section des UEs (jauge ultra-fine sans bordure, chiffres en blanc) -->
 		<div>
 			<div class="flex items-center justify-between mb-3">
-				<h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+				<h2 class="text-xs font-semibold uppercase tracking-wider text-muted">
 					Unités d'Enseignement (UE) du Semestre
 				</h2>
-				<span class="text-[11px] text-zinc-500">
-					Survolez la jauge pour voir la plage promo
-				</span>
 			</div>
 
 			<!-- 3 UEs Principales -->
@@ -352,23 +320,23 @@
 
 					<Card class="p-4 space-y-3">
 						<div class="flex items-center gap-2">
-							<span class="text-xs font-bold text-white bg-cyan-600 px-2.5 py-0.5 rounded-full shrink-0">
+							<span class="text-[11px] font-bold text-muted shrink-0">
 								{ue.code}
 							</span>
-							<h3 class="font-semibold text-xs text-white truncate" title={ue.titre}>
+							<h3 class="font-semibold text-xs text-fg truncate" title={ue.titre}>
 								{ue.titre}
 							</h3>
 						</div>
 
 						<div class="flex items-baseline justify-between pt-0.5">
 							<div class="flex items-baseline gap-1">
-								<span class="text-2xl font-bold text-white">
+								<span class="text-2xl font-bold text-fg">
 									{formatGrade(ue.moyenne)}
 								</span>
-								<span class="text-xs text-zinc-500">/ 20</span>
+								<span class="text-xs text-subtle">/ 20</span>
 							</div>
-							<div class="text-xs text-zinc-400">
-								Rang : <strong class="text-white font-semibold">{ue.rang || "--"}</strong> / <span class="text-white">{ue.total_promo || "--"}</span>
+							<div class="text-xs text-muted">
+								Rang : <strong class="text-fg font-semibold">{ue.rang || "--"}</strong> / <span class="text-fg">{ue.total_promo || "--"}</span>
 							</div>
 						</div>
 
@@ -377,7 +345,7 @@
 							class="pt-1 cursor-help"
 							title="Promotion : Min {formatGrade(ue.min_promo)} | Moy {formatGrade(ue.moy_promo)} | Max {formatGrade(ue.max_promo)} — Votre note : {formatGrade(ue.moyenne)}"
 						>
-							<div class="w-full bg-zinc-800 rounded-full h-1 relative overflow-visible flex items-center">
+							<div class="w-full bg-app-raised rounded-full h-1 relative overflow-visible flex items-center">
 								<!-- Plage couverte par la promo (du minimum au maximum) -->
 								<div
 									class="h-full rounded-full bg-cyan-600 absolute transition-all"
@@ -396,7 +364,7 @@
 										class="absolute -top-1 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none"
 										style="left: {userPos}%;"
 									>
-										<div class="w-3 h-3 rounded-full bg-white shadow-xs"></div>
+										<div class="w-3 h-3 rounded-full bg-fg shadow-xs"></div>
 									</div>
 								{/if}
 							</div>
@@ -409,11 +377,11 @@
 			{#if bonusUes().length > 0}
 				<div class="pt-2 flex flex-wrap items-center gap-2">
 					{#each bonusUes() as bUe}
-						<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-app-card text-xs text-zinc-400">
-							<span class="font-bold text-white">{bUe.code}</span>
+						<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-app-card text-xs text-muted">
+							<span class="font-bold text-fg">{bUe.code}</span>
 							<span>{bUe.titre}</span>
-							<span class="text-zinc-600">•</span>
-							<span class="text-white font-medium">{bUe.moyenne ? `${formatGrade(bUe.moyenne)}/20` : 'Non notée'}</span>
+							<span class="text-subtle">•</span>
+							<span class="text-fg font-medium">{bUe.moyenne ? `${formatGrade(bUe.moyenne)}/20` : 'Non notée'}</span>
 						</div>
 					{/each}
 				</div>
@@ -423,7 +391,7 @@
 		<!-- 3. Grille des Moyennes par Matière (Sans bouton toggle, chiffres en blanc) -->
 		<div class="space-y-3">
 			<div class="flex items-center justify-between">
-				<h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+				<h2 class="text-xs font-semibold uppercase tracking-wider text-muted">
 					Moyennes par Matière (Ressources & SAÉ)
 				</h2>
 			</div>
@@ -436,29 +404,29 @@
 						type="button"
 						onclick={() => (selectedMatiere = isSelected ? "ALL" : mat.code)}
 						class="text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 {isSelected
-							? 'border-cyan-500 bg-zinc-800 text-white'
-							: 'border-app-border bg-app-card hover:border-zinc-700'}"
+							? 'border-cyan-500 bg-app-raised text-fg'
+							: 'border-app-border bg-app-card hover:border-app-border'}"
 					>
 						<div class="space-y-1 min-w-0 flex-1">
 							<div class="flex items-center gap-2">
-								<span class="font-bold text-xs {isSelected ? 'text-cyan-300' : 'text-white'}">
+								<span class="font-bold text-xs {isSelected ? 'text-cyan-300' : 'text-fg'}">
 									{mat.code}
 								</span>
-								<span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 font-medium">
+								<span class="text-[10px] px-2 py-0.5 rounded-full bg-app-raised text-muted font-medium">
 									{mat.evaluations_count} éval.
 								</span>
 							</div>
-							<div class="text-xs text-zinc-400 truncate" title={mat.titre}>
+							<div class="text-xs text-muted truncate" title={mat.titre}>
 								{mat.titre}
 							</div>
 						</div>
 
 						<div class="text-right shrink-0">
-							<div class="text-base sm:text-lg font-bold text-white">
+							<div class="text-base sm:text-lg font-bold text-fg">
 								{mat.moyenne !== null && mat.moyenne !== undefined ? formatGrade(mat.moyenne) : "--"}
 							</div>
 							{#if mat.moyenne !== null && mat.moyenne !== undefined}
-								<span class="text-[10px] text-zinc-500">/ 20</span>
+								<span class="text-[10px] text-subtle">/ 20</span>
 							{/if}
 						</div>
 					</button>
@@ -468,12 +436,12 @@
 			<!-- Matières non notées minimisées sous forme de badges compacts -->
 			{#if ungradedMatieres().length > 0}
 				<div class="pt-1.5 flex flex-wrap items-center gap-1.5">
-					<span class="text-xs text-zinc-400 mr-1">En attente de notation :</span>
+					<span class="text-xs text-muted mr-1">En attente de notation :</span>
 					{#each ungradedMatieres() as mat}
 						<button
 							type="button"
 							onclick={() => (selectedMatiere = selectedMatiere === mat.code ? "ALL" : mat.code)}
-							class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer {selectedMatiere === mat.code ? 'bg-cyan-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700'}"
+							class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer {selectedMatiere === mat.code ? 'bg-cyan-600 text-white' : 'bg-app-raised text-muted hover:text-white hover:bg-app-raised2'}"
 							title="{mat.code} - {mat.titre} (0 évaluation)"
 						>
 							{mat.code}
@@ -487,21 +455,21 @@
 		<Card class="p-0 overflow-hidden space-y-0">
 			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-app-border">
 				<div>
-					<h2 class="text-sm font-bold text-white">Détail des Évaluations Saisies</h2>
-					<p class="text-xs text-zinc-500 mt-0.5">
+					<h2 class="text-sm font-bold text-fg">Détail des Évaluations Saisies</h2>
+					<p class="text-xs text-subtle mt-0.5">
 						{#if selectedMatiere !== "ALL"}
 							Filtré pour la matière <strong class="text-cyan-400">{selectedMatiere}</strong>
 						{:else}
-							Cliquez sur une évaluation pour ouvrir sa répartition promo
+							Détail et répartition promo au clic
 						{/if}
 					</p>
 				</div>
 
 				<div class="flex items-center gap-2">
-					<Filter class="w-3.5 h-3.5 text-zinc-500" />
+					<Filter class="w-3.5 h-3.5 text-subtle" />
 					<select
 						bind:value={selectedMatiere}
-						class="rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-zinc-200 focus:border-cyan-500 focus:outline-none"
+						class="rounded-lg border border-app-border bg-app-surface px-3 py-1.5 text-xs text-fg focus:border-cyan-500 focus:outline-none"
 					>
 						<option value="ALL">Toutes les matières ({allEvaluations().length} notes)</option>
 						{#each gradesData.matieres || [] as mat}
@@ -511,61 +479,8 @@
 				</div>
 			</div>
 
-			<!-- Tableau avec colonnes : Évaluation, Coefficient, Note, Date -->
-			<div class="overflow-x-auto">
-				<table class="w-full text-left text-xs">
-					<thead>
-						<tr class="border-b border-app-border text-zinc-400 font-semibold uppercase text-[11px] tracking-wider bg-app-surface">
-							<th class="py-3 px-4">Évaluation</th>
-							<th class="py-3 px-4 w-28 text-center">Coefficient</th>
-							<th class="py-3 px-4 w-32 text-center">Note</th>
-							<th class="py-3 px-4 w-32 text-right">Date</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-white/5">
-						{#if filteredEvaluations().length === 0}
-							<tr>
-								<td colspan="4" class="py-10 text-center text-zinc-500 text-xs">
-									Aucune note enregistrée pour cette sélection.
-								</td>
-							</tr>
-						{:else}
-							{#each filteredEvaluations() as ev}
-								<tr
-									onclick={() => openEvaluationDetail(ev)}
-									class="hover:bg-zinc-800/60 transition-colors cursor-pointer group"
-								>
-									<td class="py-3 px-4">
-										<div class="flex items-center gap-2.5">
-											<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-cyan-600 text-white shrink-0">
-												{ev.code_matiere}
-											</span>
-											<div class="min-w-0">
-												<div class="font-semibold text-zinc-200 group-hover:text-cyan-400 transition-colors truncate">
-													{ev.description || "Évaluation"}
-												</div>
-												<div class="text-[11px] text-zinc-500 truncate">
-													{ev.titre_matiere}
-												</div>
-											</div>
-										</div>
-									</td>
-									<td class="py-3 px-4 text-center font-medium text-white">
-										{ev.coefficient}
-									</td>
-									<td class="py-3 px-4 text-center">
-										<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white">
-											{formatGrade(ev.note)} / 20
-										</span>
-									</td>
-									<td class="py-3 px-4 text-right text-zinc-400">
-										{formatDateFr(ev.date) || "--"}
-									</td>
-								</tr>
-							{/each}
-						{/if}
-					</tbody>
-				</table>
+			<div class="px-4 pb-2">
+				<GradesTable rows={filteredEvaluations()} showCoef onSelect={openEvaluationDetail} emptyText="Aucune note enregistrée pour cette sélection." />
 			</div>
 		</Card>
 	{/if}

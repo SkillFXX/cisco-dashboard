@@ -25,10 +25,10 @@
 
 	const variantClasses: Record<Variant, string> = {
 		default: "bg-cyan-600 text-white font-semibold hover:bg-cyan-500 shadow-xs active:scale-[0.98]",
-		secondary: "bg-zinc-800 text-zinc-100 hover:bg-zinc-700/80 border border-zinc-700/60 active:scale-[0.98]",
+		secondary: "bg-app-raised text-fg hover:bg-app-raised2/80 border border-app-border active:scale-[0.98]",
 		destructive: "bg-red-600 text-white hover:bg-red-500 shadow-sm active:scale-[0.98]",
-		outline: "border border-zinc-700/80 bg-transparent hover:bg-zinc-800/80 text-zinc-200 active:scale-[0.98]",
-		ghost: "hover:bg-zinc-800/80 text-zinc-300 hover:text-white",
+		outline: "border border-app-border bg-transparent hover:bg-app-raised/80 text-fg active:scale-[0.98]",
+		ghost: "hover:bg-app-raised/80 text-muted hover:text-fg",
 		link: "text-cyan-400 underline-offset-4 hover:underline p-0 h-auto",
 		cisco: "bg-cyan-600 text-white font-semibold hover:bg-cyan-500 shadow-xs active:scale-[0.98]"
 	};
@@ -46,7 +46,7 @@
 	{disabled}
 	{onclick}
 	class={cn(
-		"inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+		"inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
 		variantClasses[variant],
 		sizeClasses[size],
 		className
