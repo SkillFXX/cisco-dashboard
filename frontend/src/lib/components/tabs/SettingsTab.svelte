@@ -20,6 +20,7 @@
 		ShieldCheck,
 		Sparkles,
 		Palette,
+		ChevronDown,
 		RefreshCw
 	} from "lucide-svelte";
 
@@ -67,6 +68,14 @@
 		{ id: "moodle", name: "Moodle", ...statusOf(moodle_verified, moodle_configured, moodle_last_error) },
 		{ id: "ical", name: "Emploi du temps", ...statusOf(ical_verified, ical_configured, ical_last_error) }
 	]);
+	// Cartes de service repliables : ouvertes par défaut tant que le service n'est pas connecté
+	let expanded = $state<Record<string, boolean>>({});
+	function isOpen(id: string): boolean {
+		return expanded[id] ?? serviceStatuses.find((x) => x.id === id)?.label !== "Connecté";
+	}
+	function toggleService(id: string) {
+		expanded[id] = !isOpen(id);
+	}
 	let connectedCount = $derived(serviceStatuses.filter((x) => x.label === "Connecté").length);
 
 	let isLoading = $state(true);
@@ -455,7 +464,12 @@
 
 				<!-- Carte ScoDoc -->
 				<Card class="space-y-4 p-5" id="service-scodoc">
-					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
+					<button
+						type="button"
+						onclick={() => toggleService("scodoc")}
+						aria-expanded={isOpen("scodoc")}
+						class="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+					>
 						<div class="flex items-center gap-2.5">
 							<div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0">
 								<FileText class="w-4 h-4" />
@@ -466,26 +480,15 @@
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {statusOf(scodoc_verified, scodoc_configured, scodoc_last_error).cls}">
+							<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold {statusOf(scodoc_verified, scodoc_configured, scodoc_last_error).cls}">
 								{statusOf(scodoc_verified, scodoc_configured, scodoc_last_error).label}
 							</span>
-							<button
-								type="button"
-								onclick={() => testConnection("scodoc")}
-								disabled={testingService === "scodoc" || !scodoc_username}
-								title="Teste la connexion et l'enregistre si elle fonctionne"
-								class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-							>
-								{#if testingService === "scodoc"}
-									<RefreshCw class="w-3 h-3 animate-spin" />
-									<span>Vérification...</span>
-								{:else}
-									<span>Vérifier & enregistrer</span>
-								{/if}
-							</button>
+							<ChevronDown class="w-4 h-4 text-subtle transition-transform {isOpen("scodoc") ? 'rotate-180' : ''}" />
 						</div>
-					</div>
+					</button>
 
+					{#if isOpen("scodoc")}
+					<div class="space-y-4 pt-4 border-t border-app-border">
 					<p class="text-[11px] leading-relaxed text-subtle">Utilisez les mêmes identifiants que pour votre ENT (compte CAS de l'université). Ils sont chiffrés sur le serveur et servent uniquement à récupérer vos notes.</p>
 
 					{@render feedback("scodoc", scodoc_last_error)}
@@ -522,11 +525,35 @@
 							/>
 						</div>
 					</div>
+
+						<div class="flex justify-end">
+				<button
+					type="button"
+					onclick={() => testConnection("scodoc")}
+					disabled={testingService === "scodoc" || !scodoc_username}
+					title="Teste la connexion et l'enregistre si elle fonctionne"
+					class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+				>
+					{#if testingService === "scodoc"}
+						<RefreshCw class="w-3 h-3 animate-spin" />
+						<span>Vérification...</span>
+					{:else}
+						<span>Vérifier & enregistrer</span>
+					{/if}
+				</button>
+						</div>
+					</div>
+					{/if}
 				</Card>
 
 				<!-- Carte Moodle -->
 				<Card class="space-y-4 p-5" id="service-moodle">
-					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
+					<button
+						type="button"
+						onclick={() => toggleService("moodle")}
+						aria-expanded={isOpen("moodle")}
+						class="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+					>
 						<div class="flex items-center gap-2.5">
 							<div class="w-8 h-8 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center shrink-0">
 								<BookOpen class="w-4 h-4" />
@@ -537,26 +564,15 @@
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {statusOf(moodle_verified, moodle_configured, moodle_last_error).cls}">
+							<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold {statusOf(moodle_verified, moodle_configured, moodle_last_error).cls}">
 								{statusOf(moodle_verified, moodle_configured, moodle_last_error).label}
 							</span>
-							<button
-								type="button"
-								onclick={() => testConnection("moodle")}
-								disabled={testingService === "moodle" || (!moodle_username && !moodle_token)}
-								title="Teste la connexion et l'enregistre si elle fonctionne"
-								class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-							>
-								{#if testingService === "moodle"}
-									<RefreshCw class="w-3 h-3 animate-spin" />
-									<span>Vérification...</span>
-								{:else}
-									<span>Vérifier & enregistrer</span>
-								{/if}
-							</button>
+							<ChevronDown class="w-4 h-4 text-subtle transition-transform {isOpen("moodle") ? 'rotate-180' : ''}" />
 						</div>
-					</div>
+					</button>
 
+					{#if isOpen("moodle")}
+					<div class="space-y-4 pt-4 border-t border-app-border">
 					<p class="text-[11px] leading-relaxed text-subtle">Identifiant et mot de passe de votre compte Moodle. Le jeton personnel est une alternative facultative, à utiliser si la connexion par mot de passe ne fonctionne pas.</p>
 
 					{@render feedback("moodle", moodle_last_error)}
@@ -610,11 +626,35 @@
 							<p class="text-[11px] text-subtle">Sur Moodle : Préférences › Clés de sécurité › « Moodle mobile web service ».</p>
 						</div>
 					</details>
+
+						<div class="flex justify-end">
+				<button
+					type="button"
+					onclick={() => testConnection("moodle")}
+					disabled={testingService === "moodle" || (!moodle_username && !moodle_token)}
+					title="Teste la connexion et l'enregistre si elle fonctionne"
+					class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+				>
+					{#if testingService === "moodle"}
+						<RefreshCw class="w-3 h-3 animate-spin" />
+						<span>Vérification...</span>
+					{:else}
+						<span>Vérifier & enregistrer</span>
+					{/if}
+				</button>
+						</div>
+					</div>
+					{/if}
 				</Card>
 
 				<!-- Carte Emploi du temps -->
 				<Card class="space-y-4 p-5" id="service-ical">
-					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border pb-3">
+					<button
+						type="button"
+						onclick={() => toggleService("ical")}
+						aria-expanded={isOpen("ical")}
+						class="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+					>
 						<div class="flex items-center gap-2.5">
 							<div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
 								<Calendar class="w-4 h-4" />
@@ -625,26 +665,15 @@
 							</div>
 						</div>
 						<div class="flex items-center gap-2 shrink-0">
-							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {statusOf(ical_verified, ical_configured, ical_last_error).cls}">
+							<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold {statusOf(ical_verified, ical_configured, ical_last_error).cls}">
 								{statusOf(ical_verified, ical_configured, ical_last_error).label}
 							</span>
-							<button
-								type="button"
-								onclick={() => testConnection("ical")}
-								disabled={testingService === "ical" || !ical_url}
-								title="Teste la connexion et l'enregistre si elle fonctionne"
-								class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-							>
-								{#if testingService === "ical"}
-									<RefreshCw class="w-3 h-3 animate-spin" />
-									<span>Vérification...</span>
-								{:else}
-									<span>Vérifier & enregistrer</span>
-								{/if}
-							</button>
+							<ChevronDown class="w-4 h-4 text-subtle transition-transform {isOpen("ical") ? 'rotate-180' : ''}" />
 						</div>
-					</div>
+					</button>
 
+					{#if isOpen("ical")}
+					<div class="space-y-4 pt-4 border-t border-app-border">
 					<p class="text-[11px] leading-relaxed text-subtle">Dans ADE Campus / UM Net, exportez votre planning au format iCal (.ics) puis collez ici le lien obtenu.</p>
 
 					{@render feedback("ical", ical_last_error)}
@@ -662,6 +691,25 @@
 							/>
 						</div>
 					</div>
+
+						<div class="flex justify-end">
+				<button
+					type="button"
+					onclick={() => testConnection("ical")}
+					disabled={testingService === "ical" || !ical_url}
+					title="Teste la connexion et l'enregistre si elle fonctionne"
+					class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+				>
+					{#if testingService === "ical"}
+						<RefreshCw class="w-3 h-3 animate-spin" />
+						<span>Vérification...</span>
+					{:else}
+						<span>Vérifier & enregistrer</span>
+					{/if}
+				</button>
+						</div>
+					</div>
+					{/if}
 				</Card>
 
 				<div class="flex justify-end gap-3 pt-2">

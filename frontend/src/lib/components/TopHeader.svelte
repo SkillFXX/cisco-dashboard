@@ -1,10 +1,6 @@
 <script lang="ts">
 	import { auth } from "$lib/stores/auth.svelte";
-	import { Plus, Sun, Moon, SunMoon } from "lucide-svelte";
-	import { theme, type ThemeMode } from "$lib/stores/theme.svelte";
-
-	const NEXT_MODE: Record<ThemeMode, ThemeMode> = { auto: "light", light: "dark", dark: "auto" };
-	const MODE_LABEL: Record<ThemeMode, string> = { auto: "automatique", light: "clair", dark: "sombre" };
+	import { Plus } from "lucide-svelte";
 
 	let {
 		activeTab = "dashboard",
@@ -79,17 +75,6 @@
 				<Plus class="w-4 h-4" />
 			</button>
 		{/if}
-
-		<!-- Thème : automatique, clair, sombre -->
-		<button
-			type="button"
-			onclick={() => theme.set(NEXT_MODE[theme.mode])}
-			title="Thème {MODE_LABEL[theme.mode]} (cliquer pour changer)"
-			aria-label="Changer de thème (actuellement {MODE_LABEL[theme.mode]})"
-			class="flex items-center justify-center w-8 h-8 rounded-lg text-muted hover:text-fg hover:bg-app-raised transition-colors cursor-pointer"
-		>
-			{#if theme.mode === "light"}<Sun class="w-4 h-4" />{:else if theme.mode === "dark"}<Moon class="w-4 h-4" />{:else}<SunMoon class="w-4 h-4" />{/if}
-		</button>
 
 		<!-- Profil etudiant -->
 		<div class="flex items-center gap-2.5 pl-2 border-l border-app-border">

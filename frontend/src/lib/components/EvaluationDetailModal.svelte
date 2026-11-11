@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Modal from "./Modal.svelte";
 	import { api } from "$lib/api";
+	import { formatDateFr } from "$lib/utils";
 	import { RefreshCw } from "lucide-svelte";
 
 	let {
@@ -13,259 +14,178 @@
 		totalPromo?: number;
 	} = $props();
 
-	let isLoadingDist = $state(false);
+	let isLoading = $state(false);
 	let distData = $state<any>(null);
-	let errorDist = $state("");
+	let error = $state("");
+	let hovered = $state<number | null>(null);
 
-	interface Bin {
-		label: string;
-		min: number;
-		max: number;
-		count: number;
-		percent: number;
-		isUserBin: boolean;
+	function toNum(v: any): number | null {
+		if (v === null || v === undefined) return null;
+		const n = typeof v === "number" ? v : parseFloat(v);
+		return Number.isFinite(n) ? n : null;
 	}
+	const fmt = (v: number | null) => (v === null ? "--" : v.toFixed(2).replace(".", ","));
 
-	let userNoteNum = $derived(() => {
-		if (!evaluation || evaluation.note === null || evaluation.note === undefined) return null;
-		const n = typeof evaluation.note === "number" ? evaluation.note : parseFloat(evaluation.note);
-		return isNaN(n) ? null : n;
+	let userNote = $derived(toNum(evaluation?.note));
+
+	// Toutes les notes de la promo, de la meilleure à la plus basse (une barre par étudiant)
+	let sorted = $derived<number[]>([...(distData?.distribution ?? [])].sort((a, b) => b - a));
+	let stats = $derived({
+		min: toNum(evaluation?.min_promo ?? distData?.min_promo),
+		moy: toNum(evaluation?.moy_promo ?? distData?.moy_promo),
+		max: toNum(evaluation?.max_promo ?? distData?.max_promo)
 	});
-
-	let moyPromoNum = $derived(() => {
-		if (!evaluation) return null;
-		const m = evaluation.moy_promo ?? distData?.moy_promo;
-		if (m === null || m === undefined) return null;
-		const num = typeof m === "number" ? m : parseFloat(m);
-		return isNaN(num) ? null : num;
-	});
-
-	let minPromoNum = $derived(() => {
-		if (!evaluation) return null;
-		const val = evaluation.min_promo ?? distData?.min_promo;
-		if (val === null || val === undefined) return null;
-		const num = typeof val === "number" ? val : parseFloat(val);
-		return isNaN(num) ? null : num;
-	});
-
-	let maxPromoNum = $derived(() => {
-		if (!evaluation) return null;
-		const val = evaluation.max_promo ?? distData?.max_promo;
-		if (val === null || val === undefined) return null;
-		const num = typeof val === "number" ? val : parseFloat(val);
-		return isNaN(num) ? null : num;
-	});
-
-	let bins = $derived((): Bin[] => {
-		const result: Bin[] = [];
-		for (let i = 0; i < 10; i++) {
-			const bMin = i * 2;
-			const bMax = (i + 1) * 2;
-			result.push({
-				label: `${bMin}-${bMax}`,
-				min: bMin,
-				max: bMax,
-				count: 0,
-				percent: 0,
-				isUserBin: false
-			});
+	let userRank = $derived(userNote === null || sorted.length === 0 || distData?.estimated ? null : 1 + sorted.filter((n) => n > userNote + 1e-9).length);
+	// Index de la barre qui représente l'utilisateur (la plus proche de sa note)
+	let userIndex = $derived.by(() => {
+		if (userNote === null || sorted.length === 0) return null;
+		let best = 0;
+		for (let i = 0; i < sorted.length; i++) {
+			if (Math.abs(sorted[i] - userNote) < Math.abs(sorted[best] - userNote)) best = i;
 		}
-
-		const notesList: number[] = distData?.distribution || [];
-		if (notesList.length > 0) {
-			for (const val of notesList) {
-				const idx = Math.min(9, Math.max(0, Math.floor(val / 2)));
-				result[idx].count++;
-			}
-			const total = notesList.length;
-			for (const b of result) {
-				b.percent = Math.round((b.count / total) * 100);
-			}
-		}
-
-		const userN = userNoteNum();
-		if (userN !== null) {
-			const userIdx = Math.min(9, Math.max(0, Math.floor(userN / 2)));
-			if (result[userIdx]) {
-				result[userIdx].isUserBin = true;
-			}
-		}
-
-		return result;
+		return best;
 	});
 
-	let maxBinCount = $derived(() => {
-		const list = bins();
-		const max = Math.max(...list.map((b) => b.count));
-		return max > 0 ? max : 1;
-	});
+	// Géométrie du graphique
+	const W = 640;
+	const H = 230;
+	const PAD = { top: 26, right: 12, bottom: 22, left: 28 };
+	const plotW = W - PAD.left - PAD.right;
+	const plotH = H - PAD.top - PAD.bottom;
+	const y = (v: number) => PAD.top + plotH * (1 - Math.min(Math.max(v, 0), 20) / 20);
+	let slot = $derived(sorted.length > 0 ? plotW / sorted.length : plotW);
+	let barW = $derived(Math.max(2, slot * 0.72));
+	const x = (i: number) => PAD.left + slot * i + (slot - barW) / 2;
 
 	$effect(() => {
-		if (open && evaluation && evaluation.id) {
-			loadDistribution(evaluation);
+		if (open && evaluation?.id) {
+			load(evaluation);
 		} else if (!open) {
 			distData = null;
-			errorDist = "";
+			error = "";
+			hovered = null;
 		}
 	});
 
-	async function loadDistribution(ev: any) {
-		isLoadingDist = true;
-		errorDist = "";
+	async function load(ev: any) {
+		isLoading = true;
+		error = "";
 		try {
-			const res = await api.getEvaluationDistribution(ev.id, {
+			distData = await api.getEvaluationDistribution(ev.id, {
 				min_promo: ev.min_promo,
 				moy_promo: ev.moy_promo,
 				max_promo: ev.max_promo,
 				total_promo: totalPromo
 			});
-			distData = res;
-		} catch (err: any) {
-			errorDist = err.message || "Impossible de charger la répartition.";
+		} catch (e: any) {
+			error = e.message || "Impossible de charger la répartition.";
 		} finally {
-			isLoadingDist = false;
+			isLoading = false;
 		}
 	}
 
-	function formatVal(v: any): string {
-		if (v === null || v === undefined) return "--";
-		const num = typeof v === "number" ? v : parseFloat(v);
-		return isNaN(num) ? "--" : num.toFixed(2);
-	}
+	let tip = $derived(hovered === null ? null : { rank: hovered + 1, note: sorted[hovered] });
 </script>
 
-<Modal bind:open title="" class="max-w-xl">
+<Modal bind:open title="" class="max-w-2xl">
 	{#if evaluation}
 		<div class="space-y-5">
-			<!-- En-tête épuré et sans boîtes imbriquées -->
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-app-border">
-				<div class="space-y-1 min-w-0">
-					<div class="flex items-center gap-2 flex-wrap text-xs text-muted">
-						<span class="font-bold text-white bg-cyan-600 px-2.5 py-0.5 rounded-full text-xs shrink-0">
-							{evaluation.code_matiere}
-						</span>
-						<span class="font-medium text-muted">Coef. {evaluation.coefficient ?? 1.0}</span>
-						{#if evaluation.date}
-							<span class="text-subtle">•</span>
-							<span class="text-muted">{new Date(evaluation.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-						{/if}
-					</div>
-					<h2 class="text-base font-bold text-fg truncate">
-						{evaluation.description || "Évaluation"}
-					</h2>
-					<p class="text-xs text-muted truncate">
-						{evaluation.titre_matiere}
+			<div class="flex items-start justify-between gap-4 pr-6">
+				<div class="min-w-0 space-y-0.5">
+					<h2 class="text-base font-bold text-fg leading-snug">{evaluation.description || "Évaluation"}</h2>
+					<p class="text-xs text-muted">
+						{[evaluation.code_matiere, evaluation.titre_matiere].filter(Boolean).join(" · ")}
+					</p>
+					<p class="text-xs text-subtle">
+						Coef. {evaluation.coefficient ?? 1}{evaluation.date ? ` · ${formatDateFr(evaluation.date)}` : ""}
 					</p>
 				</div>
-
-				<!-- Note de l'étudiant en blanc -->
-				<div class="self-start sm:self-center shrink-0">
-					<div class="inline-flex items-baseline gap-1.5 bg-app-raised text-fg px-4 py-1.5 rounded-full font-bold">
-						<span class="text-xs text-muted uppercase font-medium">Note</span>
-						<span class="text-xl sm:text-2xl font-black text-fg">{formatVal(evaluation.note)}</span>
-						<span class="text-xs text-muted font-normal">/ 20</span>
+				<div class="text-right shrink-0">
+					<div class="flex items-baseline justify-end gap-1">
+						<span class="text-3xl font-black text-fg tabular-nums {userNote !== null && userNote < 10 ? 'text-rose-400' : ''}">{fmt(userNote)}</span>
+						<span class="text-xs text-subtle">/ 20</span>
 					</div>
+					{#if userRank !== null}
+						<div class="text-xs text-muted">{userRank}<sup>{userRank === 1 ? "er" : "e"}</sup> sur {sorted.length}</div>
+					{/if}
 				</div>
 			</div>
 
-			<!-- Indicateurs statistiques essentiels (chiffres en blanc) -->
-			<div class="grid grid-cols-4 divide-x divide-app-border py-3 bg-app-surface rounded-xl border border-app-border text-center">
-				<div class="px-2">
-					<span class="block text-[11px] text-muted font-medium uppercase tracking-wider">Note Min</span>
-					<span class="block text-base sm:text-lg font-bold text-fg mt-0.5">{formatVal(minPromoNum())}</span>
+			{#if isLoading}
+				<div class="py-14 flex flex-col items-center justify-center text-muted text-xs gap-2">
+					<RefreshCw class="w-5 h-5 animate-spin text-cyan-400" />
+					<span>Chargement des notes de la promotion…</span>
 				</div>
-
-				<div class="px-2">
-					<span class="block text-[11px] text-muted font-medium uppercase tracking-wider">Moyenne</span>
-					<span class="block text-base sm:text-lg font-bold text-fg mt-0.5">{formatVal(moyPromoNum())}</span>
-				</div>
-
-				<div class="px-2">
-					<span class="block text-[11px] text-muted font-medium uppercase tracking-wider">Note Max</span>
-					<span class="block text-base sm:text-lg font-bold text-fg mt-0.5">{formatVal(maxPromoNum())}</span>
-				</div>
-
-				<div class="px-2">
-					<span class="block text-[11px] text-muted font-medium uppercase tracking-wider">Effectif</span>
-					<span class="block text-base sm:text-lg font-bold text-fg mt-0.5">{distData?.count || totalPromo}</span>
-				</div>
-			</div>
-
-			<!-- Distribution des notes dans la promo -->
-			<div class="space-y-3 pt-1">
-				<div class="flex items-center justify-between">
-					<h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
-						Répartition des Notes
-					</h3>
-
-					<div class="flex items-center gap-3 text-xs">
-						<div class="flex items-center gap-1.5">
-							<span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
-							<span class="text-muted">Votre tranche</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="w-2.5 h-2.5 rounded-full bg-app-raised2"></span>
-							<span class="text-muted">Promotion</span>
-						</div>
+			{:else if error && sorted.length === 0}
+				<p class="text-xs text-rose-400">{error}</p>
+			{:else if sorted.length > 0}
+				<div>
+					<div class="flex items-center justify-between h-5 text-xs mb-1">
+						<span class="font-semibold text-muted">Notes de la promotion, classées</span>
+						{#if tip}
+							<span class="text-fg font-medium tabular-nums">{tip.rank}<sup>{tip.rank === 1 ? "er" : "e"}</sup> · {fmt(tip.note)}</span>
+						{/if}
 					</div>
+
+					<svg viewBox="0 0 {W} {H}" class="w-full h-auto" role="img" aria-label="Chaque barre est la note d'un étudiant, de la meilleure à la plus basse">
+						{#each [0, 5, 10, 15, 20] as t}
+							<line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="currentColor" class="text-fg/10" stroke-dasharray={t === 10 ? "4 4" : undefined} />
+							<text x={PAD.left - 6} y={y(t) + 4} text-anchor="end" class="fill-subtle" font-size="11">{t}</text>
+						{/each}
+
+						{#each sorted as note, i}
+							{@const isUser = i === userIndex}
+							<rect
+								x={x(i)}
+								y={y(note)}
+								width={barW}
+								height={Math.max(1, y(0) - y(note))}
+								rx={Math.min(3, barW / 2)}
+								class={isUser ? "fill-cyan-500" : hovered === i ? "fill-fg/45" : "fill-fg/20"}
+							/>
+						{/each}
+
+						{#if stats.moy !== null}
+							<line x1={PAD.left} x2={W - PAD.right} y1={y(stats.moy)} y2={y(stats.moy)} stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 4" />
+							<text x={W - PAD.right} y={y(stats.moy) - 5} text-anchor="end" font-size="11" fill="#f59e0b" font-weight="600">Moy. {fmt(stats.moy)}</text>
+						{/if}
+
+						{#if userIndex !== null && userNote !== null}
+							<text x={x(userIndex) + barW / 2} y={y(sorted[userIndex]) - 7} text-anchor="middle" font-size="11" font-weight="700" class="fill-cyan-500">Vous</text>
+						{/if}
+
+						{#each sorted as _, i}
+							<rect
+								x={PAD.left + slot * i}
+								y={PAD.top}
+								width={slot}
+								height={plotH}
+								fill="transparent"
+								role="presentation"
+								onpointerenter={() => (hovered = i)}
+								onpointerleave={() => (hovered = null)}
+							/>
+						{/each}
+
+						<text x={PAD.left} y={H - 5} font-size="11" class="fill-subtle">1<tspan baseline-shift="super" font-size="8">er</tspan></text>
+						<text x={W - PAD.right} y={H - 5} text-anchor="end" font-size="11" class="fill-subtle">{sorted.length}<tspan baseline-shift="super" font-size="8">e</tspan></text>
+					</svg>
+
+					{#if distData?.estimated}
+						<p class="text-[11px] text-amber-400 mt-1">
+							Répartition estimée à partir du minimum, de la moyenne et du maximum : ScoDoc ne fournit pas les notes individuelles de cette évaluation.
+						</p>
+					{/if}
 				</div>
+			{/if}
 
-				{#if isLoadingDist}
-					<div class="py-12 flex flex-col items-center justify-center text-muted text-xs gap-2">
-						<RefreshCw class="w-5 h-5 animate-spin text-cyan-400" />
-						<span>Chargement de la répartition...</span>
+			<div class="grid grid-cols-3 divide-x divide-app-border border-t border-app-border pt-3 text-center">
+				{#each [["Minimum", stats.min], ["Moyenne", stats.moy], ["Maximum", stats.max]] as [label, value]}
+					<div class="px-2">
+						<div class="text-[11px] text-subtle">{label}</div>
+						<div class="text-base font-bold text-fg tabular-nums">{fmt(value as number | null)}</div>
 					</div>
-				{:else if errorDist && (!distData || distData.distribution.length === 0)}
-					<div class="p-3 rounded-lg bg-rose-900/40 text-rose-300 text-xs font-medium">
-						{errorDist}
-					</div>
-				{:else}
-					<!-- Histogramme épuré -->
-					<div class="pt-2">
-						<div class="h-40 flex items-end gap-1.5 sm:gap-2 px-1">
-							{#each bins() as b}
-								{@const maxH = maxBinCount()}
-								{@const hPercent = Math.max(6, Math.round((b.count / maxH) * 100))}
-								<div class="flex-1 flex flex-col items-center h-full justify-end group relative">
-									<!-- Info-bulle au survol -->
-									<div class="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute -top-8 bg-app-surface border border-app-border text-fg text-[10px] rounded-md px-2 py-1 shadow-md whitespace-nowrap z-20">
-										<span class="font-bold">{b.min} à {b.max} : </span>
-										<span>{b.count} étud. ({b.percent}%)</span>
-									</div>
-
-									<!-- Effectif au dessus de la barre (en blanc) -->
-									<span class="text-[10px] text-muted group-hover:text-fg transition-colors mb-1 {b.isUserBin ? 'text-fg font-bold' : ''}">
-										{b.count}
-									</span>
-
-									<!-- Barre -->
-									<div
-										class="w-full rounded-t-sm transition-all duration-200 {b.isUserBin
-											? 'bg-cyan-500'
-											: 'bg-app-raised2 hover:bg-app-raised2'}"
-										style="height: {hPercent}%"
-									></div>
-
-									<!-- Tranche de notes en bas -->
-									<span class="text-[9px] text-muted mt-2 whitespace-nowrap {b.isUserBin ? 'text-fg font-bold' : ''}">
-										{b.label}
-									</span>
-								</div>
-							{/each}
-						</div>
-					</div>
-				{/if}
-			</div>
-
-			<!-- Bouton de fermeture sobre -->
-			<div class="flex justify-end pt-2 border-t border-app-border">
-				<button
-					type="button"
-					onclick={() => (open = false)}
-					class="px-4 py-2 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-semibold text-fg transition-all cursor-pointer"
-				>
-					Fermer
-				</button>
+				{/each}
 			</div>
 		</div>
 	{/if}

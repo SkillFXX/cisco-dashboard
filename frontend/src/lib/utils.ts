@@ -56,12 +56,12 @@ export function getMondayOfDate(d: Date, weekOffset = 0): Date {
 /** Aplat de couleur d'un cours (texte blanc), identique dans les deux thèmes. */
 export function getCourseColorStyle(type: string): string {
 	const t = (type || "").toUpperCase();
-	if (t === "TP") return "bg-c-tp text-white";
-	if (t === "TD") return "bg-c-td text-white";
-	if (t === "CM") return "bg-c-cm text-white";
-	if (t === "DS" || t === "EXAMEN") return "bg-c-ds text-white";
-	if (t === "SAE") return "bg-c-sae text-white";
-	return "bg-c-other text-white";
+	if (t === "TP") return "bg-c-tp/85 text-white";
+	if (t === "TD") return "bg-c-td/85 text-white";
+	if (t === "CM") return "bg-c-cm/85 text-white";
+	if (t === "DS" || t === "EXAMEN") return "bg-c-ds/85 text-white";
+	if (t === "SAE") return "bg-c-sae/85 text-white";
+	return "bg-c-other/85 text-white";
 }
 
 export function getCourseBadgeStyle(type: string): string {

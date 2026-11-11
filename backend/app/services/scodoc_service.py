@@ -293,12 +293,13 @@ def fetch_evaluation_distribution(
     total_promo: Optional[int] = None
 ) -> Dict[str, Any]:
     """Recupere la repartition exacte ou modelisee des notes d'une evaluation avec mise en cache."""
-    cache_key = f"scodoc:{user_id}:eval_dist:{evaluation_id}"
+    cache_key = f"scodoc:{user_id}:eval_dist2:{evaluation_id}"
     cached = get_cached_data(cache_key)
     if cached:
         return cached
 
     distribution: list[float] = []
+    estimated = False
 
     # 1. Tentative via l'API ScoDoc
     if url and username and password and not validate_service_url(url):
@@ -312,6 +313,7 @@ def fetch_evaluation_distribution(
 
     # 2. Si non fournie par l'API, generation d'une distribution statistique fidele
     if not distribution and (moy_promo is not None or min_promo is not None or max_promo is not None):
+        estimated = True
         import random
         m = moy_promo if moy_promo is not None else 12.0
         p_min = min_promo if min_promo is not None else max(0.0, m - 5.0)
@@ -327,6 +329,7 @@ def fetch_evaluation_distribution(
     res = {
         "evaluation_id": evaluation_id,
         "distribution": distribution,
+        "estimated": estimated,
         "count": len(distribution),
         "min_promo": min(distribution) if distribution else min_promo,
         "max_promo": max(distribution) if distribution else max_promo,
