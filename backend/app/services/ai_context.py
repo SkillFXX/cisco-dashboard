@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from ..models import User, PersonalTask, CompletedExternalTask
 from .ical_service import fetch_timetable
 from .moodle_service import fetch_moodle_data
+from .moodle_resources import get_course, list_courses
 from .scodoc_service import fetch_scodoc_data
 
 PARIS = ZoneInfo("Europe/Paris")
@@ -26,6 +27,8 @@ TOPIC_KEYWORDS: Dict[str, List[str]] = {
     "absences": ["absen", "retard", "justif", "assidu", "manque"],
     "timetable": ["cours", "emploi", "planning", "salle", "prof", "enseignant", "demain", "aujourd", "semaine", "horaire", "heure",
                   "lundi", "mardi", "mercredi", "jeudi", "vendredi", "prochain", "libre", "edt", "amphi", "groupe", "finis", "commence"],
+    "resources": ["document", "support", "polycop", "pdf", "fichier", "telecharg", "diapo", "slides", "chapitre", "corrige", "annale",
+                  "contenu du cours", "ressources moodle", "cours moodle"],
     "tasks": ["devoir", "rendre", "rendu", "deadline", "echeance", "dm ", "faire", "travail", "moodle", "reviser", "projet", "tp ", "ds ", "date limite"],
 }
 
@@ -153,12 +156,74 @@ def _tasks_section(db: Session, user: User, moodle: Dict[str, Any], timetable: D
     return "\n".join(lines)
 
 
+RESOURCE_STOPWORDS = {
+    "cours", "document", "documents", "support", "supports", "fichier", "fichiers", "pdf", "moodle", "ressource", "ressources",
+    "les", "des", "pour", "dans", "quel", "quels", "quelle", "quelles", "est", "sont", "mes", "mon", "ton", "sur", "avec", "une",
+    "que", "qui", "pas", "plus", "tous", "tout", "toutes", "telecharger", "disponible", "disponibles", "trouve", "trouver",
+    "donne", "peux", "peut", "liste", "lister", "existe", "il", "elle", "the", "chapitre", "annale", "corrige",
+}
+MAX_RESOURCE_ENTRIES = 40
+
+
+def _resources_section(user: User, question_texts: List[str]) -> str:
+    """Liste (noms seulement) des documents Moodle du cours cite dans la question. Le contenu des fichiers n'est jamais lu."""
+    listing = list_courses(user)
+    if not listing.get("configured"):
+        return "RESSOURCES MOODLE: Moodle non configuré."
+    courses = listing.get("courses", [])
+    if not courses:
+        return "RESSOURCES MOODLE: aucun cours trouvé."
+
+    words = {w for w in re.findall(r"[a-z0-9]{3,}", _norm(" ".join(question_texts))) if w not in RESOURCE_STOPWORDS}
+    scored = []
+    for c in courses:
+        name = _norm(f"{c['fullname']} {c['shortname']}")
+        score = sum(1 for w in words if w in name)
+        if score:
+            scored.append((score, not c.get("ended"), c))
+    scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
+
+    if not scored:
+        names = "; ".join(c["fullname"] for c in courses[:15] if not c.get("ended"))
+        return f"RESSOURCES MOODLE (cours disponibles, précise lequel pour lister ses documents): {names}"
+
+    lines = ["RESSOURCES MOODLE (noms des documents, contenu non lisible):"]
+    for _, _, c in scored[:2]:
+        data = get_course(user, c["id"])
+        lines.append(f"COURS {c['fullname']}:")
+        if data.get("error") and not data.get("sections"):
+            lines.append(f"- indisponible ({data['error']})")
+            continue
+        count = 0
+        for sec in data.get("sections", []):
+            items = []
+            for m in sec["modules"]:
+                if m["files"]:
+                    names = [f["name"] for f in m["files"]] if len(m["files"]) > 1 else [m["name"]]
+                    items.extend(names)
+                elif m.get("link"):
+                    items.append(f"{m['name']} (lien)")
+                elif m["modname"] in ("assign", "quiz"):
+                    items.append(f"{m['name']} ({m['modname']})")
+            if not items:
+                continue
+            room = MAX_RESOURCE_ENTRIES - count
+            if room <= 0:
+                break
+            shown = [i[:70] for i in items[:room]]
+            count += len(shown)
+            extra = f" (+{len(items) - len(shown)})" if len(items) > len(shown) else ""
+            lines.append(f"- {sec['name'][:50]}: " + "; ".join(shown) + extra)
+    lines.append("Les documents se téléchargent dans l'onglet Ressources.")
+    return "\n".join(lines)
+
+
 def build_context(db: Session, user: User, question_texts: List[str], with_subjects: bool = False) -> str:
     now = datetime.datetime.now(PARIS).replace(tzinfo=None)
     creds = user.credentials
     topics = detect_topics(question_texts)
     broad = not topics and not with_subjects
-    wanted = set(TOPIC_KEYWORDS) if broad else (topics or {"tasks"})
+    wanted = set(TOPIC_KEYWORDS) - {"resources"} if broad else (topics or {"tasks"})
     if with_subjects:
         wanted = wanted | {"subjects"}
 
@@ -197,6 +262,8 @@ def build_context(db: Session, user: User, question_texts: List[str], with_subje
         parts.append(_timetable_section(timetable, now, 14 if "prochaine" in blob or "quinzaine" in blob else (4 if broad else 7)))
     if "tasks" in wanted:
         parts.append(_tasks_section(db, user, moodle, timetable, now))
+    if "resources" in wanted:
+        parts.append(_resources_section(user, question_texts))
     return "\n".join(parts)
 
 
