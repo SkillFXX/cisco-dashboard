@@ -29,7 +29,7 @@ def _load_secret_key() -> str:
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Cisco - Panel Étudiant BUT R&T"
+    PROJECT_NAME: str = "Cisco Dashboard"
     SECRET_KEY: str = _load_secret_key()
     # Cle de chiffrement des mots de passe ScoDoc/Moodle stockes (par defaut derivee de SECRET_KEY)
     ENCRYPTION_KEY: str = ""

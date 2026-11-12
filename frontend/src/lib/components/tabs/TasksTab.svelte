@@ -884,10 +884,10 @@
 					{/if}
 
 					<!-- Lien direct Moodle -->
-					{#if selectedTask.source === "moodle"}
+					{#if selectedTask.source === "moodle" && selectedTask.url}
 						<div class="space-y-2 pt-2">
 							<a
-								href={selectedTask.url || "https://moodle-but.iutbeziers.fr/moodle"}
+								href={selectedTask.url}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition-all shadow-xs cursor-pointer"

@@ -158,7 +158,7 @@ export const api = {
 		return await request<any>(`/moodle/courses?force_refresh=${forceRefresh}`);
 	},
 
-	// Timetable (ADE / UM Net iCal)
+	// Timetable (iCal)
 	async getTimetableWeek(forceRefresh = false) {
 		return await request<any>(`/timetable/week?force_refresh=${forceRefresh}`);
 	},

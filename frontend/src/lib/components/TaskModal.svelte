@@ -20,41 +20,30 @@
 
 	let title = $state("");
 	let description = $state("");
-	let subject = $state("R101 Réseaux");
+	let subject = $state("");
 	let event_type = $state("ds");
 	let due_date = $state("");
 	let isSubmitting = $state(false);
 	let error = $state("");
 
-	const subjectsList = [
-		"R101 Réseaux",
-		"R102 Principes architecture",
-		"R103 Réseaux locaux",
-		"R104 Électronique",
-		"R105 Support transmission",
-		"R106 Archi des systèmes",
-		"R107 Programmation",
-		"R108 Systèmes exploitation",
-		"R109 Technologies Web",
-		"R110 Anglais",
-		"R111 Expression-Communication",
-		"R112 Projet Personnel Pro (PPP)",
-		"R113 Maths du signal",
-		"R114 Maths des transmissions",
-		"R115 Gestion de projet",
-		"SAÉ S1.01",
-		"SAÉ S1.02",
-		"Autre"
-	];
+	// Matieres proposees : celles du releve ScoDoc de l'utilisateur (saisie libre possible).
+	let subjectsList = $state<string[]>([]);
 
-	// Rattache un intitule de cours ("R113 Maths du signal-TDB") a la matiere de la liste via son code.
+	$effect(() => {
+		if (!open || subjectsList.length) return;
+		api.getGrades()
+			.then((data) => {
+				subjectsList = (data?.matieres ?? []).map((m: any) => `${m.code} ${m.titre}`.trim()).filter(Boolean);
+			})
+			.catch(() => {});
+	});
+
+	// Rattache un intitule de cours ("R113 Maths du signal-TDB") a la matiere du releve via son code.
 	function resolveSubject(raw: string): string {
 		const code = raw.match(/^(R\d{3}|SA[EÉ]\s*S?[\d.]+)/i)?.[1]?.toUpperCase().replace(/\s+/g, " ");
 		const found = code ? subjectsList.find((s) => s.toUpperCase().startsWith(code)) : undefined;
 		return found ?? raw;
 	}
-
-	let subjectOptions = $derived(subject && !subjectsList.includes(subject) ? [subject, ...subjectsList] : subjectsList);
 
 	function initDefaultDate() {
 		const tomorrow = new Date();
@@ -69,7 +58,7 @@
 			if (task) {
 				title = task.title || "";
 				description = task.description || "";
-				subject = task.subject || "R101 Réseaux";
+				subject = task.subject || "";
 				event_type = task.event_type || (task.category && task.category !== "AUTRES" ? task.category.toLowerCase() : task.category ? "todo" : "ds");
 				if (task.due_date) {
 					try {
@@ -84,7 +73,7 @@
 			} else {
 				title = "";
 				description = "";
-				subject = prefill?.subject ? resolveSubject(prefill.subject) : "R101 Réseaux";
+				subject = prefill?.subject ? resolveSubject(prefill.subject) : "";
 				event_type = prefill?.event_type ?? "ds";
 				// dt_start est une heure locale sans fuseau ("2026-11-10T09:00:00") : compatible avec datetime-local
 				if (prefill?.due_date) due_date = prefill.due_date.slice(0, 16);
@@ -178,15 +167,20 @@
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 			<div>
 				<label for="task-subject" class="block text-xs font-medium text-muted mb-1">Matière associée</label>
-				<select
+				<input
 					id="task-subject"
+					type="text"
+					list="task-subject-list"
+					maxlength="100"
 					bind:value={subject}
-					class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg focus:border-cyan-500 focus:outline-none"
-				>
-					{#each subjectOptions as sub}
-						<option value={sub}>{sub}</option>
+					placeholder="Choisir ou saisir une matière"
+					class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
+				/>
+				<datalist id="task-subject-list">
+					{#each subjectsList as sub}
+						<option value={sub}></option>
 					{/each}
-				</select>
+				</datalist>
 			</div>
 
 			<div>

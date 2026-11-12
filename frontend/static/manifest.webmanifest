@@ -1,7 +1,7 @@
 {
 	"name": "Cisco Dashboard",
 	"short_name": "Cisco",
-	"description": "Notes, emploi du temps, devoirs et absences du BUT Réseaux & Télécoms.",
+	"description": "Notes, emploi du temps, devoirs et absences du BUT.",
 	"lang": "fr",
 	"start_url": "/",
 	"scope": "/",

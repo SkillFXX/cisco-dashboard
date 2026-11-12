@@ -479,7 +479,7 @@
 							{#if selectedAbsence.justifie}
 								Ce créneau d'absence a été officiellement régularisé sur ScoDoc par l'équipe pédagogique ou le secrétariat.
 							{:else}
-								Cette absence est comptabilisée comme non justifiée. Conformément au règlement des études du BUT Réseaux & Télécoms, tout certificat médical ou justificatif officiel doit être remis dans un délai de 48 heures au secrétariat de département.
+								Cette absence est comptabilisée comme non justifiée. Pour la faire justifier, remettez votre certificat médical ou justificatif officiel au secrétariat de votre département dans le délai prévu par le règlement de votre IUT.
 							{/if}
 						</p>
 					</div>

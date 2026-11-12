@@ -1,6 +1,6 @@
 @echo off
 echo ===================================================
-echo     Demarrage du Panel Etudiant CISCO (BUT R&T)
+echo     Demarrage du Panel Etudiant CISCO (BUT)
 echo ===================================================
 echo.
 

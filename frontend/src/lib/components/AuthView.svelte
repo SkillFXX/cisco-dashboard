@@ -109,12 +109,12 @@
 			CISCO DASHBOARD
 		</h1>
 		<p class="text-sm text-muted">
-			Le tableau de bord unifié pour étudiants en <strong>BUT Réseaux & Télécoms</strong>
+			Le tableau de bord unifié pour étudiants en <strong>BUT</strong>
 		</p>
 		<div class="flex items-center justify-center gap-2 pt-1">
-			<Badge variant="cisco">ScoDoc</Badge>
+			<Badge variant="secondary">ScoDoc</Badge>
 			<Badge variant="secondary">Moodle</Badge>
-			<Badge variant="outline">Emploi du temps</Badge>
+			<Badge variant="secondary">Emploi du temps</Badge>
 		</div>
 	</div>
 
@@ -165,7 +165,7 @@
 								bind:value={loginEmail}
 								required
 								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-								placeholder="votre.email@etu.umontpellier.fr"
+								placeholder="prenom.nom@exemple.fr"
 							/>
 						</div>
 					</div>
@@ -212,7 +212,7 @@
 								bind:value={regEmail}
 								required
 								class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-								placeholder="votre.email@etu.umontpellier.fr"
+								placeholder="prenom.nom@exemple.fr"
 							/>
 						</div>
 					</div>
@@ -255,7 +255,7 @@
 							required
 							aria-label="Adresse email"
 							class="w-full rounded-lg border border-app-border bg-app-surface pl-9 pr-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-							placeholder="votre.email@etu.umontpellier.fr"
+							placeholder="prenom.nom@exemple.fr"
 						/>
 					</div>
 					<Button variant="cisco" type="submit" class="w-full" disabled={isSubmitting}>

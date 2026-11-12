@@ -28,13 +28,13 @@
 	let currentStep = $state(1); // 1: ScoDoc, 2: Moodle, 3: ADE, 4: Recap
 
 	// ScoDoc state
-	let scodoc_url = $state("https://wscodoc.iutbeziers.fr");
+	let scodoc_url = $state("");
 	let scodoc_username = $state("");
 	let scodoc_password = $state("");
 	let scodocSaved = $state(false);
 
 	// Moodle state
-	let moodle_url = $state("https://moodle-but.iutbeziers.fr/moodle");
+	let moodle_url = $state("");
 	let moodle_username = $state("");
 	let moodle_password = $state("");
 	let moodle_token = $state("");
@@ -314,7 +314,7 @@
 								id="onb-sco-url"
 								type="text"
 								bind:value={scodoc_url}
-								placeholder="https://wscodoc.iutbeziers.fr"
+								placeholder="https://scodoc.votre-iut.fr"
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
@@ -383,7 +383,7 @@
 								id="onb-mdl-url"
 								type="text"
 								bind:value={moodle_url}
-								placeholder="https://moodle-but.iutbeziers.fr/moodle"
+								placeholder="https://moodle.votre-iut.fr"
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
@@ -474,13 +474,13 @@
 									id="onb-ical"
 									type="url"
 									bind:value={ical_url}
-									placeholder="https://edt.umontpellier.fr/.../export.ics"
+									placeholder="https://.../export.ics"
 									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 								/>
 							</div>
 						</div>
 						<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
-							Dans ADE Campus / UM Net, exportez votre planning au format iCal (.ics), puis copiez ici le lien obtenu. Il alimente l'emploi du temps, les prochains cours et les DS.
+							Depuis votre outil d'emploi du temps (ADE, Hyperplanning...), exportez votre planning au format iCal (.ics), puis copiez ici le lien obtenu. Il alimente l'emploi du temps, les prochains cours et les DS.
 						</div>
 					</div>
 

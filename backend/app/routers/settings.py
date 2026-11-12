@@ -161,7 +161,7 @@ def verify_service_endpoint(
     service = payload.service.lower()
 
     if service == "scodoc":
-        url = payload.url or creds.scodoc_url or "https://wscodoc.iutbeziers.fr"
+        url = payload.url or creds.scodoc_url
         user = payload.username or creds.scodoc_username
         pwd = payload.password or creds.scodoc_password
 
@@ -193,7 +193,7 @@ def verify_service_endpoint(
         }
 
     elif service == "moodle":
-        url = payload.url or creds.moodle_url or "https://moodle-but.iutbeziers.fr/moodle"
+        url = payload.url or creds.moodle_url
         user = payload.username or creds.moodle_username
         pwd = payload.password or creds.moodle_password
         tok = payload.token or creds.moodle_token

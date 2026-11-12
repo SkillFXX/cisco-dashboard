@@ -164,7 +164,7 @@ def build_context(db: Session, user: User, question_texts: List[str], with_subje
 
     header = (
         f"Maintenant: {DAYS_LONG[now.weekday()]} {now.strftime('%d/%m/%Y %H:%M')} (Paris). "
-        f"Étudiant: {user.full_name or 'inconnu'}, BUT Réseaux & Télécoms."
+        f"Étudiant: {user.full_name or 'inconnu'}, BUT."
     )
     parts = [header]
 

@@ -55,7 +55,7 @@ def parse_description(description: str) -> Dict[str, str]:
 
 
 def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
-    """Parse un flux iCal (.ics) ADE Campus / UM Net."""
+    """Parse un flux iCal (.ics) ADE, Hyperplanning...."""
     cal = icalendar.Calendar.from_ical(ical_content)
     now = datetime.datetime.now()
     today = datetime.date.today()

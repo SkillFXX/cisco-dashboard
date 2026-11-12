@@ -91,10 +91,10 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
     # Creer les identifiants de services par defaut
     creds = UserCredentials(
         user_id=new_user.id,
-        scodoc_url=payload.scodoc_url or "https://wscodoc.iutbeziers.fr",
+        scodoc_url=payload.scodoc_url,
         scodoc_username=payload.scodoc_username,
         scodoc_password=payload.scodoc_password,
-        moodle_url=payload.moodle_url or "https://moodle-but.iutbeziers.fr/moodle",
+        moodle_url=payload.moodle_url,
         moodle_username=payload.moodle_username,
         moodle_password=payload.moodle_password,
         moodle_token=payload.moodle_token,

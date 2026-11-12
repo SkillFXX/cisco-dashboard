@@ -75,7 +75,7 @@
 				{#if auth.user}
 					<div class="flex items-center gap-2 pl-2 border-l border-app-border">
 						<div class="w-8 h-8 rounded-full bg-app-raised border border-app-border flex items-center justify-center text-xs font-semibold text-fg">
-							{(auth.user.full_name || auth.user.email || "RT").slice(0, 2).toUpperCase()}
+							{(auth.user.full_name || auth.user.email || "ET").slice(0, 2).toUpperCase()}
 						</div>
 						<div class="hidden lg:block text-left">
 							<div class="text-xs font-medium text-fg leading-none">

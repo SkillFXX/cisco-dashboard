@@ -25,17 +25,17 @@ class UserCredentials(Base):
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
 
     # ScoDoc settings
-    scodoc_url = Column(String(255), nullable=True, default="https://wscodoc.iutbeziers.fr")
+    scodoc_url = Column(String(255), nullable=True)
     scodoc_username = Column(String(100), nullable=True)
     scodoc_password = Column(EncryptedString(512), nullable=True)
 
     # Moodle settings
-    moodle_url = Column(String(255), nullable=True, default="https://moodle-but.iutbeziers.fr/moodle")
+    moodle_url = Column(String(255), nullable=True)
     moodle_username = Column(String(100), nullable=True)
     moodle_password = Column(EncryptedString(512), nullable=True)
     moodle_token = Column(EncryptedString(512), nullable=True)
 
-    # UM Net / ADE Campus iCal URL
+    # Lien iCal (.ics) de l'emploi du temps (ADE, Hyperplanning...)
     ical_url = Column(Text, nullable=True)
 
     # Fallback simulation
@@ -64,7 +64,7 @@ class PersonalTask(Base):
 
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
-    subject = Column(String(100), nullable=True) # e.g. "R101 Réseaux", "R102 Télécoms"
+    subject = Column(String(100), nullable=True) # e.g. "R101 Initiation aux réseaux"
     due_date = Column(DateTime, nullable=False)
     event_type = Column(String(50), default="ds") # "ds", "dm", "todo", "tp", "exam"
     status = Column(String(20), default="todo") # "todo", "done"

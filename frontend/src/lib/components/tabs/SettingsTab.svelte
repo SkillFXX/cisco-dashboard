@@ -35,14 +35,14 @@
 	let profileErrorMsg = $state("");
 
 	// Services state
-	let scodoc_url = $state("https://wscodoc.iutbeziers.fr");
+	let scodoc_url = $state("");
 	let scodoc_username = $state("");
 	let scodoc_password = $state("");
 	let scodoc_configured = $state(false);
 	let scodoc_verified = $state(false);
 	let scodoc_last_error = $state("");
 
-	let moodle_url = $state("https://moodle-but.iutbeziers.fr/moodle");
+	let moodle_url = $state("");
 	let moodle_username = $state("");
 	let moodle_password = $state("");
 	let moodle_token = $state("");
@@ -473,7 +473,7 @@
 								type="email"
 								bind:value={email}
 								required
-								placeholder="prenom.nom@etu.umontpellier.fr"
+								placeholder="prenom.nom@exemple.fr"
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
@@ -578,7 +578,7 @@
 								id="scodoc-url"
 								type="text"
 								bind:value={scodoc_url}
-								placeholder="https://wscodoc.iutbeziers.fr"
+								placeholder="https://scodoc.votre-iut.fr"
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
@@ -662,7 +662,7 @@
 								id="moodle-url"
 								type="text"
 								bind:value={moodle_url}
-								placeholder="https://moodle-but.iutbeziers.fr/moodle"
+								placeholder="https://moodle.votre-iut.fr"
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>
@@ -752,7 +752,7 @@
 
 					{#if isOpen("ical")}
 					<div class="space-y-4 pt-4 border-t border-app-border">
-					<p class="text-[11px] leading-relaxed text-subtle">Dans ADE Campus / UM Net, exportez votre planning au format iCal (.ics) puis collez ici le lien obtenu.</p>
+					<p class="text-[11px] leading-relaxed text-subtle">Depuis votre outil d'emploi du temps (ADE, Hyperplanning...), exportez votre planning au format iCal (.ics) puis collez ici le lien obtenu.</p>
 
 					{@render feedback("ical", ical_last_error)}
 
@@ -764,7 +764,7 @@
 								id="ical-url"
 								type="url"
 								bind:value={ical_url}
-								placeholder="https://edt.umontpellier.fr/.../export.ics"
+								placeholder="https://.../export.ics"
 								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
 							/>
 						</div>

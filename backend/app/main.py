@@ -61,7 +61,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     lifespan=lifespan,
     title=settings.PROJECT_NAME,
-    description="API pour le tableau de bord étudiant Cisco BUT Réseaux & Télécoms",
+    description="API du tableau de bord étudiant Cisco Dashboard (BUT)",
     version="1.0.0",
     docs_url="/docs" if settings.ENABLE_DOCS else None,
     redoc_url=None,
@@ -101,7 +101,7 @@ def root():
         "status": "online",
         "app": settings.PROJECT_NAME,
         "docs": "/docs",
-        "description": "Agrégateur ScoDoc, Moodle & ADE Campus pour étudiants BUT Réseaux et Télécoms"
+        "description": "Agrégateur ScoDoc, Moodle & emploi du temps pour étudiants en BUT"
     }
 
 if __name__ == "__main__":

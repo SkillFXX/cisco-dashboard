@@ -24,19 +24,19 @@
 	let breadcrumb = $derived(breadcrumbsMap[activeTab] || { category: "Tableau de bord", page: "Vue d'ensemble" });
 
 	let userDisplayName = $derived(() => {
-		if (!auth.user) return "Étudiant R&T";
+		if (!auth.user) return "Étudiant";
 		if (auth.user.full_name && auth.user.full_name.trim()) {
-			return `${auth.user.full_name.trim()} (RT2)`;
+			return `${auth.user.full_name.trim()} `;
 		}
 		if (auth.user.email) {
-			return `${auth.user.email.split("@")[0]} (RT2)`;
+			return `${auth.user.email.split("@")[0]} `;
 		}
-		return "Étudiant R&T";
+		return "Étudiant";
 	});
 
 	let userInitials = $derived(() => {
-		if (!auth.user) return "RT";
-		const name = (auth.user.full_name || auth.user.email || "RT").trim();
+		if (!auth.user) return "ET";
+		const name = (auth.user.full_name || auth.user.email || "ET").trim();
 		const parts = name.split(/[\s._@-]+/);
 		if (parts.length >= 2 && parts[0] && parts[1]) {
 			return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
@@ -81,9 +81,6 @@
 			<div class="text-right hidden sm:block">
 				<div class="text-xs font-semibold text-fg leading-none">
 					{userDisplayName()}
-				</div>
-				<div class="text-[10px] text-subtle leading-none mt-1">
-					IUT Béziers
 				</div>
 			</div>
 			{#if auth.user?.photo_base64}

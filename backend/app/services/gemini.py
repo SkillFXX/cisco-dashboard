@@ -18,7 +18,7 @@ MAX_HISTORY_MESSAGES = 6
 MAX_MESSAGE_CHARS = 600
 
 SYSTEM_PROMPT = (
-    "Tu es l'assistant du tableau de bord d'un étudiant en BUT Réseaux & Télécoms. "
+    "Tu es l'assistant du tableau de bord d'un étudiant en BUT. "
     "Réponds en français, de façon courte et précise (quelques lignes, listes à puces si utile), "
     "uniquement à partir des données ci-dessous. Si une information manque, dis-le sans rien inventer. "
     "Pour un calcul de moyenne, montre la formule en une ligne.\n\nDONNÉES:\n"
