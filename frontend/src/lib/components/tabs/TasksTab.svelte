@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import Card from "../Card.svelte";
+	import DueLabel from "../DueLabel.svelte";
 	import Skeleton from "../Skeleton.svelte";
 	import TaskModal from "../TaskModal.svelte";
 	import { api } from "$lib/api";
@@ -509,19 +510,7 @@
 
 									<!-- Date et délai (à droite) -->
 									<div class="flex flex-col items-end shrink-0 text-right">
-										<div class="text-xs font-semibold">
-											{#if item.days_left < 0}
-												<span class="text-rose-400">En retard ({Math.abs(item.days_left)} j)</span>
-											{:else if item.days_left === 0}
-												<span class="text-amber-300">Aujourd'hui</span>
-											{:else if item.days_left === 1}
-												<span class="text-amber-200">Demain</span>
-											{:else if item.days_left <= 5}
-												<span class="text-fg">Dans <span class="text-fg font-bold">{item.days_left}</span> jours</span>
-											{:else}
-												<span class="text-muted">Dans <span class="text-fg font-bold">{item.days_left}</span> jours</span>
-											{/if}
-										</div>
+										<DueLabel daysLeft={item.days_left} long />
 										<span class="text-[11px] text-subtle mt-0.5">
 											{formatDateFr(item.due_date)}
 										</span>
@@ -739,7 +728,7 @@
 
 									<!-- Date et délai (à droite) -->
 									<div class="flex flex-col items-end shrink-0 text-right">
-										<span class="text-xs font-semibold text-emerald-400">
+										<span class="text-xs font-medium text-muted">
 											Terminé
 										</span>
 										<span class="text-[11px] text-subtle mt-0.5">
@@ -829,7 +818,7 @@
 					<div class="p-4 rounded-xl bg-app-surface border border-app-border flex items-center justify-between">
 						<div>
 							<div class="text-[11px] text-muted uppercase font-semibold">Statut actuel</div>
-							<div class="text-xs font-bold mt-0.5 {selectedTask.status === 'done' ? 'text-emerald-400' : 'text-amber-400'}">
+							<div class="text-xs font-bold mt-0.5 text-fg">
 								{selectedTask.status === 'done' ? 'Terminé' : 'À faire'}
 							</div>
 						</div>
@@ -874,15 +863,9 @@
 							<span class="text-muted">Temps restant</span>
 							<span class="font-bold text-fg">
 								{#if selectedTask.status === 'done'}
-									<span class="text-emerald-400">Validé</span>
-								{:else if selectedTask.days_left < 0}
-									<span class="text-rose-400">En retard de {Math.abs(selectedTask.days_left)} jours</span>
-								{:else if selectedTask.days_left === 0}
-									<span class="text-amber-300">Aujourd'hui</span>
-								{:else if selectedTask.days_left === 1}
-									<span class="text-amber-200">Demain</span>
+									Validé
 								{:else}
-									Dans {selectedTask.days_left} jours
+									<DueLabel daysLeft={selectedTask.days_left} long />
 								{/if}
 							</span>
 						</div>

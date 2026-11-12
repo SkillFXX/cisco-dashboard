@@ -13,10 +13,6 @@
 		emptyText?: string;
 	} = $props();
 
-	function numeric(n: any): number | null {
-		const v = typeof n === "number" ? n : parseFloat(n);
-		return Number.isFinite(v) ? v : null;
-	}
 </script>
 
 <div class="overflow-x-auto">
@@ -34,7 +30,6 @@
 				<tr><td colspan={showCoef ? 4 : 3} class="py-10 text-center text-subtle">{emptyText}</td></tr>
 			{:else}
 				{#each rows as row}
-					{@const note = numeric(row.note)}
 					<tr
 						onclick={() => onSelect?.(row)}
 						class="transition-colors {onSelect ? 'cursor-pointer hover:bg-app-hover' : ''}"
@@ -50,7 +45,7 @@
 						{/if}
 						<td class="py-3 px-4 text-right text-muted hidden sm:table-cell">{row.date ? formatDateFr(row.date) : "--"}</td>
 						<td class="py-3 pl-4 text-right whitespace-nowrap">
-							<span class="text-sm font-bold tabular-nums {note !== null && note < 10 ? 'text-rose-400' : 'text-fg'}">{formatGrade(row.note)}</span>
+							<span class="text-sm font-bold tabular-nums text-fg">{formatGrade(row.note)}</span>
 							<span class="text-[10px] text-subtle"> / 20</span>
 						</td>
 					</tr>

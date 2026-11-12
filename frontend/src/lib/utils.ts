@@ -53,19 +53,26 @@ export function getMondayOfDate(d: Date, weekOffset = 0): Date {
 	return copy;
 }
 
-/** Aplat de couleur d'un cours (texte blanc), identique dans les deux thèmes. */
+/** Fond très translucide (15 %) et liseré plein à gauche : suit le thème clair comme le sombre. */
 export function getCourseColorStyle(type: string): string {
 	const t = (type || "").toUpperCase();
-	if (t === "TP") return "bg-c-tp/85 text-white";
-	if (t === "TD") return "bg-c-td/85 text-white";
-	if (t === "CM") return "bg-c-cm/85 text-white";
-	if (t === "DS" || t === "EXAMEN") return "bg-c-ds/85 text-white";
-	if (t === "SAE") return "bg-c-sae/85 text-white";
-	return "bg-c-other/85 text-white";
+	if (t === "TP") return "bg-c-tp/15 border-l-[3px] border-c-tp text-fg";
+	if (t === "TD") return "bg-c-td/15 border-l-[3px] border-c-td text-fg";
+	if (t === "CM") return "bg-c-cm/15 border-l-[3px] border-c-cm text-fg";
+	if (t === "DS" || t === "EXAMEN") return "bg-c-ds/15 border-l-[3px] border-c-ds text-fg";
+	if (t === "SAE") return "bg-c-sae/15 border-l-[3px] border-c-sae text-fg";
+	return "bg-c-other/15 border-l-[3px] border-c-other text-fg";
 }
 
+/** Étiquette (badge) du type de cours. */
 export function getCourseBadgeStyle(type: string): string {
-	return getCourseColorStyle(type);
+	const t = (type || "").toUpperCase();
+	if (t === "TP") return "bg-c-tp/15 text-c-tp";
+	if (t === "TD") return "bg-c-td/15 text-c-td";
+	if (t === "CM") return "bg-c-cm/15 text-c-cm";
+	if (t === "DS" || t === "EXAMEN") return "bg-c-ds/15 text-c-ds";
+	if (t === "SAE") return "bg-c-sae/15 text-c-sae";
+	return "bg-c-other/15 text-c-other";
 }
 
 export function getCourseTypeLabel(type: string): string {
@@ -78,3 +85,45 @@ export function getCourseTypeLabel(type: string): string {
 	return "Cours";
 }
 
+
+/** Courbe lissée (spline cubique monotone) passant par tous les points, sans dépassement entre deux relevés. */
+export function smoothPath(pts: { x: number; y: number }[]): string {
+	const f = (n: number) => n.toFixed(1);
+	if (pts.length === 0) return "";
+	if (pts.length < 3) return pts.map((p, i) => `${i === 0 ? "M" : "L"}${f(p.x)},${f(p.y)}`).join(" ");
+
+	const n = pts.length;
+	const dx: number[] = [];
+	const slope: number[] = [];
+	for (let i = 0; i < n - 1; i++) {
+		dx.push(pts[i + 1].x - pts[i].x || 1e-6);
+		slope.push((pts[i + 1].y - pts[i].y) / dx[i]);
+	}
+	const m: number[] = [slope[0]];
+	for (let i = 1; i < n - 1; i++) {
+		m.push(slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2);
+	}
+	m.push(slope[n - 2]);
+	// Fritsch–Carlson : limite les tangentes pour garder la monotonie
+	for (let i = 0; i < n - 1; i++) {
+		if (slope[i] === 0) {
+			m[i] = 0;
+			m[i + 1] = 0;
+			continue;
+		}
+		const a = m[i] / slope[i];
+		const b = m[i + 1] / slope[i];
+		const s = a * a + b * b;
+		if (s > 9) {
+			const t = 3 / Math.sqrt(s);
+			m[i] = t * a * slope[i];
+			m[i + 1] = t * b * slope[i];
+		}
+	}
+	let d = `M${f(pts[0].x)},${f(pts[0].y)}`;
+	for (let i = 0; i < n - 1; i++) {
+		const h = dx[i] / 3;
+		d += ` C${f(pts[i].x + h)},${f(pts[i].y + m[i] * h)} ${f(pts[i + 1].x - h)},${f(pts[i + 1].y - m[i + 1] * h)} ${f(pts[i + 1].x)},${f(pts[i + 1].y)}`;
+	}
+	return d;
+}

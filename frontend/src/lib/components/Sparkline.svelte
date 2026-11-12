@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { smoothPath } from "$lib/utils";
 	// Mini-courbe décorative : apparaît en fondu (dégradé) et se dessine de gauche à droite.
 	let {
 		values,
@@ -22,7 +23,7 @@
 			const y = PAD + (invert ? ratio : 1 - ratio) * (H - 2 * PAD);
 			return { x, y };
 		});
-		const line = coords.map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+		const line = smoothPath(coords);
 		const area = `${line} L${coords[coords.length - 1].x.toFixed(1)},${H} L${coords[0].x.toFixed(1)},${H} Z`;
 		return { line, area, last: coords[coords.length - 1] };
 	});

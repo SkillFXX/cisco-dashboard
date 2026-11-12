@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Clock, MapPin, User as UserIcon, Users, Plus, CalendarClock } from "lucide-svelte";
 	import { api } from "$lib/api";
-	import { getCourseColorStyle, getCourseTypeLabel } from "$lib/utils";
+	import { getCourseBadgeStyle, getCourseTypeLabel } from "$lib/utils";
 	import Modal from "./Modal.svelte";
 
 	let {
@@ -80,11 +80,11 @@
 		<div class="space-y-5">
 			<div class="space-y-1.5">
 				<div class="flex items-center gap-2 flex-wrap">
-					<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md {getCourseColorStyle(course.type)}">
+					<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md {getCourseBadgeStyle(course.type)}">
 						{getCourseTypeLabel(course.type)}
 					</span>
 					{#if course.is_current}
-						<span class="text-[11px] font-semibold text-cyan-400">En cours</span>
+						<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-cyan-600/15 text-cyan-400">En cours</span>
 					{/if}
 				</div>
 				<h2 class="text-base font-bold text-fg leading-snug">{course.title}</h2>

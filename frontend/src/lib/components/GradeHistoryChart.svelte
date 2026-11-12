@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { TrendingUp, TrendingDown, Minus } from "lucide-svelte";
+	import { smoothPath } from "$lib/utils";
 
 	type Point = { day: string; moyenne: number | null; rang: number | null; total_promo: number | null };
 
@@ -37,7 +38,7 @@
 		// Moyenne : valeur haute en haut. Rang : rang 1 (meilleur) en haut.
 		const y = (v: number) => PAD.top + (isRank ? (v - lo) / (hi - lo) : 1 - (v - lo) / (hi - lo)) * innerH;
 		const coords = points.map((p) => ({ x: x(p.day), y: y(p[metric] as number), v: p[metric] as number, day: p.day, total: p.total_promo }));
-		const path = coords.map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+		const path = smoothPath(coords);
 		const ticks = [lo, lo + (hi - lo) / 2, hi].map((v) => ({ v: Math.round(v * 10) / 10, y: y(v) }));
 		return { coords, path, ticks, t0, t1 };
 	});
@@ -84,7 +85,7 @@
 			</div>
 			<div class="text-xs text-subtle pb-0.5">{shown ? formatDay(shown.day) : "Dernier relevé"}</div>
 			{#if points.length > 1 && !shown}
-				<div class="ml-auto flex items-center gap-1 text-xs font-semibold pb-0.5 {delta === 0 ? 'text-muted' : improved ? 'text-emerald-400' : 'text-rose-400'}">
+				<div class="ml-auto flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold {delta === 0 ? 'bg-app-raised text-muted' : improved ? 'bg-emerald-600/15 text-emerald-400' : 'bg-rose-600/15 text-rose-400'}">
 					{#if delta === 0}<Minus class="w-3.5 h-3.5" />{:else if improved}<TrendingUp class="w-3.5 h-3.5" />{:else}<TrendingDown class="w-3.5 h-3.5" />{/if}
 					{delta > 0 ? "+" : ""}{Math.round(delta * 100) / 100} depuis le {formatDay(points[0].day)}
 				</div>
@@ -105,7 +106,7 @@
 				<text x={PAD.left - 8} y={t.y + 5} text-anchor="end" class="fill-subtle" font-size="15">{t.v}</text>
 			{/each}
 
-			<path d={layout.path} fill="none" stroke="rgb(34 211 238)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+			<path d={layout.path} fill="none" stroke="#0891b2" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
 			{#each layout.coords as c, i}
 				<circle cx={c.x} cy={c.y} r={hoverIndex === i ? 5 : layout.coords.length > 40 ? 0 : 3} fill="#0891b2" stroke="var(--app-card)" stroke-width="1.5" />
 			{/each}

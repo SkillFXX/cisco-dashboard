@@ -409,7 +409,7 @@
 					>
 						<div class="space-y-1 min-w-0 flex-1">
 							<div class="flex items-center gap-2">
-								<span class="font-bold text-xs {isSelected ? 'text-cyan-300' : 'text-fg'}">
+								<span class="font-bold text-xs {isSelected ? 'text-fg' : 'text-fg'}">
 									{mat.code}
 								</span>
 								<span class="text-[10px] px-2 py-0.5 rounded-full bg-app-raised text-muted font-medium">
@@ -458,7 +458,7 @@
 					<h2 class="text-sm font-bold text-fg">Détail des Évaluations Saisies</h2>
 					<p class="text-xs text-subtle mt-0.5">
 						{#if selectedMatiere !== "ALL"}
-							Filtré pour la matière <strong class="text-cyan-400">{selectedMatiere}</strong>
+							Filtré pour la matière <strong class="text-fg">{selectedMatiere}</strong>
 						{:else}
 							Détail et répartition promo au clic
 						{/if}

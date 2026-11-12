@@ -36,26 +36,27 @@
 		max: toNum(evaluation?.max_promo ?? distData?.max_promo)
 	});
 	let userRank = $derived(userNote === null || sorted.length === 0 || distData?.estimated ? null : 1 + sorted.filter((n) => n > userNote + 1e-9).length);
-	// Index de la barre qui représente l'utilisateur (la plus proche de sa note)
-	let userIndex = $derived.by(() => {
-		if (userNote === null || sorted.length === 0) return null;
-		let best = 0;
-		for (let i = 0; i < sorted.length; i++) {
-			if (Math.abs(sorted[i] - userNote) < Math.abs(sorted[best] - userNote)) best = i;
-		}
-		return best;
+	// Répartition par note : un intervalle d'un point (0–1, 1–2, … 19–20 ; le 20 est compté dans le dernier)
+	const BINS = 20;
+	let bins = $derived.by(() => {
+		const counts = Array<number>(BINS).fill(0);
+		for (const n of sorted) counts[Math.min(BINS - 1, Math.max(0, Math.floor(n)))]++;
+		return counts;
 	});
+	let maxCount = $derived(Math.max(1, ...bins));
+	let userBin = $derived(userNote === null ? null : Math.min(BINS - 1, Math.max(0, Math.floor(userNote))));
 
 	// Géométrie du graphique
 	const W = 640;
 	const H = 230;
-	const PAD = { top: 26, right: 12, bottom: 22, left: 28 };
+	const PAD = { top: 28, right: 12, bottom: 24, left: 28 };
 	const plotW = W - PAD.left - PAD.right;
 	const plotH = H - PAD.top - PAD.bottom;
-	const y = (v: number) => PAD.top + plotH * (1 - Math.min(Math.max(v, 0), 20) / 20);
-	let slot = $derived(sorted.length > 0 ? plotW / sorted.length : plotW);
-	let barW = $derived(Math.max(2, slot * 0.72));
-	const x = (i: number) => PAD.left + slot * i + (slot - barW) / 2;
+	const slot = plotW / BINS;
+	const barW = slot * 0.78;
+	const xNote = (v: number) => PAD.left + (Math.min(Math.max(v, 0), 20) / 20) * plotW;
+	const yCount = (c: number) => PAD.top + plotH * (1 - c / maxCount);
+	let yTicks = $derived(Array.from(new Set([0, Math.ceil(maxCount / 2), maxCount])));
 
 	$effect(() => {
 		if (open && evaluation?.id) {
@@ -84,7 +85,7 @@
 		}
 	}
 
-	let tip = $derived(hovered === null ? null : { rank: hovered + 1, note: sorted[hovered] });
+	let tip = $derived(hovered === null ? null : { from: hovered, count: bins[hovered] });
 </script>
 
 <Modal bind:open title="" class="max-w-2xl">
@@ -102,7 +103,7 @@
 				</div>
 				<div class="text-right shrink-0">
 					<div class="flex items-baseline justify-end gap-1">
-						<span class="text-3xl font-black text-fg tabular-nums {userNote !== null && userNote < 10 ? 'text-rose-400' : ''}">{fmt(userNote)}</span>
+						<span class="text-3xl font-black text-fg tabular-nums">{fmt(userNote)}</span>
 						<span class="text-xs text-subtle">/ 20</span>
 					</div>
 					{#if userRank !== null}
@@ -121,40 +122,39 @@
 			{:else if sorted.length > 0}
 				<div>
 					<div class="flex items-center justify-between h-5 text-xs mb-1">
-						<span class="font-semibold text-muted">Notes de la promotion, classées</span>
+						<span class="font-semibold text-muted">Répartition des notes de la promotion</span>
 						{#if tip}
-							<span class="text-fg font-medium tabular-nums">{tip.rank}<sup>{tip.rank === 1 ? "er" : "e"}</sup> · {fmt(tip.note)}</span>
+							<span class="text-fg font-medium tabular-nums">{tip.from} – {tip.from + 1} : {tip.count} étudiant{tip.count > 1 ? "s" : ""}</span>
 						{/if}
 					</div>
 
-					<svg viewBox="0 0 {W} {H}" class="w-full h-auto" role="img" aria-label="Chaque barre est la note d'un étudiant, de la meilleure à la plus basse">
-						{#each [0, 5, 10, 15, 20] as t}
-							<line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="currentColor" class="text-fg/10" stroke-dasharray={t === 10 ? "4 4" : undefined} />
-							<text x={PAD.left - 6} y={y(t) + 4} text-anchor="end" class="fill-subtle" font-size="11">{t}</text>
+					<svg viewBox="0 0 {W} {H}" class="w-full h-auto" role="img" aria-label="Nombre d'étudiants par note, par intervalle d'un point">
+						{#each yTicks as t}
+							<line x1={PAD.left} x2={W - PAD.right} y1={yCount(t)} y2={yCount(t)} stroke="currentColor" class="text-fg/10" />
+							<text x={PAD.left - 6} y={yCount(t) + 4} text-anchor="end" class="fill-subtle" font-size="11">{t}</text>
 						{/each}
 
-						{#each sorted as note, i}
-							{@const isUser = i === userIndex}
+						{#each bins as count, i}
 							<rect
-								x={x(i)}
-								y={y(note)}
+								x={PAD.left + slot * i + (slot - barW) / 2}
+								y={yCount(count)}
 								width={barW}
-								height={Math.max(1, y(0) - y(note))}
-								rx={Math.min(3, barW / 2)}
-								class={isUser ? "fill-cyan-500" : hovered === i ? "fill-fg/45" : "fill-fg/20"}
+								height={Math.max(0, yCount(0) - yCount(count))}
+								rx="3"
+								class={i === userBin ? "fill-cyan-500" : hovered === i ? "fill-fg/45" : "fill-fg/20"}
 							/>
 						{/each}
 
 						{#if stats.moy !== null}
-							<line x1={PAD.left} x2={W - PAD.right} y1={y(stats.moy)} y2={y(stats.moy)} stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 4" />
-							<text x={W - PAD.right} y={y(stats.moy) - 5} text-anchor="end" font-size="11" fill="#f59e0b" font-weight="600">Moy. {fmt(stats.moy)}</text>
+							<line x1={xNote(stats.moy)} x2={xNote(stats.moy)} y1={PAD.top - 6} y2={yCount(0)} stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 4" />
+							<text x={xNote(stats.moy) + 5} y={PAD.top - 10} font-size="11" fill="#f59e0b" font-weight="600">Moy. {fmt(stats.moy)}</text>
 						{/if}
 
-						{#if userIndex !== null && userNote !== null}
-							<text x={x(userIndex) + barW / 2} y={y(sorted[userIndex]) - 7} text-anchor="middle" font-size="11" font-weight="700" class="fill-cyan-500">Vous</text>
+						{#if userBin !== null}
+							<text x={PAD.left + slot * (userBin + 0.5)} y={yCount(bins[userBin]) - 7} text-anchor="middle" font-size="11" font-weight="700" class="fill-cyan-500">Vous</text>
 						{/if}
 
-						{#each sorted as _, i}
+						{#each bins as _, i}
 							<rect
 								x={PAD.left + slot * i}
 								y={PAD.top}
@@ -167,12 +167,13 @@
 							/>
 						{/each}
 
-						<text x={PAD.left} y={H - 5} font-size="11" class="fill-subtle">1<tspan baseline-shift="super" font-size="8">er</tspan></text>
-						<text x={W - PAD.right} y={H - 5} text-anchor="end" font-size="11" class="fill-subtle">{sorted.length}<tspan baseline-shift="super" font-size="8">e</tspan></text>
+						{#each [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20] as t}
+							<text x={xNote(t)} y={H - 6} text-anchor="middle" font-size="11" class="fill-subtle">{t}</text>
+						{/each}
 					</svg>
 
 					{#if distData?.estimated}
-						<p class="text-[11px] text-amber-400 mt-1">
+						<p class="text-[11px] text-muted mt-1">
 							Répartition estimée à partir du minimum, de la moyenne et du maximum : ScoDoc ne fournit pas les notes individuelles de cette évaluation.
 						</p>
 					{/if}

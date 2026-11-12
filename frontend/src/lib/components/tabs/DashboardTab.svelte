@@ -3,6 +3,7 @@
 	import { api } from "$lib/api";
 	import { formatGrade, formatDateFr, toLocalIsoDate, getMondayOfDate, getCourseColorStyle } from "$lib/utils";
 	import Card from "../Card.svelte";
+	import DueLabel from "../DueLabel.svelte";
 	import Skeleton from "../Skeleton.svelte";
 	import CourseDetailModal from "../CourseDetailModal.svelte";
 	import AverageCard from "../AverageCard.svelte";
@@ -354,8 +355,12 @@
 				<span class="text-2xl sm:text-3xl font-black text-fg">{unjustifiedCount()}</span>
 				<span class="text-xs text-subtle font-semibold">demi-journée{unjustifiedCount() > 1 ? "s" : ""}</span>
 			</div>
-			<div class="pt-1.5 border-t border-app-border text-[11px] {unjustifiedCount() > 0 ? 'text-rose-400' : 'text-emerald-400'}">
-				{unjustifiedCount() > 0 ? "À justifier" : "Tout est justifié"}
+			<div class="pt-1.5 border-t border-app-border text-[11px] text-muted">
+				{#if unjustifiedCount() > 0}
+					<span class="rounded-md px-2 py-0.5 font-semibold bg-rose-600/15 text-rose-400">À justifier</span>
+				{:else}
+					Tout est justifié
+				{/if}
 			</div>
 		</Card>
 
@@ -368,7 +373,7 @@
 					<div class="text-xs text-muted truncate">{nextClassInfo()?.subtitle}</div>
 				</button>
 				<div class="pt-1.5 border-t border-app-border flex items-center justify-between text-[11px] text-muted">
-					<span class="font-medium {nextClassInfo()?.isLive ? 'text-cyan-400' : ''}">{nextClassInfo()?.statusText}</span>
+					<span class="font-medium text-fg">{nextClassInfo()?.statusText}</span>
 					<span>{nextClassInfo()?.time}</span>
 				</div>
 			{:else}
@@ -408,8 +413,8 @@
 					<div class="grid grid-cols-6 border-b border-app-border pb-2 text-center text-xs font-medium text-muted">
 						<div class="text-left pl-1 text-subtle">Heure</div>
 						{#each weekDays as day, i}
-							<div class="{currentWeekday === i ? 'text-cyan-400 font-bold' : ''}">
-								<span>{day.name}</span>
+							<div>
+								<span class="{currentWeekday === i ? 'rounded-md bg-cyan-600/15 text-cyan-400 px-2 py-0.5 font-semibold' : ''}">{day.name}</span>
 								<span class="block text-[10px] text-subtle">{day.formattedDate}</span>
 							</div>
 						{/each}
@@ -463,7 +468,7 @@
 										type="button"
 										onclick={() => openCourse(ev)}
 										style="top: {ev.topPercent}%; height: {ev.heightPercent}%;"
-										class="absolute left-1 right-1 rounded-md p-2 text-xs font-sans overflow-hidden shadow-sm transition-all hover:brightness-110 cursor-pointer z-10 text-left {ev.colorStyle}"
+										class="absolute left-1 right-1 rounded-md p-2 text-xs font-sans overflow-hidden transition-all hover:brightness-95 cursor-pointer z-10 text-left {ev.colorStyle}"
 										title="{ev.title} ({ev.start_time} - {ev.end_time}) - {ev.location}"
 									>
 										<div class="font-semibold truncate text-[11px] leading-tight">
@@ -541,19 +546,7 @@
 
 								<!-- Date et délai (à droite) -->
 								<div class="flex flex-col items-end shrink-0 text-right">
-									<div class="text-xs font-semibold">
-										{#if item.days_left < 0}
-											<span class="text-rose-400">En retard ({Math.abs(item.days_left)} j)</span>
-										{:else if item.days_left === 0}
-											<span class="text-amber-300">Aujourd'hui</span>
-										{:else if item.days_left === 1}
-											<span class="text-amber-200">Demain</span>
-										{:else if item.days_left <= 5}
-											<span class="text-fg">Dans <span class="text-fg font-bold">{item.days_left}</span> j</span>
-										{:else}
-											<span class="text-muted">Dans <span class="text-fg font-bold">{item.days_left}</span> j</span>
-										{/if}
-									</div>
+									<DueLabel daysLeft={item.days_left} />
 									<span class="text-[10px] text-subtle mt-0.5">
 										{formatDateFr(item.due_date)}
 									</span>

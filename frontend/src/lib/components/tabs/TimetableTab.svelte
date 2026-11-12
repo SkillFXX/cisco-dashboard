@@ -519,8 +519,8 @@
 						>
 							<div class="text-left pl-1 text-subtle">Heure</div>
 							{#each weekDays() as day}
-								<div class="{day.isToday ? 'text-cyan-400 font-bold' : ''}">
-									<span>{day.name}</span>
+								<div>
+									<span class="{day.isToday ? 'rounded-md bg-cyan-600/15 text-cyan-400 px-2 py-0.5 font-semibold' : ''}">{day.name}</span>
 									<span class="block text-[10px] text-muted font-medium">{day.formattedDate}</span>
 								</div>
 							{/each}
@@ -577,7 +577,7 @@
 											type="button"
 											onclick={() => openCourseDetail(ev)}
 											style="top: {ev.topPercent}%; height: {ev.heightPercent}%;"
-											class="absolute left-1 right-1 rounded-lg p-2 text-xs text-left overflow-hidden shadow-sm transition-all hover:brightness-110 cursor-pointer z-10 {ev.colorStyle}"
+											class="absolute left-1 right-1 rounded-lg p-2 text-xs text-left overflow-hidden transition-all hover:brightness-95 cursor-pointer z-10 {ev.colorStyle}"
 										>
 											<div class="flex items-center justify-between gap-1 mb-0.5">
 												<span class="font-bold text-[10px] uppercase tracking-wider opacity-90">
