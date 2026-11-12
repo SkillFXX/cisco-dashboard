@@ -13,7 +13,7 @@
 	}: {
 		open: boolean;
 		task?: any;
-		prefill?: { subject?: string; event_type?: string } | null;
+		prefill?: { subject?: string; event_type?: string; due_date?: string } | null;
 		onTaskCreated?: () => void;
 		onTaskSaved?: () => void;
 	} = $props();
@@ -86,7 +86,9 @@
 				description = "";
 				subject = prefill?.subject ? resolveSubject(prefill.subject) : "R101 Réseaux";
 				event_type = prefill?.event_type ?? "ds";
-				initDefaultDate();
+				// dt_start est une heure locale sans fuseau ("2026-11-10T09:00:00") : compatible avec datetime-local
+				if (prefill?.due_date) due_date = prefill.due_date.slice(0, 16);
+				else initDefaultDate();
 			}
 		}
 	});

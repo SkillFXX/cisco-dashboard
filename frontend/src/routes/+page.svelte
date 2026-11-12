@@ -20,7 +20,7 @@
 
 	let activeTab = $state("dashboard");
 	let isAddTaskOpen = $state(false);
-	let taskPrefill = $state<{ subject?: string; event_type?: string } | null>(null);
+	let taskPrefill = $state<{ subject?: string; event_type?: string; due_date?: string } | null>(null);
 
 	function openAddTask() {
 		taskPrefill = null;
@@ -29,7 +29,7 @@
 
 	function openAddTaskForCourse(course: any) {
 		const type = String(course?.type || "").toLowerCase();
-		taskPrefill = { subject: course?.title || "", event_type: ["ds", "tp"].includes(type) ? type : "todo" };
+		taskPrefill = { subject: course?.title || "", event_type: ["ds", "tp"].includes(type) ? type : "todo", due_date: course?.dt_start };
 		isAddTaskOpen = true;
 	}
 	let tasksRefreshTrigger = $state(0);
