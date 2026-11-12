@@ -1,84 +1,82 @@
-# Cisco Dashboard - Panel Étudiant Universitaire (BUT Réseaux & Télécoms)
+# Cisco Dashboard
 
-Plateforme web centralisée moderne type *Pronote / Linear* conçue pour les étudiants en **BUT Réseaux et Télécommunications** (et adaptable à tous les BUT / IUT).
+Panel étudiant auto-hébergeable pour les **BUT Réseaux & Télécoms** (adaptable à d'autres BUT / IUT) : notes, absences, emploi du temps, devoirs, notifications et assistant IA, dans une seule interface.
 
-Elle agrège et synchronise automatiquement l'ensemble de vos outils du quotidien :
-- **ScoDoc** : Moyenne générale, rang dans la promotion, moyennes par UE & Matières (Ressources R101, R102, R107... et SAÉ), dernières notes avec moyennes/min/max de promo, absences justifiées & non justifiées avec motifs et créneaux. Intégré via le paquet PyPI officiel [`scodoc-api`](https://pypi.org/project/scodoc-api/) (`pip install scodoc-api`, code source sur [GitHub](https://github.com/SkillFXX/scodoc-api)).
-- **Moodle (Université de Montpellier / IUT)** : Récupération des cours inscrits, devoirs maison (DM), TP notés à rendre et échéances via l'API WebService Moodle Mobile.
-- **Emploi du temps ADE Campus / UM Net** : Parsing en direct de votre flux iCal exporté (`.ics`), détection du cours en cours, salle, enseignant et vue calendrier jour / semaine.
-- **Agenda & Échéancier unifié** : Ajout manuel de dates de devoirs surveillés (DS), contrôles, rendus de TP ou to-do list avec compte à rebours ("Dans 2 jours", "Demain", "Aujourd'hui") et archivage.
+> Projet non officiel, sans lien avec les universités ni avec les éditeurs de ScoDoc, Moodle ou ADE. Il stocke (chiffrés) des identifiants d'ENT : n'hébergez que pour des personnes qui vous font confiance, et à vos risques.
 
----
+## Fonctionnalités
 
-## Stack Technique
+- **Notes (ScoDoc)** : moyenne générale, rang, moyennes par UE et par ressource/SAÉ, détail de chaque évaluation avec répartition de la promo, courbe d'évolution de la moyenne et du rang.
+- **Absences** : justifiées / injustifiées, créneaux et motifs.
+- **Emploi du temps (ADE, flux `.ics`)** : vues jour, semaine et mois, cours en cours, salle, enseignant, groupe, navigation sur toute l'année universitaire.
+- **Devoirs** : DS, DM, TP, to-do, avec échéances, archivage et ajout direct depuis un cours.
+- **Moodle** : cours inscrits et devoirs à rendre.
+- **Notifications** : nouvelle note, rappel avant un devoir, récapitulatif quotidien, emploi du temps de la semaine suivante en image ; par email ou webhook Discord.
+- **Assistant IA (Gemini)** : chaque utilisateur renseigne sa propre clé d'API dans les Paramètres, puis pose ses questions (cours, devoirs, notes, absences) et peut lui demander d'ajouter un devoir. Le contexte envoyé est réduit aux rubriques utiles à la question, avec limites de débit pour rester dans le quota gratuit.
+- **Thème** clair, sombre ou automatique, interface responsive et installable (PWA).
+- **Administration** : serveur SMTP, gestion des utilisateurs, mot de passe oublié.
+- **Préchargement en arrière-plan** : les données de chaque utilisateur sont rafraîchies toutes les 5 minutes pour un affichage instantané.
 
-- **Backend** : [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12+)
-- **Connecteur ScoDoc** : [`scodoc-api`](https://pypi.org/project/scodoc-api/) disponible sur PyPI
-- **Base de données** : SQLite avec [SQLAlchemy 2.0](https://www.sqlalchemy.org/)
-- **Sécurité** : JWT (JSON Web Tokens), hachage sécurisé des mots de passe avec `bcrypt`
-- **Frontend** : [SvelteKit](https://kit.svelte.dev/) (Svelte 5 avec Runes)
-- **UI & Design** : [Tailwind CSS v4](https://tailwindcss.com/) + Design System [shadcn](https://shadcn-svelte.com/) + Icônes [Lucide Svelte](https://lucide.dev/)
+## Stack
 
----
+- **Backend** : FastAPI (Python 3.12), SQLAlchemy 2 + SQLite, JWT, bcrypt, connecteur [`scodoc-api`](https://pypi.org/project/scodoc-api/)
+- **Frontend** : SvelteKit (Svelte 5), Tailwind CSS v4, Lucide
 
-## Démarrage Rapide
-
-### 1. Lancer le Backend FastAPI
+## Déploiement (Docker Compose)
 
 ```bash
-cd backend
-# Activer l'environnement virtuel
-.\.venv\Scripts\Activate.ps1   # (sur Windows PowerShell)
-# ou source .venv/bin/activate (sur Linux/macOS)
-
-# Lancer le serveur d'API
-uvicorn app.main:app --reload --port 8000
+cp .env.example .env
+# éditez .env : au minimum SECRET_KEY (openssl rand -hex 32)
+docker compose up -d --build
 ```
-L'API démarre sur : **`http://localhost:8000`** (Swagger sur `/docs` si `ENABLE_DOCS=true`).
 
-### 2. Lancer le Frontend SvelteKit
+L'application est servie sur `http://localhost:18420` (port modifiable avec `APP_PORT`). Les données sont conservées dans le volume `cisco-data`. Placez un reverse proxy HTTPS devant pour une utilisation publique.
 
-Dans un second terminal :
-```bash
-cd frontend
-npm run dev
-```
-L'application démarre sur : **`http://localhost:5173`**.
-
----
-
-## ⚙️ Configuration des Services Tiers
-
-Lors de la création de votre compte (ou dans l'onglet **Services & Paramètres**) :
-1. **ScoDoc** :
-   - URL : Ex. `https://wscodoc.iutbeziers.fr` (ou votre instance d'IUT)
-   - Identifiant & Mot de passe CAS / ENT
-2. **Moodle** :
-   - URL : Ex. `https://moodle-but.iutbeziers.fr/moodle`
-   - Identifiant & Mot de passe ou Jeton de sécurité WebService
-3. **ADE Campus (iCal)** :
-   - Copiez le lien de flux iCal exporté depuis votre espace ADE Campus / UM Net.
-
----
-
-## 🛠️ Administration, notifications & PWA
-
-### Variables d'environnement (backend)
+### Variables d'environnement
 
 | Variable | Rôle |
 |---|---|
-| `SECRET_KEY` | Clé de signature des sessions (générée et conservée à côté de la base si absente) |
+| `SECRET_KEY` | **Obligatoire** avec Docker Compose. Signe les sessions et dérive la clé de chiffrement des identifiants. Ne la changez pas après coup : les identifiants stockés deviendraient illisibles. |
+| `ENCRYPTION_KEY` | Clé de chiffrement dédiée (par défaut dérivée de `SECRET_KEY`) |
 | `ADMIN_EMAIL` | Email du compte administrateur (onglet **Administration**) |
 | `ADMIN_PASSWORD` | Mot de passe de l'admin, appliqué à chaque démarrage |
-| `PUBLIC_URL` | URL publique du site, utilisée dans les emails « mot de passe oublié » (sinon saisie dans l'onglet Administration) |
+| `PUBLIC_URL` | URL publique du site, utilisée dans les emails « mot de passe oublié » |
+| `APP_PORT` | Port exposé sur l'hôte (défaut `18420`) |
+| `DATABASE_URL` | URL SQLAlchemy de la base (défaut : SQLite) |
 | `ENABLE_DOCS` | `true` pour exposer Swagger (`/docs`) |
 
-### Fonctionnalités
-- **Administration** : configuration du serveur SMTP, liste des utilisateurs, modification, changement de mot de passe et suppression de comptes.
-- **Mot de passe oublié** : disponible dès qu'un SMTP et une URL publique sont configurés ; les utilisateurs peuvent aussi changer leur mot de passe dans *Paramètres*.
-- **Notifications** : alertes personnalisées (nouvelle note, rappel X heures avant un devoir fait ou non, récapitulatif quotidien) par email ou webhook Discord.
-- **Courbe d'évolution** de la moyenne et du rang (un point par jour), alimentée automatiquement.
-- **Préchargement en arrière-plan** : toutes les 5 minutes, les données ScoDoc, Moodle et emploi du temps de chaque utilisateur sont renouvelées avant l'expiration du cache (15 min), pour un affichage instantané à l'ouverture.
-- **Assistant IA** (Gemini) : chaque utilisateur ajoute sa propre clé d'API gratuite dans les Paramètres ; une bulle de discussion répond ensuite sur les cours, devoirs, notes et absences. Le contexte envoyé est compact et limité aux rubriques utiles à la question (≈ 300 à 700 tokens), avec limites de débit par utilisateur pour rester dans le quota gratuit.
-- **Thème** clair, sombre ou automatique (réglable dans les Paramètres).
-- **PWA** : l'application est installable sur mobile et responsive.
+## Développement local
+
+Backend :
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate   # Windows : .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Frontend, dans un second terminal :
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend sur `http://localhost:5173`, API sur `http://localhost:8000`. Sous Windows, `start.bat` lance les deux.
+
+## Configuration des services
+
+À la création du compte ou dans **Paramètres** :
+
+1. **ScoDoc** : URL de votre instance (ex. `https://wscodoc.iutbeziers.fr`), identifiant et mot de passe CAS / ENT.
+2. **Moodle** : URL (ex. `https://moodle-but.iutbeziers.fr/moodle`), identifiant et mot de passe, ou jeton WebService.
+3. **Emploi du temps** : lien du flux iCal exporté depuis ADE Campus / UM Net.
+4. **Assistant IA** (optionnel) : clé d'API Gemini gratuite, depuis [Google AI Studio](https://aistudio.google.com/apikey).
+
+## Licence
+
+Distribué sous licence [GNU AGPL v3](LICENSE). Si vous hébergez une version modifiée pour d'autres utilisateurs, vous devez leur fournir le code source de vos modifications.
+
+Les polices DejaVu incluses dans `backend/app/assets/fonts/` conservent leur propre licence (voir `LICENSE.txt` dans ce dossier).
