@@ -17,6 +17,7 @@
 	import NotificationsTab from "$lib/components/tabs/NotificationsTab.svelte";
 	import AdminTab from "$lib/components/tabs/AdminTab.svelte";
 	import MobileNav from "$lib/components/MobileNav.svelte";
+	import AiChat from "$lib/components/AiChat.svelte";
 
 	let activeTab = $state("dashboard");
 	let isAddTaskOpen = $state(false);
@@ -131,6 +132,8 @@
 				</main>
 			</div>
 		</div>
+
+		<AiChat refreshKey={dataVersion} />
 
 		<!-- Modal d'ajout de DS & Évaluations -->
 		<TaskModal

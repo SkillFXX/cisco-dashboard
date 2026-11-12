@@ -79,5 +79,6 @@ Lors de la création de votre compte (ou dans l'onglet **Services & Paramètres*
 - **Notifications** : alertes personnalisées (nouvelle note, rappel X heures avant un devoir fait ou non, récapitulatif quotidien) par email ou webhook Discord.
 - **Courbe d'évolution** de la moyenne et du rang (un point par jour), alimentée automatiquement.
 - **Préchargement en arrière-plan** : toutes les 5 minutes, les données ScoDoc, Moodle et emploi du temps de chaque utilisateur sont renouvelées avant l'expiration du cache (15 min), pour un affichage instantané à l'ouverture.
+- **Assistant IA** (Gemini) : chaque utilisateur ajoute sa propre clé d'API gratuite dans les Paramètres ; une bulle de discussion répond ensuite sur les cours, devoirs, notes et absences. Le contexte envoyé est compact et limité aux rubriques utiles à la question (≈ 300 à 700 tokens), avec limites de débit par utilisateur pour rester dans le quota gratuit.
 - **Thème** clair, sombre ou automatique (réglable dans les Paramètres).
 - **PWA** : l'application est installable sur mobile et responsive.

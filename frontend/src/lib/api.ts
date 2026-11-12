@@ -256,6 +256,20 @@ export const api = {
 		return await request<Array<{ day: string; moyenne: number | null; rang: number | null; total_promo: number | null }>>("/scodoc/history");
 	},
 
+	// Assistant IA (Gemini)
+	async getAiStatus() {
+		return await request<{ configured: boolean; verified: boolean; model: string; key_hint: string | null; last_error: string | null }>("/ai");
+	},
+	async verifyAi(payload: { api_key?: string; model?: string }) {
+		return await request<{ configured: boolean; verified: boolean; model: string; key_hint: string | null; last_error: string | null }>("/ai/verify", { method: "POST", body: JSON.stringify(payload) });
+	},
+	async removeAi() {
+		return await request<any>("/ai", { method: "DELETE" });
+	},
+	async aiChat(messages: { role: "user" | "assistant"; content: string }[]) {
+		return await request<{ reply: string; usage: { prompt: number | null; output: number | null } }>("/ai/chat", { method: "POST", body: JSON.stringify({ messages }) });
+	},
+
 	// Notifications
 	async getNotifications() {
 		return await request<any>("/notifications");

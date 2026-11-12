@@ -74,10 +74,57 @@
 	let expanded = $state<Record<string, boolean>>({});
 	function isOpen(id: string): boolean {
 		if (id === "discord") return expanded[id] ?? !webhook_configured;
+		if (id === "ai") return expanded[id] ?? !ai_verified;
 		return expanded[id] ?? serviceStatuses.find((x) => x.id === id)?.label !== "Connecté";
 	}
 	function toggleService(id: string) {
 		expanded[id] = !isOpen(id);
+	}
+
+	// Assistant IA (Gemini)
+	let ai_configured = $state(false);
+	let ai_verified = $state(false);
+	let ai_hint = $state<string | null>(null);
+	let ai_last_error = $state("");
+	let ai_key = $state("");
+	let ai_model = $state("gemini-2.5-flash-lite");
+	let isSavingAi = $state(false);
+	let aiFeedback = $state<{ success: boolean; message: string } | null>(null);
+
+	function applyAiStatus(st: { configured: boolean; verified: boolean; model: string; key_hint: string | null; last_error: string | null }) {
+		ai_configured = st.configured;
+		ai_verified = st.verified;
+		ai_model = st.model;
+		ai_hint = st.key_hint;
+		ai_last_error = st.last_error || "";
+	}
+
+	async function verifyAi() {
+		isSavingAi = true;
+		aiFeedback = null;
+		try {
+			applyAiStatus(await api.verifyAi({ api_key: ai_key.trim() || undefined, model: ai_model.trim() || undefined }));
+			ai_key = "";
+			aiFeedback = { success: true, message: "Assistant activé : la bulle de discussion apparaît en bas à droite." };
+		} catch (e: any) {
+			ai_verified = false;
+			aiFeedback = { success: false, message: e.message || "Vérification impossible." };
+		} finally {
+			isSavingAi = false;
+		}
+	}
+
+	async function removeAi() {
+		isSavingAi = true;
+		aiFeedback = null;
+		try {
+			await api.removeAi();
+			applyAiStatus({ configured: false, verified: false, model: "gemini-2.5-flash-lite", key_hint: null, last_error: null });
+		} catch (e: any) {
+			aiFeedback = { success: false, message: e.message || "Suppression impossible." };
+		} finally {
+			isSavingAi = false;
+		}
 	}
 
 	// Webhook Discord (notifications)
@@ -149,6 +196,7 @@
 			if (auth.user) {
 				email = auth.user.email || "";
 			}
+			api.getAiStatus().then(applyAiStatus).catch(() => {});
 			api.getNotifications()
 				.then((n) => {
 					webhook_configured = n.webhook_configured;
@@ -819,6 +867,103 @@
 								class="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer"
 							>
 								{isSavingWebhook ? "Enregistrement..." : "Enregistrer"}
+							</button>
+						</div>
+					</div>
+				{/if}
+			</Card>
+		</section>
+
+		<!-- Assistant IA -->
+		<section class="space-y-4">
+			<div class="flex items-center gap-2 pb-1 border-b border-app-border">
+				<Sparkles class="w-4 h-4 text-cyan-400" />
+				<h2 class="text-sm font-bold text-fg uppercase tracking-wider">Assistant IA</h2>
+			</div>
+
+			<Card class="space-y-4 p-5" id="service-ai">
+				<button
+					type="button"
+					onclick={() => toggleService("ai")}
+					aria-expanded={isOpen("ai")}
+					class="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+				>
+					<div class="flex items-center gap-2.5">
+						<div class="w-8 h-8 rounded-lg bg-violet-600/20 text-violet-400 flex items-center justify-center shrink-0">
+							<Sparkles class="w-4 h-4" />
+						</div>
+						<div>
+							<h3 class="font-bold text-fg text-sm">Gemini</h3>
+							<p class="text-xs text-muted">Poser des questions sur vos cours, devoirs, notes et absences</p>
+						</div>
+					</div>
+					<div class="flex items-center gap-2 shrink-0">
+						<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold {ai_verified ? 'bg-emerald-600/15 text-emerald-400' : ai_configured ? 'bg-red-600/15 text-red-400' : 'bg-app-raised text-muted'}">
+							{ai_verified ? "Actif" : ai_configured ? "Erreur" : "Non configuré"}
+						</span>
+						<ChevronDown class="w-4 h-4 text-subtle transition-transform {isOpen('ai') ? 'rotate-180' : ''}" />
+					</div>
+				</button>
+
+				{#if isOpen("ai")}
+					<div class="space-y-4 pt-4 border-t border-app-border">
+						<p class="text-[11px] leading-relaxed text-subtle">
+							Créez une clé gratuite dans <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-fg underline">Google AI Studio</a> puis collez-la ci-dessous. Une fois la clé vérifiée, une bulle de discussion apparaît en bas à droite.
+							Seules les données utiles à la question (notes, absences, emploi du temps, devoirs) sont envoyées à Google ; une question consomme environ 300 à 700 tokens, ce qui reste dans le quota gratuit. La clé est chiffrée sur le serveur.
+						</p>
+
+						{#if aiFeedback}
+							<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {aiFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
+								{#if aiFeedback.success}<Check class="w-4 h-4 shrink-0" />{:else}<AlertCircle class="w-4 h-4 shrink-0" />{/if}
+								<span>{aiFeedback.message}</span>
+							</div>
+						{:else if ai_last_error}
+							<div class="p-3 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
+								<AlertCircle class="w-4 h-4 shrink-0" />
+								<span>{ai_last_error}</span>
+							</div>
+						{/if}
+
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+							<div class="md:col-span-2">
+								<label for="ai-key" class="block text-xs font-medium text-muted mb-1">Clé d'API Gemini</label>
+								<input
+									id="ai-key"
+									type="password"
+									autocomplete="off"
+									bind:value={ai_key}
+									placeholder={ai_configured ? `Enregistrée (${ai_hint}) — laisser vide pour la conserver` : "AIza…"}
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
+								/>
+							</div>
+							<div>
+								<label for="ai-model" class="block text-xs font-medium text-muted mb-1">Modèle</label>
+								<input
+									id="ai-model"
+									type="text"
+									list="ai-models"
+									bind:value={ai_model}
+									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
+								/>
+								<datalist id="ai-models">
+									<option value="gemini-2.5-flash-lite"></option>
+									<option value="gemini-2.5-flash"></option>
+									<option value="gemini-2.0-flash"></option>
+								</datalist>
+							</div>
+						</div>
+
+						<div class="flex justify-end gap-2">
+							{#if ai_configured}
+								<button type="button" onclick={removeAi} disabled={isSavingAi} class="px-2.5 py-1 rounded-lg text-xs font-medium text-muted hover:text-fg cursor-pointer">Supprimer la clé</button>
+							{/if}
+							<button
+								type="button"
+								onclick={verifyAi}
+								disabled={isSavingAi || (!ai_key.trim() && !ai_configured)}
+								class="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+							>
+								{#if isSavingAi}<RefreshCw class="w-3 h-3 animate-spin" />Vérification...{:else}Vérifier & enregistrer{/if}
 							</button>
 						</div>
 					</div>
