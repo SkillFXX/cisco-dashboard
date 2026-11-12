@@ -15,6 +15,7 @@
 		timetable: { category: "Emploi du temps", page: "Semaine" },
 		grades: { category: "Notes", page: "Relevé" },
 		tasks: { category: "Devoirs", page: "Échéances" },
+		resources: { category: "Ressources", page: "Cours Moodle" },
 		absences: { category: "Absences", page: "Bilan" },
 		settings: { category: "Paramètres", page: "Services" },
 		notifications: { category: "Notifications", page: "Alertes personnalisées" },

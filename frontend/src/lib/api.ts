@@ -158,6 +158,32 @@ export const api = {
 		return await request<any>(`/moodle/courses?force_refresh=${forceRefresh}`);
 	},
 
+	// Ressources Moodle (onglet Ressources)
+	async getResourceCourses(forceRefresh = false) {
+		return await request<any>(`/moodle/resources/courses?force_refresh=${forceRefresh}`);
+	},
+
+	async getResourceCourse(courseId: number, forceRefresh = false) {
+		return await request<any>(`/moodle/resources/courses/${courseId}?force_refresh=${forceRefresh}`);
+	},
+
+	/** Telecharge un fichier Moodle via le serveur (le jeton Moodle ne quitte jamais le serveur). */
+	async fetchResourceFile(courseId: number, cmid: number, index: number, inline = false): Promise<Blob> {
+		const res = await fetch(`${API_BASE}/moodle/resources/courses/${courseId}/modules/${cmid}/files/${index}?inline=${inline}`, {
+			headers: getAuthHeader()
+		});
+		if (!res.ok) {
+			let msg = "Téléchargement impossible";
+			try {
+				msg = (await res.json()).detail || msg;
+			} catch {
+				// ignore
+			}
+			throw new Error(msg);
+		}
+		return await res.blob();
+	},
+
 	// Timetable (iCal)
 	async getTimetableWeek(forceRefresh = false) {
 		return await request<any>(`/timetable/week?force_refresh=${forceRefresh}`);

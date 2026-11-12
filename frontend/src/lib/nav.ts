@@ -6,6 +6,7 @@ import {
 	Clock,
 	Settings,
 	Bell,
+	Library,
 	ShieldCheck
 } from "lucide-svelte";
 
@@ -23,6 +24,7 @@ export const navItems: NavItem[] = [
 	{ id: "timetable", label: "Emploi du temps", icon: Calendar, primary: true },
 	{ id: "grades", label: "Notes", icon: FileText, primary: true },
 	{ id: "tasks", label: "Devoirs", icon: GraduationCap, primary: true },
+	{ id: "resources", label: "Ressources", icon: Library },
 	{ id: "absences", label: "Absences", icon: Clock },
 	{ id: "notifications", label: "Notifications", icon: Bell },
 	{ id: "settings", label: "Paramètres", icon: Settings },

@@ -11,6 +11,7 @@
 	import TimetableTab from "$lib/components/tabs/TimetableTab.svelte";
 	import TasksTab from "$lib/components/tabs/TasksTab.svelte";
 	import AbsencesTab from "$lib/components/tabs/AbsencesTab.svelte";
+	import ResourcesTab from "$lib/components/tabs/ResourcesTab.svelte";
 	import SettingsTab from "$lib/components/tabs/SettingsTab.svelte";
 	import AuthView from "$lib/components/AuthView.svelte";
 	import OpenSourceFooter from "$lib/components/OpenSourceFooter.svelte";
@@ -55,7 +56,7 @@
 		window.scrollTo({ top: 0 });
 	});
 
-	const TABS = ["dashboard", "timetable", "grades", "tasks", "absences", "notifications", "settings", "admin"];
+	const TABS = ["dashboard", "timetable", "grades", "tasks", "resources", "absences", "notifications", "settings", "admin"];
 
 	onMount(async () => {
 		// Raccourcis de l'application installée (?tab=tasks)
@@ -123,6 +124,9 @@
 							<div class="tab-pane" class:hidden={activeTab !== "tasks"}>
 								<TasksTab {tasksRefreshTrigger} onOpenAddTask={openAddTask} />
 							</div>
+						{/if}
+						{#if visited.has("resources")}
+							<div class="tab-pane" class:hidden={activeTab !== "resources"}><ResourcesTab onNavigate={(tab: string) => (activeTab = tab)} /></div>
 						{/if}
 						{#if visited.has("absences")}
 							<div class="tab-pane" class:hidden={activeTab !== "absences"}><AbsencesTab /></div>

@@ -11,6 +11,7 @@ Panel étudiant auto-hébergeable pour les étudiants en **BUT**, quel que soit 
 - **Emploi du temps (lien iCal `.ics` fourni par votre université)** : vues jour, semaine et mois, cours en cours, salle, enseignant, groupe, navigation sur toute l'année universitaire.
 - **Devoirs** : DS, DM, TP, to-do, avec échéances, archivage et ajout direct depuis un cours.
 - **Moodle** : cours inscrits et devoirs à rendre.
+- **Ressources** : les cours Moodle et leurs documents directement dans l'application (sections, dossiers, liens), avec recherche, aperçu des PDF et images, et téléchargement sans passer par le site.
 - **Notifications** : nouvelle note, rappel avant un devoir, récapitulatif quotidien, emploi du temps de la semaine suivante en image ; par email ou webhook Discord.
 - **Assistant IA (Gemini)** : chaque utilisateur renseigne sa propre clé d'API dans les Paramètres, puis pose ses questions (cours, devoirs, notes, absences) et peut lui demander d'ajouter un devoir. Le contexte envoyé est réduit aux rubriques utiles à la question, avec limites de débit pour rester dans le quota gratuit.
 - **Thème** clair, sombre ou automatique, interface responsive et installable (PWA).
