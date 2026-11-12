@@ -480,7 +480,7 @@
 							</div>
 						</div>
 						<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
-							Sur le site où vous consultez votre emploi du temps (celui de votre université ou IUT), cherchez une option d'export ou d'abonnement « iCal » / « .ics ». Collez-le ici. Il alimente l'emploi du temps, les prochains cours et les DS.
+							Sur le site où vous consultez votre emploi du temps (celui de votre université ou IUT), cherchez une option d'export ou d'abonnement « iCal » / « .ics », puis collez le lien obtenu ici. Il alimente l'emploi du temps, les prochains cours et les DS.
 						</div>
 					</div>
 
