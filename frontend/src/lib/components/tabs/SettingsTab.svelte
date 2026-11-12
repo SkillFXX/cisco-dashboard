@@ -20,6 +20,8 @@
 		ShieldCheck,
 		Sparkles,
 		Palette,
+		Bell,
+		Webhook,
 		ChevronDown,
 		RefreshCw
 	} from "lucide-svelte";
@@ -71,12 +73,45 @@
 	// Cartes de service repliables : ouvertes par défaut tant que le service n'est pas connecté
 	let expanded = $state<Record<string, boolean>>({});
 	function isOpen(id: string): boolean {
+		if (id === "discord") return expanded[id] ?? !webhook_configured;
 		return expanded[id] ?? serviceStatuses.find((x) => x.id === id)?.label !== "Connecté";
 	}
 	function toggleService(id: string) {
 		expanded[id] = !isOpen(id);
 	}
-	let connectedCount = $derived(serviceStatuses.filter((x) => x.label === "Connecté").length);
+
+	// Webhook Discord (notifications)
+	let webhook_configured = $state(false);
+	let webhook_masked = $state<string | null>(null);
+	let webhook_url = $state("");
+	let isSavingWebhook = $state(false);
+	let webhookFeedback = $state<{ success: boolean; message: string } | null>(null);
+
+	async function saveWebhook(clear = false) {
+		isSavingWebhook = true;
+		webhookFeedback = null;
+		try {
+			const res = await api.updateNotificationChannels(clear ? null : webhook_url.trim());
+			webhook_configured = res.webhook_configured;
+			webhook_masked = res.webhook_masked;
+			webhook_url = "";
+			webhookFeedback = { success: true, message: clear ? "Webhook supprimé." : "Webhook enregistré." };
+		} catch (e: any) {
+			webhookFeedback = { success: false, message: e.message || "Impossible d'enregistrer le webhook." };
+		} finally {
+			isSavingWebhook = false;
+		}
+	}
+
+	async function testWebhook() {
+		webhookFeedback = null;
+		try {
+			await api.testNotificationChannel("webhook");
+			webhookFeedback = { success: true, message: "Message de test envoyé sur le webhook." };
+		} catch (e: any) {
+			webhookFeedback = { success: false, message: e.message || "Échec de l'envoi." };
+		}
+	}
 
 	let isLoading = $state(true);
 	let isSavingServices = $state(false);
@@ -114,6 +149,12 @@
 			if (auth.user) {
 				email = auth.user.email || "";
 			}
+			api.getNotifications()
+				.then((n) => {
+					webhook_configured = n.webhook_configured;
+					webhook_masked = n.webhook_masked;
+				})
+				.catch(() => {});
 		} catch (e: any) {
 			servicesErrorMsg = e.message || "Erreur de chargement des paramètres";
 		} finally {
@@ -451,17 +492,6 @@
 					</div>
 				{/if}
 
-				<!-- Résumé : état des trois services -->
-				<div class="flex flex-wrap items-center gap-2 text-xs">
-					<span class="text-muted mr-1"><strong class="text-fg">{connectedCount}</strong> service{connectedCount > 1 ? "s" : ""} sur 3 connecté{connectedCount > 1 ? "s" : ""}</span>
-					{#each serviceStatuses as svc}
-						<a href="#service-{svc.id}" class="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-surface px-2.5 py-1 text-[11px] text-muted hover:text-fg">
-							<span class="w-1.5 h-1.5 rounded-full {svc.label === 'Connecté' ? 'bg-emerald-500' : svc.label === 'Erreur' ? 'bg-red-500' : svc.label === 'À vérifier' ? 'bg-amber-500' : 'bg-app-raised2'}"></span>
-							{svc.name}
-						</a>
-					{/each}
-				</div>
-
 				<!-- Carte ScoDoc -->
 				<Card class="space-y-4 p-5" id="service-scodoc">
 					<button
@@ -718,6 +748,82 @@
 					</Button>
 				</div>
 			</form>
+		</section>
+
+		<!-- Notifications : webhook Discord -->
+		<section class="space-y-4">
+			<div class="flex items-center gap-2 pb-1 border-b border-app-border">
+				<Bell class="w-4 h-4 text-cyan-400" />
+				<h2 class="text-sm font-bold text-fg uppercase tracking-wider">Notifications</h2>
+			</div>
+
+			<Card class="space-y-4 p-5" id="service-discord">
+				<button
+					type="button"
+					onclick={() => toggleService("discord")}
+					aria-expanded={isOpen("discord")}
+					class="w-full flex items-center justify-between gap-3 text-left cursor-pointer"
+				>
+					<div class="flex items-center gap-2.5">
+						<div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center shrink-0">
+							<Webhook class="w-4 h-4" />
+						</div>
+						<div>
+							<h3 class="font-bold text-fg text-sm">Webhook Discord</h3>
+							<p class="text-xs text-muted">Recevoir les notifications dans un salon Discord</p>
+						</div>
+					</div>
+					<div class="flex items-center gap-2 shrink-0">
+						<span class="rounded-md px-2 py-0.5 text-[11px] font-semibold {webhook_configured ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-muted'}">
+							{webhook_configured ? "Configuré" : "Non configuré"}
+						</span>
+						<ChevronDown class="w-4 h-4 text-subtle transition-transform {isOpen('discord') ? 'rotate-180' : ''}" />
+					</div>
+				</button>
+
+				{#if isOpen("discord")}
+					<div class="space-y-4 pt-4 border-t border-app-border">
+						<p class="text-[11px] leading-relaxed text-subtle">
+							Dans Discord : Paramètres du salon › Intégrations › Webhooks › Nouveau webhook › Copier l'URL. Les notifications se créent ensuite dans l'onglet Notifications.
+						</p>
+
+						{#if webhookFeedback}
+							<div class="p-3 rounded-lg text-xs font-medium flex items-center gap-2 {webhookFeedback.success ? 'bg-emerald-600/20 text-emerald-300' : 'bg-red-600/20 text-red-300'}">
+								{#if webhookFeedback.success}<Check class="w-4 h-4 shrink-0" />{:else}<AlertCircle class="w-4 h-4 shrink-0" />{/if}
+								<span>{webhookFeedback.message}</span>
+							</div>
+						{/if}
+
+						<div>
+							<label for="webhook-url" class="block text-xs font-medium text-muted mb-1">URL du webhook</label>
+							<input
+								id="webhook-url"
+								type="url"
+								bind:value={webhook_url}
+								placeholder={webhook_configured ? `Actuel : ${webhook_masked} — coller une nouvelle URL pour la remplacer` : "https://discord.com/api/webhooks/…"}
+								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
+							/>
+						</div>
+
+						<div class="flex justify-end gap-2">
+							{#if webhook_configured}
+								{#if auth.user?.is_admin}
+									<button type="button" onclick={testWebhook} class="px-2.5 py-1 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-fg cursor-pointer">Tester</button>
+								{/if}
+								<button type="button" onclick={() => saveWebhook(true)} class="px-2.5 py-1 rounded-lg text-xs font-medium text-muted hover:text-fg cursor-pointer">Supprimer</button>
+							{/if}
+							<button
+								type="button"
+								onclick={() => saveWebhook()}
+								disabled={isSavingWebhook || !webhook_url.trim()}
+								class="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer"
+							>
+								{isSavingWebhook ? "Enregistrement..." : "Enregistrer"}
+							</button>
+						</div>
+					</div>
+				{/if}
+			</Card>
 		</section>
 	{/if}
 </div>

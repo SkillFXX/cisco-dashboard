@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { api } from "$lib/api";
-	import { auth } from "$lib/stores/auth.svelte";
 	import Card from "../Card.svelte";
+	import Modal from "../Modal.svelte";
 	import Skeleton from "../Skeleton.svelte";
-	import { Bell, Mail, Webhook, Plus, Trash2, Pencil, Send, Check, X } from "lucide-svelte";
+	import { Mail, Webhook, Plus, Trash2, Pencil, Check, X } from "lucide-svelte";
 
 	type Rule = {
 		id?: number;
 		name: string;
 		enabled: boolean;
-		trigger: "new_grade" | "deadline" | "daily_digest";
+		trigger: "new_grade" | "deadline" | "daily_digest" | "new_week";
 		params: Record<string, any>;
 		channels: string[];
 	};
@@ -18,8 +18,11 @@
 	const TRIGGERS = [
 		{ id: "new_grade", label: "Nouvelle note", hint: "Dès qu'une nouvelle note apparaît dans ScoDoc." },
 		{ id: "deadline", label: "Avant une échéance", hint: "Un rappel X heures avant un devoir, DM, TP ou DS." },
-		{ id: "daily_digest", label: "Récapitulatif quotidien", hint: "Un résumé des échéances à venir, chaque jour à l'heure choisie." }
+		{ id: "daily_digest", label: "Récapitulatif quotidien", hint: "Un résumé des échéances à venir, chaque jour à l'heure choisie." },
+		{ id: "new_week", label: "Nouvelle semaine", hint: "L'emploi du temps de la semaine suivante, envoyé en image à la fin de chaque semaine." }
 	] as const;
+
+	const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 	const CATEGORIES = [
 		{ id: "ds", label: "DS" },
@@ -33,11 +36,14 @@
 	let notice = $state("");
 	let overview = $state<any>(null);
 
-	let webhookInput = $state("");
-	let isSavingWebhook = $state(false);
-
 	let editing = $state<Rule | null>(null);
+	let modalOpen = $state(false);
 	let isSavingRule = $state(false);
+
+	// Fermer la fenêtre abandonne l'édition en cours
+	$effect(() => {
+		if (!modalOpen) editing = null;
+	});
 
 	async function load() {
 		try {
@@ -56,31 +62,6 @@
 		setTimeout(() => (notice = ""), 3500);
 	}
 
-	async function saveWebhook(clear = false) {
-		isSavingWebhook = true;
-		error = "";
-		try {
-			await api.updateNotificationChannels(clear ? null : webhookInput.trim());
-			webhookInput = "";
-			await load();
-			flash(clear ? "Webhook supprimé." : "Webhook enregistré.");
-		} catch (e: any) {
-			error = e.message;
-		} finally {
-			isSavingWebhook = false;
-		}
-	}
-
-	async function testChannel(channel: "email" | "webhook") {
-		error = "";
-		try {
-			await api.testNotificationChannel(channel);
-			flash(channel === "email" ? "Email de test envoyé." : "Message de test envoyé sur le webhook.");
-		} catch (e: any) {
-			error = e.message;
-		}
-	}
-
 	function newRule(): Rule {
 		return {
 			name: "",
@@ -91,8 +72,14 @@
 		};
 	}
 
+	function startNew() {
+		editing = newRule();
+		modalOpen = true;
+	}
+
 	function startEdit(rule: Rule) {
 		editing = JSON.parse(JSON.stringify(rule));
+		modalOpen = true;
 	}
 
 	function setTrigger(trigger: Rule["trigger"]) {
@@ -103,7 +90,9 @@
 				? { hours_before: 24, include_done: false, categories: [] }
 				: trigger === "daily_digest"
 					? { hour: 18, days_ahead: 3, include_done: false }
-					: {};
+					: trigger === "new_week"
+						? { day: 6, hour: 18 }
+						: {};
 		if (!editing.name) editing.name = TRIGGERS.find((t) => t.id === trigger)?.label || "";
 	}
 
@@ -124,7 +113,7 @@
 			const payload = { ...editing };
 			if (editing.id) await api.updateNotificationRule(editing.id, payload);
 			else await api.createNotificationRule(payload);
-			editing = null;
+			modalOpen = false;
 			await load();
 			flash("Notification enregistrée.");
 		} catch (e: any) {
@@ -164,6 +153,7 @@
 			const delay = h % 24 === 0 ? `${h / 24} jour${h / 24 > 1 ? "s" : ""}` : `${h} h`;
 			return `${delay} avant l'échéance (${cats}) — ${p.include_done ? "faits ou non" : "non faits uniquement"}`;
 		}
+		if (rule.trigger === "new_week") return `${DAYS[p.day ?? 6]} à ${String(p.hour ?? 18).padStart(2, "0")}h : emploi du temps de la semaine suivante (image)`;
 		return `Chaque jour à ${String(p.hour).padStart(2, "0")}h, échéances des ${p.days_ahead} prochains jours`;
 	}
 
@@ -175,9 +165,9 @@
 		<div>
 			<h1 class="text-xl font-bold tracking-tight text-fg">Notifications</h1>
 		</div>
-		{#if overview && !editing}
+		{#if overview}
 			<button
-				onclick={() => (editing = newRule())}
+				onclick={startNew}
 				class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer"
 			>
 				<Plus class="w-3.5 h-3.5" />
@@ -202,177 +192,8 @@
 		<Skeleton class="h-40 w-full" />
 		<Skeleton class="h-32 w-full" />
 	{:else if overview}
-		<!-- Canaux -->
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-			<Card>
-				<div class="flex items-start justify-between gap-3">
-					<div class="flex items-center gap-2.5">
-						<Mail class="w-4 h-4 text-cyan-400" />
-						<h2 class="text-sm font-semibold text-fg">Email</h2>
-					</div>
-					<span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium {overview.email_available ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-muted'}">
-						{overview.email_available ? "Disponible" : "Indisponible"}
-					</span>
-				</div>
-				<p class="text-xs text-muted mt-2">
-					{#if overview.email_available}
-						Les alertes seront envoyées à <span class="text-fg">{overview.email_address}</span>.
-					{:else}
-						L'administrateur doit d'abord configurer un serveur SMTP.
-					{/if}
-				</p>
-				{#if overview.email_available && auth.user?.is_admin}
-					<button onclick={() => testChannel("email")} class="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-fg/[0.04] text-xs text-muted cursor-pointer">
-						<Send class="w-3.5 h-3.5" />Envoyer un test
-					</button>
-				{/if}
-			</Card>
-
-			<Card>
-				<div class="flex items-start justify-between gap-3">
-					<div class="flex items-center gap-2.5">
-						<Webhook class="w-4 h-4 text-cyan-400" />
-						<h2 class="text-sm font-semibold text-fg">Webhook Discord</h2>
-					</div>
-					<span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium {overview.webhook_configured ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-muted'}">
-						{overview.webhook_configured ? "Configuré" : "Non configuré"}
-					</span>
-				</div>
-				<form
-					class="mt-3 flex flex-col sm:flex-row gap-2"
-					onsubmit={(e) => {
-						e.preventDefault();
-						saveWebhook();
-					}}
-				>
-					<input
-						type="url"
-						bind:value={webhookInput}
-						placeholder={overview.webhook_configured ? `Actuel : ${overview.webhook_masked}` : "https://discord.com/api/webhooks/…"}
-						aria-label="URL du webhook"
-						class={inputClass}
-					/>
-					<button type="submit" disabled={isSavingWebhook || !webhookInput.trim()} class="px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer">
-						Enregistrer
-					</button>
-				</form>
-				{#if overview.webhook_configured}
-					<div class="mt-2 flex gap-2">
-						{#if auth.user?.is_admin}
-							<button onclick={() => testChannel("webhook")} class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-fg/[0.04] text-xs text-muted cursor-pointer">
-								<Send class="w-3.5 h-3.5" />Tester
-							</button>
-						{/if}
-						<button onclick={() => saveWebhook(true)} class="px-3 py-1.5 rounded-lg text-xs text-muted hover:text-red-400 cursor-pointer">Supprimer</button>
-					</div>
-				{/if}
-				<p class="text-[11px] text-subtle mt-2">Discord : Paramètres du salon → Intégrations → Webhooks → Copier l'URL.</p>
-			</Card>
-		</div>
-
-		<!-- Formulaire -->
-		{#if editing}
-			<Card>
-				<form onsubmit={saveRule} class="space-y-4">
-					<h2 class="text-sm font-semibold text-fg">{editing.id ? "Modifier la notification" : "Nouvelle notification"}</h2>
-
-					<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-						{#each TRIGGERS as t}
-							<button
-								type="button"
-								onclick={() => setTrigger(t.id)}
-								class="text-left rounded-lg border p-3 cursor-pointer transition-colors {editing.trigger === t.id ? 'border-cyan-500 bg-cyan-500/10' : 'border-app-border bg-app-surface hover:bg-fg/[0.03]'}"
-							>
-								<div class="text-xs font-semibold text-fg">{t.label}</div>
-								<div class="text-[11px] text-muted mt-1">{t.hint}</div>
-							</button>
-						{/each}
-					</div>
-
-					<div>
-						<label for="n-name" class="block text-xs font-medium text-muted mb-1">Nom</label>
-						<input id="n-name" type="text" bind:value={editing.name} required maxlength="100" class={inputClass} placeholder="Ex : Rappel DS la veille" />
-					</div>
-
-					{#if editing.trigger === "deadline"}
-						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-							<div>
-								<label for="n-hours" class="block text-xs font-medium text-muted mb-1">Prévenir combien d'heures avant ?</label>
-								<div class="flex gap-2">
-									<input id="n-hours" type="number" min="1" max="720" bind:value={editing.params.hours_before} required class={inputClass} />
-									<div class="flex gap-1 shrink-0">
-										{#each [[2, "2 h"], [24, "1 j"], [72, "3 j"]] as [h, label]}
-											<button type="button" onclick={() => (editing!.params.hours_before = h)} class="px-2 rounded-lg border border-app-border bg-app-surface text-[11px] text-muted hover:text-fg cursor-pointer">{label}</button>
-										{/each}
-									</div>
-								</div>
-							</div>
-							<div>
-								<span class="block text-xs font-medium text-muted mb-1">Types concernés (vide = tous)</span>
-								<div class="flex flex-wrap gap-1.5">
-									{#each CATEGORIES as c}
-										<button
-											type="button"
-											onclick={() => (editing!.params.categories = toggleIn(editing!.params.categories, c.id))}
-											class="px-2.5 py-1.5 rounded-lg text-xs cursor-pointer {editing.params.categories.includes(c.id) ? 'bg-fg/[0.12] text-fg font-semibold' : 'border border-app-border bg-app-surface text-muted'}"
-										>{c.label}</button>
-									{/each}
-								</div>
-							</div>
-						</div>
-						<label class="flex items-center gap-2 text-xs text-muted cursor-pointer">
-							<input type="checkbox" bind:checked={editing.params.include_done} class="accent-cyan-500" />
-							Me prévenir même si le devoir est déjà marqué comme fait
-						</label>
-					{:else if editing.trigger === "daily_digest"}
-						<div class="grid grid-cols-2 gap-3">
-							<div>
-								<label for="n-hour" class="block text-xs font-medium text-muted mb-1">Heure d'envoi</label>
-								<select id="n-hour" bind:value={editing.params.hour} class={inputClass}>
-									{#each Array(24) as _, h}<option value={h}>{String(h).padStart(2, "0")}h00</option>{/each}
-								</select>
-							</div>
-							<div>
-								<label for="n-days" class="block text-xs font-medium text-muted mb-1">Échéances des … prochains jours</label>
-								<input id="n-days" type="number" min="1" max="14" bind:value={editing.params.days_ahead} required class={inputClass} />
-							</div>
-						</div>
-						<label class="flex items-center gap-2 text-xs text-muted cursor-pointer">
-							<input type="checkbox" bind:checked={editing.params.include_done} class="accent-cyan-500" />
-							Inclure les devoirs déjà faits
-						</label>
-					{/if}
-
-					<div>
-						<span class="block text-xs font-medium text-muted mb-1">Envoyer par</span>
-						<div class="flex flex-wrap gap-2">
-							<button
-								type="button"
-								disabled={!overview.email_available}
-								onclick={() => (editing!.channels = toggleIn(editing!.channels, "email"))}
-								class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs disabled:opacity-40 cursor-pointer {editing.channels.includes('email') ? 'bg-fg/[0.12] text-fg font-semibold' : 'border border-app-border bg-app-surface text-muted'}"
-							><Mail class="w-3.5 h-3.5" />Email</button>
-							<button
-								type="button"
-								disabled={!overview.webhook_configured}
-								onclick={() => (editing!.channels = toggleIn(editing!.channels, "webhook"))}
-								class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs disabled:opacity-40 cursor-pointer {editing.channels.includes('webhook') ? 'bg-fg/[0.12] text-fg font-semibold' : 'border border-app-border bg-app-surface text-muted'}"
-							><Webhook class="w-3.5 h-3.5" />Discord / webhook</button>
-						</div>
-					</div>
-
-					<div class="flex justify-end gap-2 pt-2 border-t border-app-border">
-						<button type="button" onclick={() => (editing = null)} class="px-3.5 py-1.5 rounded-lg border border-app-border bg-app-surface hover:bg-fg/[0.04] text-xs font-medium text-muted cursor-pointer">Annuler</button>
-						<button type="submit" disabled={isSavingRule} class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer">
-							{isSavingRule ? "Enregistrement..." : "Enregistrer"}
-						</button>
-					</div>
-				</form>
-			</Card>
-		{/if}
-
 		<!-- Liste -->
-		{#if overview.rules.length === 0 && !editing}
+		{#if overview.rules.length === 0}
 			<div class="py-10 text-center border border-dashed border-app-border rounded-xl bg-app-card/40 text-subtle text-xs">
 				Aucune notification pour l'instant. Créez-en une pour être prévenu automatiquement.
 			</div>
@@ -405,3 +226,128 @@
 		{/if}
 	{/if}
 </div>
+
+<Modal bind:open={modalOpen} title={editing?.id ? "Modifier la notification" : "Nouvelle notification"} class="max-w-xl">
+	{#if editing && overview}
+		<form onsubmit={saveRule} class="space-y-5">
+			<fieldset>
+				<legend class="block text-xs font-medium text-muted mb-1">Quand être prévenu ?</legend>
+				<div class="divide-y divide-app-border">
+					{#each TRIGGERS as t}
+						<label class="flex items-start gap-3 py-2.5 cursor-pointer">
+							<input type="radio" name="trigger" checked={editing.trigger === t.id} onchange={() => setTrigger(t.id)} class="mt-0.5 accent-cyan-500" />
+							<span>
+								<span class="block text-xs font-semibold text-fg">{t.label}</span>
+								<span class="block text-[11px] text-muted">{t.hint}</span>
+							</span>
+						</label>
+					{/each}
+				</div>
+			</fieldset>
+
+			<div>
+				<label for="n-name" class="block text-xs font-medium text-muted mb-1">Nom</label>
+				<input id="n-name" type="text" bind:value={editing.name} required maxlength="100" class={inputClass} placeholder="Ex : Rappel DS la veille" />
+			</div>
+
+			{#if editing.trigger === "deadline"}
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+					<div>
+						<label for="n-hours" class="block text-xs font-medium text-muted mb-1">Prévenir combien d'heures avant ?</label>
+						<div class="flex gap-2">
+							<input id="n-hours" type="number" min="1" max="720" bind:value={editing.params.hours_before} required class={inputClass} />
+							<div class="flex gap-1 shrink-0">
+								{#each [[2, "2 h"], [24, "1 j"], [72, "3 j"]] as [h, label]}
+									<button type="button" onclick={() => (editing!.params.hours_before = h)} class="px-2 rounded-lg bg-app-raised hover:bg-app-raised2 text-[11px] text-muted hover:text-fg cursor-pointer">{label}</button>
+								{/each}
+							</div>
+						</div>
+					</div>
+					<div>
+						<span class="block text-xs font-medium text-muted mb-1">Types concernés (vide = tous)</span>
+						<div class="flex flex-wrap gap-1.5">
+							{#each CATEGORIES as c}
+								<button
+									type="button"
+									onclick={() => (editing!.params.categories = toggleIn(editing!.params.categories, c.id))}
+									class="px-2.5 py-1.5 rounded-lg text-xs cursor-pointer {editing.params.categories.includes(c.id) ? 'bg-cyan-600/15 text-cyan-400 font-semibold' : 'bg-app-raised text-muted'}"
+								>{c.label}</button>
+							{/each}
+						</div>
+					</div>
+				</div>
+				<label class="flex items-center gap-2 text-xs text-muted cursor-pointer">
+					<input type="checkbox" bind:checked={editing.params.include_done} class="accent-cyan-500" />
+					Me prévenir même si le devoir est déjà marqué comme fait
+				</label>
+			{:else if editing.trigger === "daily_digest"}
+				<div class="grid grid-cols-2 gap-3">
+					<div>
+						<label for="n-hour" class="block text-xs font-medium text-muted mb-1">Heure d'envoi</label>
+						<select id="n-hour" bind:value={editing.params.hour} class={inputClass}>
+							{#each Array(24) as _, h}<option value={h}>{String(h).padStart(2, "0")}h00</option>{/each}
+						</select>
+					</div>
+					<div>
+						<label for="n-days" class="block text-xs font-medium text-muted mb-1">Échéances des … prochains jours</label>
+						<input id="n-days" type="number" min="1" max="14" bind:value={editing.params.days_ahead} required class={inputClass} />
+					</div>
+				</div>
+				<label class="flex items-center gap-2 text-xs text-muted cursor-pointer">
+					<input type="checkbox" bind:checked={editing.params.include_done} class="accent-cyan-500" />
+					Inclure les devoirs déjà faits
+				</label>
+			{:else if editing.trigger === "new_week"}
+				<div class="grid grid-cols-2 gap-3">
+					<div>
+						<label for="n-day" class="block text-xs font-medium text-muted mb-1">Jour d'envoi</label>
+						<select id="n-day" bind:value={editing.params.day} class={inputClass}>
+							{#each DAYS as d, i}<option value={i}>{d}</option>{/each}
+						</select>
+					</div>
+					<div>
+						<label for="n-wk-hour" class="block text-xs font-medium text-muted mb-1">Heure d'envoi</label>
+						<select id="n-wk-hour" bind:value={editing.params.hour} class={inputClass}>
+							{#each Array(24) as _, h}<option value={h}>{String(h).padStart(2, "0")}h00</option>{/each}
+						</select>
+					</div>
+				</div>
+				<p class="text-[11px] text-subtle">Nécessite un lien d'emploi du temps dans les Paramètres. L'image est envoyée une seule fois par semaine.</p>
+			{/if}
+
+			<div>
+				<span class="block text-xs font-medium text-muted mb-1">Envoyer par</span>
+				<div class="flex flex-wrap gap-2">
+					<button
+						type="button"
+						disabled={!overview.email_available}
+						onclick={() => (editing!.channels = toggleIn(editing!.channels, "email"))}
+						class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs disabled:opacity-40 cursor-pointer {editing.channels.includes('email') ? 'bg-cyan-600/15 text-cyan-400 font-semibold' : 'bg-app-raised text-muted'}"
+					><Mail class="w-3.5 h-3.5" />Email</button>
+					<button
+						type="button"
+						disabled={!overview.webhook_configured}
+						onclick={() => (editing!.channels = toggleIn(editing!.channels, "webhook"))}
+						class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs disabled:opacity-40 cursor-pointer {editing.channels.includes('webhook') ? 'bg-cyan-600/15 text-cyan-400 font-semibold' : 'bg-app-raised text-muted'}"
+					><Webhook class="w-3.5 h-3.5" />Discord</button>
+				</div>
+				{#if !overview.email_available || !overview.webhook_configured}
+					<p class="text-[11px] text-subtle mt-1.5">
+						{#if !overview.webhook_configured}Le webhook Discord se configure dans les Paramètres. {/if}{#if !overview.email_available}L'email nécessite un serveur SMTP configuré par l'administrateur.{/if}
+					</p>
+				{/if}
+			</div>
+
+			{#if error}
+				<p class="text-xs text-red-400">{error}</p>
+			{/if}
+
+			<div class="flex justify-end gap-2 pt-3 border-t border-app-border">
+				<button type="button" onclick={() => (modalOpen = false)} class="px-3.5 py-1.5 rounded-lg bg-app-raised hover:bg-app-raised2 text-xs font-medium text-muted cursor-pointer">Annuler</button>
+				<button type="submit" disabled={isSavingRule} class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer">
+					{isSavingRule ? "Enregistrement..." : "Enregistrer"}
+				</button>
+			</div>
+		</form>
+	{/if}
+</Modal>
