@@ -81,11 +81,33 @@
 	const startDay = now.getDay() === 0 || now.getDay() === 6 ? nextWorkingDay(now, 1) : now;
 	let mobileDayIso = $state(toLocalIsoDate(startDay));
 
+	function weekOffsetOf(d: Date): number {
+		const diffDays = Math.round((getMondayOfDate(d, 0).getTime() - getMondayOfDate(now, 0).getTime()) / 86400000);
+		return Math.round(diffDays / 7);
+	}
+
 	function setMobileDay(d: Date) {
 		mobileDayIso = toLocalIsoDate(d);
-		const diffDays = Math.round((getMondayOfDate(d, 0).getTime() - getMondayOfDate(now, 0).getTime()) / 86400000);
-		weekOffset = Math.round(diffDays / 7);
+		weekOffset = weekOffsetOf(d);
 	}
+
+	// Les flèches « semaine » du haut changent weekOffset : le jour affiché sur mobile suit
+	// (même jour de la semaine, ou aujourd'hui pour la semaine en cours).
+	$effect(() => {
+		const offset = weekOffset;
+		const current = isoToDate(mobileDayIso);
+		if (weekOffsetOf(current) === offset) return;
+		if (offset === 0) {
+			mobileDayIso = toLocalIsoDate(startDay);
+			return;
+		}
+		const weekday = Math.min((current.getDay() + 6) % 7, 4);
+		const monday = getMondayOfDate(now, offset);
+		const target = new Date(monday);
+		target.setDate(monday.getDate() + weekday);
+		target.setHours(12, 0, 0, 0);
+		mobileDayIso = toLocalIsoDate(target);
+	});
 
 	function stepMobileDay(step: 1 | -1) {
 		setMobileDay(nextWorkingDay(isoToDate(mobileDayIso), step));
