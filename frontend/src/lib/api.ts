@@ -267,7 +267,7 @@ export const api = {
 		return await request<any>("/ai", { method: "DELETE" });
 	},
 	async aiChat(messages: { role: "user" | "assistant"; content: string }[]) {
-		return await request<{ reply: string; usage: { prompt: number | null; output: number | null } }>("/ai/chat", { method: "POST", body: JSON.stringify({ messages }) });
+		return await request<{ reply: string; usage: { prompt: number | null; output: number | null }; tasks_created: number }>("/ai/chat", { method: "POST", body: JSON.stringify({ messages }) });
 	},
 
 	// Notifications

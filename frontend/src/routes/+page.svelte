@@ -63,6 +63,13 @@
 		await auth.init();
 	});
 
+	onMount(() => {
+		// Un devoir créé par l'assistant IA doit apparaître sans recharger la page
+		const refresh = () => (tasksRefreshTrigger += 1);
+		window.addEventListener("cisco:tasks-changed", refresh);
+		return () => window.removeEventListener("cisco:tasks-changed", refresh);
+	});
+
 	function handleTaskCreated() {
 		tasksRefreshTrigger += 1;
 		activeTab = "tasks";

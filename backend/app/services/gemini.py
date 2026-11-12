@@ -32,7 +32,7 @@ class GeminiError(Exception):
         self.invalid_key = invalid_key
 
 
-def _generate(api_key: str, model: str, system: str, contents: List[Dict[str, Any]], max_tokens: int) -> Tuple[str, Dict[str, Any]]:
+def _generate(api_key: str, model: str, system: str, contents: List[Dict[str, Any]], max_tokens: int, tools: Optional[List[Dict[str, Any]]] = None) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
     config: Dict[str, Any] = {"maxOutputTokens": max_tokens, "temperature": 0.3}
     # Les modèles 2.5 "flash" réfléchissent par défaut : ces tokens de réflexion consomment le quota et la limite de sortie.
     if "2.5-flash" in model:
@@ -40,6 +40,8 @@ def _generate(api_key: str, model: str, system: str, contents: List[Dict[str, An
     body: Dict[str, Any] = {"contents": contents, "generationConfig": config}
     if system:
         body["systemInstruction"] = {"parts": [{"text": system}]}
+    if tools:
+        body["tools"] = tools
 
     url = f"{API_BASE}/models/{model}:generateContent"
     headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
@@ -70,11 +72,12 @@ def _generate(api_key: str, model: str, system: str, contents: List[Dict[str, An
     candidates = data.get("candidates") or []
     parts = (candidates[0].get("content", {}).get("parts") if candidates else None) or []
     text = "".join(p.get("text", "") for p in parts).strip()
+    calls = [p["functionCall"] for p in parts if p.get("functionCall")]
     usage = data.get("usageMetadata", {})
-    if not text:
+    if not text and not calls:
         reason = candidates[0].get("finishReason") if candidates else (data.get("promptFeedback", {}) or {}).get("blockReason")
         raise GeminiError(f"Aucune réponse générée ({reason or 'vide'}). Reformulez la question.", 502)
-    return text, usage
+    return text, usage, calls
 
 
 def verify_key(api_key: str, model: str) -> None:
@@ -82,7 +85,26 @@ def verify_key(api_key: str, model: str) -> None:
     _generate(api_key, model, "", [{"role": "user", "parts": [{"text": "Réponds uniquement : OK"}]}], 16)
 
 
-def chat(api_key: str, model: str, context: str, messages: List[Dict[str, str]]) -> Tuple[str, Dict[str, Any]]:
+ADD_HOMEWORK_TOOL = [{
+    "functionDeclarations": [{
+        "name": "add_homework",
+        "description": "Ajoute un devoir / DS / rappel à la liste de l'étudiant. À appeler seulement quand l'étudiant le demande explicitement.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Titre court du devoir"},
+                "due_date": {"type": "string", "description": "Échéance, heure de Paris, format AAAA-MM-JJ HH:MM. Sans heure précisée : 08:00. Calcule les dates relatives (demain, vendredi prochain) à partir de « Maintenant »."},
+                "category": {"type": "string", "enum": ["ds", "dm", "tp", "todo"], "description": "ds = contrôle, dm = devoir maison, tp = TP à rendre, todo = autre"},
+                "subject": {"type": "string", "description": "Matière, idéalement un élément de la liste MATIÈRES (code + nom)"},
+                "description": {"type": "string", "description": "Consignes ou notes (facultatif)"},
+            },
+            "required": ["title", "due_date"],
+        },
+    }]
+}]
+
+
+def chat(api_key: str, model: str, context: str, messages: List[Dict[str, str]], allow_actions: bool = False) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
     history = messages[-MAX_HISTORY_MESSAGES:]
     contents = [
         {"role": "model" if m["role"] == "assistant" else "user", "parts": [{"text": m["content"][:MAX_MESSAGE_CHARS]}]}
@@ -91,4 +113,4 @@ def chat(api_key: str, model: str, context: str, messages: List[Dict[str, str]])
     # Gemini exige que la conversation commence par un message utilisateur
     while contents and contents[0]["role"] != "user":
         contents.pop(0)
-    return _generate(api_key, model, SYSTEM_PROMPT + context, contents, MAX_OUTPUT_TOKENS)
+    return _generate(api_key, model, SYSTEM_PROMPT + context, contents, MAX_OUTPUT_TOKENS, ADD_HOMEWORK_TOOL if allow_actions else None)

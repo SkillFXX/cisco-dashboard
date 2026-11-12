@@ -894,7 +894,7 @@
 						</div>
 						<div>
 							<h3 class="font-bold text-fg text-sm">Gemini</h3>
-							<p class="text-xs text-muted">Poser des questions sur vos cours, devoirs, notes et absences</p>
+							<p class="text-xs text-muted">Poser des questions sur vos cours, devoirs, notes et absences, et faire ajouter des devoirs</p>
 						</div>
 					</div>
 					<div class="flex items-center gap-2 shrink-0">
@@ -909,7 +909,7 @@
 					<div class="space-y-4 pt-4 border-t border-app-border">
 						<p class="text-[11px] leading-relaxed text-subtle">
 							Créez une clé gratuite dans <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-fg underline">Google AI Studio</a> puis collez-la ci-dessous. Une fois la clé vérifiée, une bulle de discussion apparaît en bas à droite.
-							Seules les données utiles à la question (notes, absences, emploi du temps, devoirs) sont envoyées à Google ; une question consomme environ 300 à 700 tokens, ce qui reste dans le quota gratuit. La clé est chiffrée sur le serveur.
+							L'assistant peut aussi ajouter un devoir quand vous le lui demandez. Seules les données utiles à la question (notes, absences, emploi du temps, devoirs) sont envoyées à Google ; une question consomme environ 300 à 700 tokens, ce qui reste dans le quota gratuit. La clé est chiffrée sur le serveur.
 						</p>
 
 						{#if aiFeedback}

@@ -9,7 +9,7 @@
 	const STORAGE_KEY = "cisco_ai_chat";
 	const MAX_KEPT = 20;
 	const MAX_SENT = 6; // l'historique envoyé au modèle reste court pour économiser les tokens
-	const SUGGESTIONS = ["Quels devoirs ai-je cette semaine ?", "Quel est mon prochain cours ?", "Où ai-je perdu le plus de points ?", "Résume ma situation"];
+	const SUGGESTIONS = ["Quels devoirs ai-je cette semaine ?", "Quel est mon prochain cours ?", "Où ai-je perdu le plus de points ?", "Ajoute un devoir de maths pour vendredi"];
 
 	let ready = $state(false);
 	let open = $state(false);
@@ -67,6 +67,8 @@
 		try {
 			const res = await api.aiChat(messages.slice(-MAX_SENT));
 			messages = [...messages, { role: "assistant", content: res.reply }];
+			// L'assistant a ajouté un devoir : les listes affichées doivent se rafraîchir
+			if (res.tasks_created > 0) window.dispatchEvent(new CustomEvent("cisco:tasks-changed"));
 		} catch (e: any) {
 			error = e.message || "L'assistant n'a pas pu répondre.";
 			// Un échec de clé désactive l'assistant : on relit l'état
@@ -153,7 +155,7 @@
 
 			<div bind:this={scroller} class="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-xs leading-relaxed">
 				{#if messages.length === 0}
-					<p class="text-muted">Posez une question sur vos cours, devoirs, notes ou absences.</p>
+					<p class="text-muted">Posez une question sur vos cours, devoirs, notes ou absences, ou demandez-moi d'ajouter un devoir.</p>
 					<div class="flex flex-col items-start gap-1.5 pt-1">
 						{#each SUGGESTIONS as s}
 							<button type="button" onclick={() => send(s)} class="text-left rounded-lg bg-app-raised hover:bg-app-raised2 px-3 py-1.5 text-fg cursor-pointer transition-colors">{s}</button>

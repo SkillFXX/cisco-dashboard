@@ -138,12 +138,14 @@ def _tasks_section(db: Session, user: User, moodle: Dict[str, Any], timetable: D
     return "\n".join(lines)
 
 
-def build_context(db: Session, user: User, question_texts: List[str]) -> str:
+def build_context(db: Session, user: User, question_texts: List[str], with_subjects: bool = False) -> str:
     now = datetime.datetime.now(PARIS).replace(tzinfo=None)
     creds = user.credentials
     topics = detect_topics(question_texts)
-    broad = not topics
-    wanted = set(TOPIC_KEYWORDS) if broad else topics
+    broad = not topics and not with_subjects
+    wanted = set(TOPIC_KEYWORDS) if broad else (topics or {"tasks"})
+    if with_subjects:
+        wanted = wanted | {"subjects"}
 
     header = (
         f"Maintenant: {DAYS_LONG[now.weekday()]} {now.strftime('%d/%m/%Y %H:%M')} (Paris). "
@@ -152,9 +154,9 @@ def build_context(db: Session, user: User, question_texts: List[str]) -> str:
     parts = [header]
 
     scodoc: Dict[str, Any] = {}
-    if wanted & {"grades", "absences"} and creds and creds.scodoc_username and creds.scodoc_password:
+    if wanted & {"grades", "absences", "subjects"} and creds and creds.scodoc_username and creds.scodoc_password:
         scodoc = fetch_scodoc_data(user_id=user.id, url=creds.scodoc_url, username=creds.scodoc_username, password=creds.scodoc_password)
-    elif wanted & {"grades", "absences"}:
+    elif wanted & {"grades", "absences", "subjects"}:
         scodoc = {"configured": False}
 
     timetable: Dict[str, Any] = {}
@@ -167,6 +169,10 @@ def build_context(db: Session, user: User, question_texts: List[str]) -> str:
     if "tasks" in wanted and creds and creds.moodle_url and (creds.moodle_token or (creds.moodle_username and creds.moodle_password)):
         moodle = fetch_moodle_data(url=creds.moodle_url, username=creds.moodle_username, password=creds.moodle_password, token=creds.moodle_token)
 
+    if with_subjects:
+        subjects = [f"{m.get('code')} {m.get('titre')}" for m in scodoc.get("matieres", []) if m.get("code")]
+        if subjects:
+            parts.append("MATIÈRES: " + "; ".join(subjects))
     if "grades" in wanted:
         parts.append(_grades_section(scodoc, compact=broad))
     if "absences" in wanted:
@@ -177,3 +183,12 @@ def build_context(db: Session, user: User, question_texts: List[str]) -> str:
     if "tasks" in wanted:
         parts.append(_tasks_section(db, user, moodle, timetable, now))
     return "\n".join(parts)
+
+
+ACTION_WORDS = ["ajout", "rajout", "cree", "creer", "rappel", "planifi", "programme", "enregistr", "inscri", "mets", "mettre", "met "]
+
+
+def wants_action(texts: List[str]) -> bool:
+    """Vrai si la question demande d'ajouter quelque chose (les outils ne sont alors déclarés qu'à ce moment, pour économiser des tokens)."""
+    blob = " " + _norm(" ".join(texts)) + " "
+    return any(w in blob for w in ACTION_WORDS)

@@ -4,11 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models import User, AiSettings
+import datetime
+from zoneinfo import ZoneInfo
+from ..models import User, AiSettings, PersonalTask
 from ..auth import get_current_user
 from ..ratelimit import ai_minute_limiter, ai_day_limiter
 from ..services import gemini
-from ..services.ai_context import build_context
+from ..services.ai_context import build_context, wants_action, DAYS_LONG
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/ai", tags=["ai"])
@@ -37,6 +39,39 @@ def _status(row: Optional[AiSettings]) -> dict:
         "key_hint": f"…{key[-4:]}" if key else None,
         "last_error": row.last_error if row else None,
     }
+
+
+PARIS = ZoneInfo("Europe/Paris")
+UTC = datetime.timezone.utc
+CATEGORIES = {"ds", "dm", "tp", "todo"}
+MAX_ACTIONS = 3
+
+
+def _create_homework(db: Session, user: User, args: dict) -> str:
+    """Execute l'outil add_homework demandé par le modèle. Retourne une phrase de confirmation, ou lève ValueError."""
+    title = str(args.get("title") or "").strip()[:200]
+    if not title:
+        raise ValueError("titre manquant")
+    raw_due = str(args.get("due_date") or "").strip().replace("T", " ")
+    try:
+        due_local = datetime.datetime.strptime(raw_due[:16], "%Y-%m-%d %H:%M")
+    except ValueError:
+        raise ValueError(f"date d'échéance illisible ({raw_due or 'vide'})")
+    now_local = datetime.datetime.now(PARIS).replace(tzinfo=None)
+    if not (now_local - datetime.timedelta(days=1) <= due_local <= now_local + datetime.timedelta(days=730)):
+        raise ValueError("date d'échéance hors limites")
+    category = args.get("category") if args.get("category") in CATEGORIES else "todo"
+    subject = (str(args.get("subject") or "").strip()[:100]) or None
+    description = (str(args.get("description") or "").strip()[:2000]) or None
+
+    task = PersonalTask(
+        user_id=user.id, title=title, subject=subject, description=description, event_type=category, status="todo",
+        due_date=due_local.replace(tzinfo=PARIS).astimezone(UTC).replace(tzinfo=None),  # stocké en UTC, comme depuis l'interface
+    )
+    db.add(task)
+    db.commit()
+    when = f"{DAYS_LONG[due_local.weekday()]} {due_local.strftime('%d/%m à %H:%M')}"
+    return f"Devoir ajouté : **{title}**" + (f" ({subject})" if subject else "") + f", pour le {when}."
 
 
 @router.get("")
@@ -102,10 +137,11 @@ def chat(payload: ChatIn, current_user: User = Depends(get_current_user), db: Se
     messages = [{"role": m.role, "content": m.content} for m in payload.messages]
     # Rubriques choisies d'après la question et la précédente (pour les relances « et demain ? »)
     user_texts = [m["content"] for m in messages if m["role"] == "user"][-2:]
-    context = build_context(db, current_user, user_texts)
+    allow_actions = wants_action(user_texts)
+    context = build_context(db, current_user, user_texts, with_subjects=allow_actions)
 
     try:
-        reply, usage = gemini.chat(row.api_key, row.model, context, messages)
+        reply, usage, calls = gemini.chat(row.api_key, row.model, context, messages, allow_actions)
     except gemini.GeminiError as e:
         if e.invalid_key:
             row.verified = False
@@ -113,8 +149,23 @@ def chat(payload: ChatIn, current_user: User = Depends(get_current_user), db: Se
             db.commit()
         raise HTTPException(status_code=e.status if e.status in (400, 429) else 502, detail=e.message)
 
+    created = 0
+    notes: List[str] = []
+    for call in calls[:MAX_ACTIONS] if allow_actions else []:
+        if call.get("name") != "add_homework":
+            continue
+        try:
+            notes.append(_create_homework(db, current_user, call.get("args") or {}))
+            created += 1
+        except ValueError as e:
+            db.rollback()
+            notes.append(f"Je n'ai pas pu ajouter ce devoir : {e}.")
+    if notes:
+        reply = "\n".join(([reply] if reply else []) + [f"- {n}" for n in notes]) if len(notes) > 1 else "\n".join(([reply] if reply else []) + notes)
+
     logger.info(f"IA user {current_user.id}: {usage.get('promptTokenCount')} tokens entrée, {usage.get('candidatesTokenCount')} sortie")
     return {
         "reply": reply,
         "usage": {"prompt": usage.get("promptTokenCount"), "output": usage.get("candidatesTokenCount")},
+        "tasks_created": created,
     }
