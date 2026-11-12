@@ -89,11 +89,11 @@ def verify(payload: VerifyIn, current_user: User = Depends(get_current_user), db
     model = (payload.model or (row.model if row else None) or gemini.DEFAULT_MODEL).strip()
     if not gemini.MODEL_RE.match(model):
         raise HTTPException(status_code=400, detail="Nom de modèle invalide.")
-    key = (payload.api_key or "").strip() or (row.api_key if row else None)
+    key = (payload.api_key or "").strip().strip("\"'") or (row.api_key if row else None)
     if not key:
         raise HTTPException(status_code=400, detail="Renseignez une clé d'API Gemini.")
     if not gemini.KEY_RE.match(key):
-        raise HTTPException(status_code=400, detail="Format de clé invalide (lettres, chiffres, - et _ uniquement).")
+        raise HTTPException(status_code=400, detail="Format de clé invalide : collez la clé seule, sans espace ni retour à la ligne.")
 
     try:
         gemini.verify_key(key, model)

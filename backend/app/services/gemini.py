@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 API_BASE = os.getenv("GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta")
 DEFAULT_MODEL = "gemini-2.5-flash-lite"
 MODEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
-KEY_RE = re.compile(r"^[A-Za-z0-9_\-]{20,120}$")
+# Caractères ASCII visibles uniquement (les clés Google peuvent contenir « . » ou d'autres symboles) : sans espaces ni retours à la ligne, pour rester sûr dans un en-tête HTTP
+KEY_RE = re.compile(r"^[\x21-\x7e]{20,200}$")
 
 MAX_OUTPUT_TOKENS = 600
 MAX_HISTORY_MESSAGES = 6
