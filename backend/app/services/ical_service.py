@@ -59,8 +59,10 @@ def parse_ical_stream(ical_content: str) -> List[Dict[str, Any]]:
     cal = icalendar.Calendar.from_ical(ical_content)
     now = datetime.datetime.now()
     today = datetime.date.today()
-    start_search = today - datetime.timedelta(days=7)
-    end_search = today + datetime.timedelta(days=45)
+    # Depuis la rentrée (1er septembre) pour pouvoir consulter les semaines passées, jusqu'à 4 mois devant
+    year = today.year if today.month >= 9 else today.year - 1
+    start_search = datetime.date(year, 9, 1)
+    end_search = today + datetime.timedelta(days=120)
 
     recurring_events = recurring_ical_events.of(cal).between(start_search, end_search)
 

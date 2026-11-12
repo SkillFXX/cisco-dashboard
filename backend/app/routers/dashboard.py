@@ -245,7 +245,11 @@ def get_dashboard_overview(
         "current_course": timetable_data.get("current_course"),
         "next_course": timetable_data.get("next_course"),
         "today_schedule": timetable_data.get("today_events", []),
-        "timetable_events": timetable_data.get("all_events", []),
+        # Le tableau de bord n'affiche que la semaine courante : inutile d'envoyer toute l'année
+        "timetable_events": [
+            e for e in timetable_data.get("all_events", [])
+            if (today_date - datetime.timedelta(days=14)).isoformat() <= e["date"] <= (today_date + datetime.timedelta(days=21)).isoformat()
+        ],
         "recent_grades": scodoc_data.get("recent_grades", [])[:6],
         "upcoming_tasks": unified_assignments[:8],
         "services_status": {
