@@ -213,7 +213,7 @@ def verify_ical(url: str) -> Dict[str, Any]:
         if status_code != 200:
             return {
                 "success": False,
-                "message": f"Impossible d'accéder au calendrier ADE (Code HTTP {status_code})."
+                "message": f"Impossible d'accéder au emploi du temps (Code HTTP {status_code})."
             }
 
         if "BEGIN:VCALENDAR" not in content.upper():
@@ -225,7 +225,7 @@ def verify_ical(url: str) -> Dict[str, Any]:
         event_count = content.upper().count("BEGIN:VEVENT")
         return {
             "success": True,
-            "message": f"Flux d'emploi du temps ADE validé ({event_count} créneaux détectés).",
+            "message": f"Flux d'emploi du temps validé ({event_count} créneaux détectés).",
             "event_count": event_count
         }
     except Exception as e:

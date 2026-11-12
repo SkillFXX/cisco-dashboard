@@ -234,7 +234,7 @@
 					</div>
 
 					<p class="text-[11px] text-muted leading-relaxed pt-1">
-						Votre nom, prénom et accès aux services (ScoDoc, Moodle, ADE) pourront être configurés ou modifiés à tout moment dans les Paramètres.
+						Votre nom, prénom et accès aux services (ScoDoc, Moodle, emploi du temps) pourront être configurés ou modifiés à tout moment dans les Paramètres.
 					</p>
 
 					<Button variant="cisco" type="submit" class="w-full mt-2" disabled={isSubmitting}>

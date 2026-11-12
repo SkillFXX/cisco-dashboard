@@ -257,7 +257,7 @@
 							<div class="hidden sm:flex items-center gap-1.5 text-[10px] shrink-0">
 								<span class="px-2 py-0.5 rounded-full {user.has_scodoc ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-subtle'}">ScoDoc</span>
 								<span class="px-2 py-0.5 rounded-full {user.has_moodle ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-subtle'}">Moodle</span>
-								<span class="px-2 py-0.5 rounded-full {user.has_ical ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-subtle'}">ADE</span>
+								<span class="px-2 py-0.5 rounded-full {user.has_ical ? 'bg-emerald-600/15 text-emerald-400' : 'bg-app-raised text-subtle'}">Emploi du temps</span>
 								<span class="text-subtle ml-1">{user.task_count} devoir{user.task_count > 1 ? "s" : ""}</span>
 							</div>
 						</button>

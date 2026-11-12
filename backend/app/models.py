@@ -35,7 +35,7 @@ class UserCredentials(Base):
     moodle_password = Column(EncryptedString(512), nullable=True)
     moodle_token = Column(EncryptedString(512), nullable=True)
 
-    # Lien iCal (.ics) de l'emploi du temps (ADE, Hyperplanning...)
+    # Lien iCal (.ics) de l'emploi du temps
     ical_url = Column(Text, nullable=True)
 
     # Fallback simulation

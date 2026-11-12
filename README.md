@@ -2,13 +2,13 @@
 
 Panel étudiant auto-hébergeable pour les étudiants en **BUT**, quel que soit leur IUT ou leur spécialité : notes, absences, emploi du temps, devoirs, notifications et assistant IA, dans une seule interface.
 
-> Projet non officiel, sans lien avec les universités ni avec les éditeurs de ScoDoc, Moodle ou ADE. Il stocke (chiffrés) des identifiants d'ENT : n'hébergez que pour des personnes qui vous font confiance, et à vos risques.
+> Projet non officiel, sans lien avec les universités ni avec les éditeurs de ScoDoc, Moodle ou des logiciels d'emploi du temps. Il stocke (chiffrés) des identifiants d'ENT : n'hébergez que pour des personnes qui vous font confiance, et à vos risques.
 
 ## Fonctionnalités
 
 - **Notes (ScoDoc)** : moyenne générale, rang, moyennes par UE et par ressource/SAÉ, détail de chaque évaluation avec répartition de la promo, courbe d'évolution de la moyenne et du rang.
 - **Absences** : justifiées / injustifiées, créneaux et motifs.
-- **Emploi du temps (flux `.ics`, ex. ADE)** : vues jour, semaine et mois, cours en cours, salle, enseignant, groupe, navigation sur toute l'année universitaire.
+- **Emploi du temps (lien iCal `.ics` fourni par votre université)** : vues jour, semaine et mois, cours en cours, salle, enseignant, groupe, navigation sur toute l'année universitaire.
 - **Devoirs** : DS, DM, TP, to-do, avec échéances, archivage et ajout direct depuis un cours.
 - **Moodle** : cours inscrits et devoirs à rendre.
 - **Notifications** : nouvelle note, rappel avant un devoir, récapitulatif quotidien, emploi du temps de la semaine suivante en image ; par email ou webhook Discord.
@@ -72,7 +72,7 @@ Frontend sur `http://localhost:5173`, API sur `http://localhost:8000`. Sous Wind
 
 1. **ScoDoc** : URL de votre instance (l'adresse de ScoDoc de votre IUT), identifiant et mot de passe CAS / ENT.
 2. **Moodle** : URL de la plateforme de votre IUT, identifiant et mot de passe, ou jeton WebService.
-3. **Emploi du temps** : lien du flux iCal exporté depuis votre outil d'emploi du temps (ADE, Hyperplanning...).
+3. **Emploi du temps** : lien du flux iCal d'abonnement / d'export « iCal » du site où vous consultez votre emploi du temps.
 4. **Assistant IA** (optionnel) : clé d'API Gemini gratuite, depuis [Google AI Studio](https://aistudio.google.com/apikey).
 
 ## Licence

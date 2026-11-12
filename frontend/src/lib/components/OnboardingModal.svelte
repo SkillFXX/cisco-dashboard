@@ -25,7 +25,7 @@
 		onComplete?: () => void;
 	} = $props();
 
-	let currentStep = $state(1); // 1: ScoDoc, 2: Moodle, 3: ADE, 4: Recap
+	let currentStep = $state(1); // 1: ScoDoc, 2: Moodle, 3: Emploi du temps, 4: Recap
 
 	// ScoDoc state
 	let scodoc_url = $state("");
@@ -480,7 +480,7 @@
 							</div>
 						</div>
 						<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
-							Depuis votre outil d'emploi du temps (ADE, Hyperplanning...), exportez votre planning au format iCal (.ics), puis copiez ici le lien obtenu. Il alimente l'emploi du temps, les prochains cours et les DS.
+							Sur le site où vous consultez votre emploi du temps (celui de votre université ou IUT), cherchez une option d'export ou d'abonnement « iCal » / « .ics ». Collez-le ici. Il alimente l'emploi du temps, les prochains cours et les DS.
 						</div>
 					</div>
 

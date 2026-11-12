@@ -752,7 +752,7 @@
 
 					{#if isOpen("ical")}
 					<div class="space-y-4 pt-4 border-t border-app-border">
-					<p class="text-[11px] leading-relaxed text-subtle">Depuis votre outil d'emploi du temps (ADE, Hyperplanning...), exportez votre planning au format iCal (.ics) puis collez ici le lien obtenu.</p>
+					<p class="text-[11px] leading-relaxed text-subtle">Sur le site où vous consultez votre emploi du temps (celui de votre université ou IUT), cherchez une option d'export ou d'abonnement « iCal » / « .ics ». Collez-le ici.</p>
 
 					{@render feedback("ical", ical_last_error)}
 
