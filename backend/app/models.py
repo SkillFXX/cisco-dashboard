@@ -127,7 +127,7 @@ class NotificationRule(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String(100), nullable=False)
     enabled = Column(Boolean, default=True)
-    trigger = Column(String(30), nullable=False)  # "new_grade", "deadline", "daily_digest"
+    trigger = Column(String(30), nullable=False)  # "new_grade", "deadline", "daily_digest", "new_week"
     params = Column(Text, nullable=False, default="{}")  # JSON
     channels = Column(Text, nullable=False, default="[]")  # JSON : ["email", "webhook"]
     baseline_done = Column(Boolean, default=False)

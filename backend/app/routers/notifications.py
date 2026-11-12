@@ -19,7 +19,7 @@ Channel = Literal["email", "webhook"]
 class RuleIn(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     enabled: bool = True
-    trigger: Literal["new_grade", "deadline", "daily_digest"]
+    trigger: Literal["new_grade", "deadline", "daily_digest", "new_week"]
     params: Dict[str, Any] = {}
     channels: List[Channel] = Field(min_length=1)
 
@@ -53,6 +53,8 @@ def _normalize_params(trigger: str, params: Dict[str, Any]) -> Dict[str, Any]:
             "days_ahead": _clamp(params.get("days_ahead"), 1, 14, 3),
             "include_done": bool(params.get("include_done", False)),
         }
+    if trigger == "new_week":
+        return {"day": _clamp(params.get("day"), 0, 6, 6), "hour": _clamp(params.get("hour"), 0, 23, 18)}
     return {}
 
 

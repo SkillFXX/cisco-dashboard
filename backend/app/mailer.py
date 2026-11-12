@@ -4,7 +4,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 from email.utils import formataddr
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from sqlalchemy.orm import Session
 from .config import settings
 from .crypto import encrypt_value, decrypt_value
@@ -68,7 +68,7 @@ def public_url(cfg: Optional[Dict[str, Any]] = None) -> str:
     return url.strip().rstrip("/")
 
 
-def send_mail(to: str, subject: str, body: str, cfg: Optional[Dict[str, Any]] = None) -> None:
+def send_mail(to: str, subject: str, body: str, cfg: Optional[Dict[str, Any]] = None, attachment: Optional[Tuple[str, bytes, str]] = None) -> None:
     """Envoie un email via le serveur SMTP configure. Leve une exception en cas d'echec."""
     if cfg is None:
         db = SessionLocal()
@@ -84,6 +84,10 @@ def send_mail(to: str, subject: str, body: str, cfg: Optional[Dict[str, Any]] = 
     msg["From"] = formataddr((cfg.get("from_name") or "", cfg["from_email"]))
     msg["To"] = to
     msg.set_content(body)
+    if attachment:
+        filename, data, mime = attachment
+        maintype, _, subtype = mime.partition("/")
+        msg.add_attachment(data, maintype=maintype, subtype=subtype, filename=filename)
 
     host, port, security = cfg["host"], int(cfg["port"]), cfg.get("security", "starttls")
     context = ssl.create_default_context()

@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 import requests
@@ -18,6 +18,7 @@ from ..models import (
 from .ical_service import fetch_timetable
 from .moodle_service import fetch_moodle_data
 from .scodoc_service import fetch_scodoc_data
+from .timetable_image import render_week_png
 from .url_guard import validate_service_url
 
 logger = logging.getLogger(__name__)
@@ -48,12 +49,12 @@ def format_paris(dt_utc: datetime.datetime) -> str:
 
 # ---------------------------------------------------------------- Envoi
 
-def send_to_channels(db: Session, user: User, channels: List[str], subject: str, body: str) -> List[str]:
+def send_to_channels(db: Session, user: User, channels: List[str], subject: str, body: str, attachment: Optional[Tuple[str, bytes, str]] = None) -> List[str]:
     """Envoie sur les canaux demandes. Retourne la liste des erreurs (vide si tout est parti)."""
     errors: List[str] = []
     if "email" in channels:
         try:
-            send_mail(user.email, subject, body)
+            send_mail(user.email, subject, body, attachment=attachment)
         except Exception as e:
             errors.append(f"email: {e}")
     if "webhook" in channels:
@@ -68,7 +69,14 @@ def send_to_channels(db: Session, user: User, channels: List[str], subject: str,
             else:
                 try:
                     text = f"**{subject}**\n{body}"[:1900]
-                    resp = requests.post(url, json={"content": text, "text": text}, timeout=10, allow_redirects=False)
+                    if attachment:
+                        filename, data, mime = attachment
+                        resp = requests.post(
+                            url, data={"payload_json": json.dumps({"content": text})}, files={"file": (filename, data, mime)},
+                            timeout=20, allow_redirects=False,
+                        )
+                    else:
+                        resp = requests.post(url, json={"content": text, "text": text}, timeout=10, allow_redirects=False)
                     if resp.status_code >= 300:
                         errors.append(f"webhook: HTTP {resp.status_code}")
                 except Exception as e:
@@ -160,10 +168,10 @@ def _release(db: Session, rule_id: int, key: str) -> None:
     db.commit()
 
 
-def _deliver(db: Session, user: User, rule: NotificationRule, key: str, subject: str, body: str) -> None:
+def _deliver(db: Session, user: User, rule: NotificationRule, key: str, subject: str, body: str, attachment: Optional[Tuple[str, bytes, str]] = None) -> None:
     if not _claim(db, user.id, rule.id, key):
         return
-    errors = send_to_channels(db, user, json.loads(rule.channels or "[]"), subject, body)
+    errors = send_to_channels(db, user, json.loads(rule.channels or "[]"), subject, body, attachment)
     if errors:
         logger.warning(f"Notification '{rule.name}' (user {user.id}) en échec : {errors}")
         _release(db, rule.id, key)  # sera retentee au prochain cycle
@@ -221,6 +229,30 @@ def _run_digest(db: Session, user: User, rule: NotificationRule, params: Dict[st
              f"Récapitulatif : {len(upcoming)} échéance(s) dans les {days} prochains jours", "\n".join(lines))
 
 
+def _run_new_week(db: Session, user: User, rule: NotificationRule, params: Dict[str, Any], now: datetime.datetime) -> None:
+    """A la fin de la semaine (jour/heure choisis), envoie l'emploi du temps de la semaine suivante en image."""
+    now_paris = now.replace(tzinfo=UTC).astimezone(PARIS)
+    day, hour = int(params.get("day", 6)), int(params.get("hour", 18))
+    if (now_paris.weekday(), now_paris.hour) < (day, hour):
+        return
+    creds = user.credentials
+    if not creds or not creds.ical_url:
+        return
+    data = fetch_timetable(ical_url=creds.ical_url)
+    if not data.get("configured") or data.get("connection_error") and not data.get("all_events"):
+        return
+    next_monday = now_paris.date() - datetime.timedelta(days=now_paris.weekday()) + datetime.timedelta(days=7)
+    week_end = next_monday + datetime.timedelta(days=5)
+    events = [e for e in data.get("all_events", []) if next_monday.isoformat() <= e["date"] <= week_end.isoformat()]
+    if not events:
+        return
+    png = render_week_png(data["all_events"], next_monday)
+    label = f"{next_monday.day:02d}/{next_monday.month:02d}"
+    _deliver(db, user, rule, f"new_week:{next_monday.isoformat()}", f"Emploi du temps de la semaine du {label}",
+             f"{len(events)} cours la semaine prochaine (à partir du {label}).",
+             attachment=(f"emploi-du-temps-{next_monday.isoformat()}.png", png, "image/png"))
+
+
 def run_rules_for_user(db: Session, user: User, rules: List[NotificationRule]) -> None:
     now = _utcnow()
     triggers = {r.trigger for r in rules}
@@ -235,6 +267,8 @@ def run_rules_for_user(db: Session, user: User, rules: List[NotificationRule]) -
                 _run_deadline(db, user, rule, params, items, now)
             elif rule.trigger == "daily_digest":
                 _run_digest(db, user, rule, params, items, now)
+            elif rule.trigger == "new_week":
+                _run_new_week(db, user, rule, params, now)
         except Exception as e:
             db.rollback()
             logger.warning(f"Règle de notification {rule.id} ignorée : {e}")

@@ -1,0 +1,1 @@
+DejaVu Sans fonts (Bitstream Vera / DejaVu license, free to use and redistribute): https://dejavu-fonts.github.io/License.html
