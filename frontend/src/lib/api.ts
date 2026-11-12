@@ -245,6 +245,7 @@ export const api = {
 			student_name?: string;
 			student_pic?: string;
 			token?: string;
+			url?: string;
 			details?: any;
 		}>("/settings/verify", {
 			method: "POST",

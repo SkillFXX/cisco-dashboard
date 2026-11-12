@@ -202,7 +202,7 @@ def verify_service_endpoint(
 
         if payload.save_if_valid or creds.moodle_username or creds.moodle_token:
             if result["success"]:
-                creds.moodle_url = url
+                creds.moodle_url = result.get("url") or url
                 if payload.username:
                     creds.moodle_username = payload.username
                 if payload.password:
@@ -226,6 +226,7 @@ def verify_service_endpoint(
             "message": result["message"],
             "student_name": result.get("student_name"),
             "token": result.get("token"),
+            "url": result.get("url"),
             "details": result.get("details")
         }
 

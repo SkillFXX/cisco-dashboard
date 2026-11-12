@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from .cache_service import get_cached_data, set_cached_data, moodle_cache_key
 from .url_guard import validate_service_url
+from .moodle_url import find_moodle_base
 
 logger = logging.getLogger(__name__)
 
@@ -155,42 +156,36 @@ def fetch_moodle_data(
         if cached:
             return cached
 
-    raw_base_url = url.rstrip("/")
+    effective_base_url = find_moodle_base(url)
+    if not effective_base_url:
+        err_res = {
+            "configured": False,
+            "site_name": "Moodle",
+            "courses": [],
+            "upcoming_assignments": [],
+            "connection_error": "Aucun Moodle trouvé à l'adresse configurée."
+        }
+        set_cached_data(cache_key, err_res, ttl_seconds=120)
+        return err_res
     auth_token = token
-    effective_base_url = raw_base_url
 
     session = requests.Session()
     adapter = requests.adapters.HTTPAdapter(pool_connections=5, pool_maxsize=10, max_retries=1)
     session.mount("http://", adapter)
     session.mount("https://", adapter)
 
-    # Tester l'URL fournie ainsi que le sous-chemin /moodle courant sur les instances universitaires
-    candidate_urls = [raw_base_url]
-    if not raw_base_url.endswith("/moodle"):
-        candidate_urls.append(f"{raw_base_url}/moodle")
-
-    # Si token absent, on tente de le générer via le service mobile sur chaque URL candidate
+    # Sans jeton, on le genere via le service mobile
     if not auth_token and username and password:
-        for cand in candidate_urls:
-            try:
-                token_url = f"{cand}/login/token.php"
-                resp = session.post(
-                    token_url,
-                    data={
-                        "username": username,
-                        "password": password,
-                        "service": "moodle_mobile_app"
-                    },
-                    timeout=10
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data.get("token"):
-                        auth_token = data.get("token")
-                        effective_base_url = cand
-                        break
-            except Exception as e:
-                logger.debug(f"Test token Moodle sur {cand} échoué: {e}")
+        try:
+            resp = session.post(
+                f"{effective_base_url}/login/token.php",
+                data={"username": username, "password": password, "service": "moodle_mobile_app"},
+                timeout=10
+            )
+            if resp.status_code == 200:
+                auth_token = resp.json().get("token")
+        except Exception as e:
+            logger.debug(f"Generation du token Moodle echouee: {e}")
 
     if not auth_token:
         err_res = {

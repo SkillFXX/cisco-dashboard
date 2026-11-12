@@ -4,6 +4,7 @@
 	import { api } from "$lib/api";
 	import { auth } from "$lib/stores/auth.svelte";
 	import Button from "./Button.svelte";
+	import Badge from "./Badge.svelte";
 	import {
 		X,
 		FileText,
@@ -12,7 +13,6 @@
 		Check,
 		ArrowRight,
 		ArrowLeft,
-		Sparkles,
 		Link2,
 		AlertCircle
 	} from "lucide-svelte";
@@ -40,9 +40,12 @@
 	let moodle_token = $state("");
 	let moodleSaved = $state(false);
 
-	// ADE state
+	// Emploi du temps
 	let ical_url = $state("");
 	let icalSaved = $state(false);
+
+	const fieldClass = "w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-sm text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none";
+	const steps = ["ScoDoc", "Moodle", "Emploi du temps"];
 
 	let isSaving = $state(false);
 	let stepError = $state("");
@@ -80,7 +83,7 @@
 
 	async function saveStepScoDoc() {
 		if (!scodoc_username.trim() || !scodoc_password.trim()) {
-			stepError = "Veuillez renseigner votre identifiant et votre mot de passe CAS, ou cliquez sur 'Passer cette étape'.";
+			stepError = "Renseignez votre identifiant et votre mot de passe, ou passez cette étape.";
 			return;
 		}
 
@@ -119,7 +122,7 @@
 
 	async function saveStepMoodle() {
 		if (!moodle_token.trim() && (!moodle_username.trim() || !moodle_password.trim())) {
-			stepError = "Veuillez renseigner vos identifiants Moodle ou votre jeton, ou cliquez sur 'Passer cette étape'.";
+			stepError = "Renseignez votre identifiant et votre mot de passe Moodle, ou passez cette étape.";
 			return;
 		}
 
@@ -142,6 +145,7 @@
 			}
 
 			moodleSaved = true;
+			if (res.url) moodle_url = res.url;
 			if (res.student_name && auth.user && !auth.user.full_name) {
 				auth.user.full_name = res.student_name;
 			}
@@ -156,7 +160,7 @@
 
 	async function saveStepIcal() {
 		if (!ical_url.trim()) {
-			stepError = "Veuillez coller le lien de votre flux iCal (.ics) ou cliquez sur 'Passer cette étape'.";
+			stepError = "Collez le lien de votre emploi du temps, ou passez cette étape.";
 			return;
 		}
 
@@ -190,424 +194,201 @@
 	}
 </script>
 
-{#if open}
-	<!-- Backdrop -->
-	<div
-		class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-		onclick={handleClose}
-		role="presentation"
-	></div>
+{#snippet stepHead(Icon: any, title: string, purpose: string)}
+	<div class="flex items-center gap-3">
+		<div class="w-10 h-10 rounded-xl bg-app-raised text-muted flex items-center justify-center shrink-0">
+			<Icon class="w-5 h-5" />
+		</div>
+		<div>
+			<h3 class="font-bold text-fg text-base leading-tight">{title}</h3>
+			<p class="text-xs text-muted mt-0.5">{purpose}</p>
+		</div>
+	</div>
+{/snippet}
 
-	<!-- Modal Container -->
+{#snippet footer(back: number | null, skipTo: number, label: string, action: () => void)}
+	<div class="flex items-center justify-between gap-3 pt-5 border-t border-app-border">
+		{#if back}
+			<button type="button" onclick={() => { stepError = ""; currentStep = back; }} class="flex items-center gap-1 text-xs font-medium text-muted hover:text-fg cursor-pointer">
+				<ArrowLeft class="w-3.5 h-3.5" /> Précédent
+			</button>
+		{:else}
+			<span></span>
+		{/if}
+		<div class="flex items-center gap-4">
+			<button type="button" onclick={() => { stepError = ""; currentStep = skipTo; }} class="text-xs font-medium text-muted hover:text-fg cursor-pointer">
+				Passer
+			</button>
+			<Button variant="cisco" onclick={action} disabled={isSaving}>
+				{isSaving ? "Vérification..." : label}
+				<ArrowRight class="w-4 h-4 ml-1" />
+			</Button>
+		</div>
+	</div>
+{/snippet}
+
+{#if open}
+	<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs" onclick={handleClose} role="presentation"></div>
+
 	<div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-		<div
-			class="relative w-full max-w-2xl rounded-2xl border border-app-border bg-app-card p-6 sm:p-8 text-fg shadow-2xl animate-in zoom-in-95 duration-200 my-8"
-			role="dialog"
-			aria-modal="true"
-		>
-			<!-- Close button -->
-			<button
-				onclick={handleClose}
-				class="absolute right-5 top-5 rounded-lg p-1.5 text-muted hover:bg-app-raised hover:text-fg transition-colors cursor-pointer"
-				aria-label="Fermer"
-			>
+		<div class="relative w-full max-w-xl rounded-2xl border border-app-border bg-app-card p-6 sm:p-8 text-fg shadow-2xl my-8" role="dialog" aria-modal="true" aria-label="Assistant de configuration">
+			<button onclick={handleClose} class="absolute right-5 top-5 rounded-lg p-1.5 text-muted hover:bg-app-raised hover:text-fg cursor-pointer" aria-label="Fermer">
 				<X class="w-5 h-5" />
 			</button>
 
-			<!-- Header -->
-			<div class="space-y-1 pr-8 mb-6">
-				<div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-cyan-600 text-white text-xs font-semibold mb-2">
-					<Sparkles class="w-3.5 h-3.5" />
-					<span>Assistant de configuration</span>
+			<div class="pr-8 mb-6">
+				<h2 class="text-xl font-bold text-fg tracking-tight">Bienvenue, reliez vos services</h2>
+				<p class="text-sm text-muted mt-1">Trois étapes, toutes facultatives. Vous pourrez tout modifier plus tard dans les Paramètres.</p>
+			</div>
+
+			<!-- Progression -->
+			<div class="mb-6">
+				<div class="grid grid-cols-3 gap-1.5">
+					{#each steps as name, i}
+						<div class="h-1.5 rounded-full {currentStep > i + 1 || currentStep === 4 ? 'bg-cyan-600' : currentStep === i + 1 ? 'bg-cyan-500/60' : 'bg-app-raised'}"></div>
+					{/each}
 				</div>
-				<h2 class="text-xl sm:text-2xl font-black text-fg tracking-tight">
-					Connexion de vos services
-				</h2>
-				<p class="text-xs text-muted">
-					Reliez vos services un par un pour synchroniser vos données.
+				<p class="text-xs text-muted mt-2">
+					{#if currentStep < 4}Étape {currentStep} sur 3 · <span class="text-fg font-medium">{steps[currentStep - 1]}</span>{:else}Récapitulatif{/if}
 				</p>
 			</div>
 
-			<!-- Étape courante (lisible aussi sur mobile) -->
-			<p class="text-[11px] font-medium text-muted mb-2">
-				{#if currentStep < 4}
-					Étape {currentStep} sur 3 · <span class="text-fg">{["ScoDoc", "Moodle", "Emploi du temps"][currentStep - 1]}</span>
-				{:else}
-					Récapitulatif
-				{/if}
-			</p>
-
-			<!-- Stepper Navigation -->
-			<div class="grid grid-cols-4 gap-2 mb-6 pb-4 border-b border-app-border">
-				<!-- Step 1 -->
-				<div class="flex items-center gap-2 text-xs">
-					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 1 ? 'bg-cyan-600 text-white' : scodocSaved ? 'bg-emerald-600 text-white' : 'bg-app-raised text-muted'}">
-						{#if scodocSaved}
-							<Check class="w-3.5 h-3.5" />
-						{:else}
-							<span>1</span>
-						{/if}
-					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 1 ? 'text-fg' : 'text-subtle'}">ScoDoc</span>
-				</div>
-
-				<!-- Step 2 -->
-				<div class="flex items-center gap-2 text-xs">
-					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 2 ? 'bg-cyan-600 text-white' : moodleSaved ? 'bg-emerald-600 text-white' : 'bg-app-raised text-muted'}">
-						{#if moodleSaved}
-							<Check class="w-3.5 h-3.5" />
-						{:else}
-							<span>2</span>
-						{/if}
-					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 2 ? 'text-fg' : 'text-subtle'}">Moodle</span>
-				</div>
-
-				<!-- Step 3 -->
-				<div class="flex items-center gap-2 text-xs">
-					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 3 ? 'bg-cyan-600 text-white' : icalSaved ? 'bg-emerald-600 text-white' : 'bg-app-raised text-muted'}">
-						{#if icalSaved}
-							<Check class="w-3.5 h-3.5" />
-						{:else}
-							<span>3</span>
-						{/if}
-					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 3 ? 'text-fg' : 'text-subtle'}">Emploi du temps</span>
-				</div>
-
-				<!-- Step 4 -->
-				<div class="flex items-center gap-2 text-xs">
-					<div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 {currentStep === 4 ? 'bg-cyan-600 text-white' : 'bg-app-raised text-muted'}">
-						<span>4</span>
-					</div>
-					<span class="hidden sm:inline font-medium text-xs {currentStep === 4 ? 'text-fg' : 'text-subtle'}">Prêt</span>
-				</div>
-			</div>
-
-			<!-- Error message if any -->
 			{#if stepError}
-				<div class="p-3 mb-5 rounded-lg bg-red-600/20 text-red-300 text-xs font-medium flex items-center gap-2">
-					<AlertCircle class="w-4 h-4 shrink-0" />
+				<div class="p-3 mb-5 rounded-lg bg-red-600/15 text-red-400 text-xs font-medium flex items-start gap-2" role="alert">
+					<AlertCircle class="w-4 h-4 shrink-0 mt-px" />
 					<span>{stepError}</span>
 				</div>
 			{/if}
 
-			<!-- Step 1 : ScoDoc -->
 			{#if currentStep === 1}
-				<div class="space-y-4">
-					<div class="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-600/10 border border-emerald-500/20">
-						<div class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0">
-							<FileText class="w-5 h-5" />
-						</div>
-						<div>
-							<h3 class="font-bold text-fg text-sm">ScoDoc</h3>
-							<p class="text-xs text-muted mt-0.5">
-								Notes, moyennes et absences
-							</p>
-						</div>
-					</div>
+				<div class="space-y-5">
+					{@render stepHead(FileText, "ScoDoc", "Vos notes, moyennes, rang et absences.")}
 
-					<div class="space-y-3 pt-2">
+					<div class="space-y-3">
 						<div>
-							<label for="onb-sco-url" class="block text-xs font-medium text-muted mb-1">URL de ScoDoc</label>
-							<input
-								id="onb-sco-url"
-								type="text"
-								bind:value={scodoc_url}
-								placeholder="https://scodoc.votre-iut.fr"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-							/>
+							<label for="onb-sco-url" class="block text-xs font-medium text-fg mb-1">Adresse de ScoDoc</label>
+							<input id="onb-sco-url" type="text" bind:value={scodoc_url} placeholder="https://scodoc.votre-iut.fr" class={fieldClass} />
+							<p class="text-[11px] text-subtle mt-1">L'adresse du site où vous consultez vos notes.</p>
 						</div>
 						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
-								<label for="onb-sco-u" class="block text-xs font-medium text-muted mb-1">Identifiant CAS</label>
-								<input
-									id="onb-sco-u"
-									type="text"
-									bind:value={scodoc_username}
-									placeholder="ex: prenom.nom"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-								/>
+								<label for="onb-sco-u" class="block text-xs font-medium text-fg mb-1">Identifiant</label>
+								<input id="onb-sco-u" type="text" bind:value={scodoc_username} autocomplete="off" placeholder="prenom.nom" class={fieldClass} />
 							</div>
 							<div>
-								<label for="onb-sco-p" class="block text-xs font-medium text-muted mb-1">Mot de passe CAS</label>
-								<input
-									id="onb-sco-p"
-									type="password"
-									bind:value={scodoc_password}
-									placeholder="••••••••••••"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-								/>
+								<label for="onb-sco-p" class="block text-xs font-medium text-fg mb-1">Mot de passe</label>
+								<input id="onb-sco-p" type="password" bind:value={scodoc_password} autocomplete="off" placeholder="••••••••" class={fieldClass} />
 							</div>
 						</div>
 					</div>
 
-					<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
-						Ce sont les mêmes identifiants que ceux de votre ENT (compte CAS de l'université). Ils sont chiffrés sur le serveur et servent uniquement à récupérer vos notes et absences.
-					</div>
+					<details class="group rounded-lg border border-app-border bg-app-surface px-3 py-2.5 text-xs text-muted">
+						<summary class="cursor-pointer font-medium text-fg list-none flex items-center justify-between">
+							Quel identifiant utiliser ?
+							<span class="text-subtle group-open:rotate-180 transition-transform">▾</span>
+						</summary>
+						<p class="mt-2 leading-relaxed">
+							Ceux de votre compte université / ENT, les mêmes que pour vous connecter à ScoDoc. Ils sont chiffrés sur le serveur et servent uniquement à récupérer vos notes et absences.
+						</p>
+					</details>
 
-					<div class="flex items-center justify-between pt-5 border-t border-app-border">
-						<button
-							type="button"
-							onclick={() => { stepError = ""; currentStep = 2; }}
-							class="text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
-						>
-							Passer cette étape
-						</button>
-						<Button variant="cisco" onclick={saveStepScoDoc} disabled={isSaving}>
-							{isSaving ? "Vérification en cours..." : "Connecter ScoDoc"}
-							<ArrowRight class="w-4 h-4 ml-1" />
-						</Button>
-					</div>
+					{@render footer(null, 2, "Connecter ScoDoc", saveStepScoDoc)}
 				</div>
 
-			<!-- Step 2 : Moodle -->
 			{:else if currentStep === 2}
-				<div class="space-y-4">
-					<div class="flex items-center gap-3 p-3.5 rounded-xl bg-amber-600/10 border border-amber-500/20">
-						<div class="w-10 h-10 rounded-xl bg-amber-600/20 text-amber-400 flex items-center justify-center shrink-0">
-							<BookOpen class="w-5 h-5" />
-						</div>
-						<div>
-							<h3 class="font-bold text-fg text-sm">Moodle</h3>
-							<p class="text-xs text-muted mt-0.5">
-								Devoirs et cours en ligne
-							</p>
-						</div>
-					</div>
+				<div class="space-y-5">
+					{@render stepHead(BookOpen, "Moodle", "Vos cours et devoirs à rendre.")}
 
-					<div class="space-y-3 pt-2">
+					<div class="space-y-3">
 						<div>
-							<label for="onb-mdl-url" class="block text-xs font-medium text-muted mb-1">URL de Moodle</label>
-							<input
-								id="onb-mdl-url"
-								type="text"
-								bind:value={moodle_url}
-								placeholder="https://moodle.votre-iut.fr"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-							/>
+							<label for="onb-mdl-url" class="block text-xs font-medium text-fg mb-1">Adresse de Moodle</label>
+							<input id="onb-mdl-url" type="text" bind:value={moodle_url} placeholder="https://moodle.votre-iut.fr" class={fieldClass} />
+							<p class="text-[11px] text-subtle mt-1">L'adresse du Moodle de votre IUT. Inutile d'ajouter « /moodle » : il est détecté automatiquement.</p>
 						</div>
 						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
-								<label for="onb-mdl-u" class="block text-xs font-medium text-muted mb-1">Identifiant Moodle</label>
-								<input
-									id="onb-mdl-u"
-									type="text"
-									bind:value={moodle_username}
-									placeholder="ex: prenom.nom"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-								/>
+								<label for="onb-mdl-u" class="block text-xs font-medium text-fg mb-1">Identifiant</label>
+								<input id="onb-mdl-u" type="text" bind:value={moodle_username} autocomplete="off" placeholder="prenom.nom" class={fieldClass} />
 							</div>
 							<div>
-								<label for="onb-mdl-p" class="block text-xs font-medium text-muted mb-1">Mot de passe Moodle</label>
-								<input
-									id="onb-mdl-p"
-									type="password"
-									bind:value={moodle_password}
-									placeholder="••••••••••••"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-								/>
+								<label for="onb-mdl-p" class="block text-xs font-medium text-fg mb-1">Mot de passe</label>
+								<input id="onb-mdl-p" type="password" bind:value={moodle_password} autocomplete="off" placeholder="••••••••" class={fieldClass} />
 							</div>
 						</div>
-						<div>
-							<label for="onb-mdl-token" class="block text-xs font-medium text-muted mb-1">Jeton personnel (facultatif)</label>
-							<input
-								id="onb-mdl-token"
-								type="text"
-								bind:value={moodle_token}
-								placeholder="Ex: 8f9b4c2e1a3d5e7f9a0b1c2d3e4f5a6b"
-								class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-							/>
-						</div>
 					</div>
 
-					<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
-						Saisissez l'identifiant et le mot de passe de votre compte Moodle. Le jeton personnel ci-dessous est facultatif : il ne sert que si la connexion par mot de passe échoue (Moodle › Préférences › Clés de sécurité › « Moodle mobile web service ».)
-					</div>
-
-					<div class="flex items-center justify-between pt-5 border-t border-app-border">
-						<button
-							type="button"
-							onclick={() => { stepError = ""; currentStep = 1; }}
-							class="flex items-center gap-1 text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
-						>
-							<ArrowLeft class="w-3.5 h-3.5" />
-							<span>Précédent</span>
-						</button>
-						<div class="flex items-center gap-3">
-							<button
-								type="button"
-								onclick={() => { stepError = ""; currentStep = 3; }}
-								class="text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
-							>
-								Passer cette étape
-							</button>
-							<Button variant="cisco" onclick={saveStepMoodle} disabled={isSaving}>
-								{isSaving ? "Vérification en cours..." : "Connecter Moodle"}
-								<ArrowRight class="w-4 h-4 ml-1" />
-							</Button>
+					<details class="group rounded-lg border border-app-border bg-app-surface px-3 py-2.5 text-xs text-muted">
+						<summary class="cursor-pointer font-medium text-fg list-none flex items-center justify-between">
+							La connexion échoue ? Utiliser un jeton
+							<span class="text-subtle group-open:rotate-180 transition-transform">▾</span>
+						</summary>
+						<div class="mt-2 space-y-2 leading-relaxed">
+							<p>Si votre Moodle refuse le mot de passe, vous pouvez coller à la place un jeton personnel : Moodle › Préférences › Clés de sécurité › « Moodle mobile web service ».</p>
+							<input id="onb-mdl-token" type="text" bind:value={moodle_token} aria-label="Jeton Moodle" placeholder="Jeton personnel" class={fieldClass} />
 						</div>
-					</div>
+					</details>
+
+					{@render footer(1, 3, "Connecter Moodle", saveStepMoodle)}
 				</div>
 
-			<!-- Step 3 : Emploi du temps iCal -->
 			{:else if currentStep === 3}
-				<div class="space-y-4">
-					<div class="flex items-center gap-3 p-3.5 rounded-xl bg-blue-600/10 border border-blue-500/20">
-						<div class="w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
-							<Calendar class="w-5 h-5" />
-						</div>
-						<div>
-							<h3 class="font-bold text-fg text-sm">Emploi du temps</h3>
-							<p class="text-xs text-muted mt-0.5">
-								Planning des cours et évaluations
-							</p>
+				<div class="space-y-5">
+					{@render stepHead(Calendar, "Emploi du temps", "Vos cours, salles, enseignants et évaluations à venir.")}
+
+					<div>
+						<label for="onb-ical" class="block text-xs font-medium text-fg mb-1">Lien de votre emploi du temps</label>
+						<div class="flex items-center gap-2">
+							<Link2 class="w-4 h-4 text-subtle shrink-0" />
+							<input id="onb-ical" type="url" bind:value={ical_url} placeholder="https://.../export.ics" class={fieldClass} />
 						</div>
 					</div>
 
-					<div class="space-y-3 pt-2">
-						<div>
-							<label for="onb-ical" class="block text-xs font-medium text-muted mb-1">Lien iCal (.ics)</label>
-							<div class="flex items-center gap-2">
-								<Link2 class="w-4 h-4 text-subtle shrink-0" />
-								<input
-									id="onb-ical"
-									type="url"
-									bind:value={ical_url}
-									placeholder="https://.../export.ics"
-									class="w-full rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs text-fg placeholder:text-subtle focus:border-cyan-500 focus:outline-none"
-								/>
-							</div>
-						</div>
-						<div class="p-3 rounded-lg bg-app-surface border border-app-border text-[11px] text-muted leading-relaxed">
-							Sur le site où vous consultez votre emploi du temps (celui de votre université ou IUT), cherchez une option d'export ou d'abonnement « iCal » / « .ics », puis collez le lien obtenu ici. Il alimente l'emploi du temps, les prochains cours et les DS.
-						</div>
-					</div>
+					<details class="group rounded-lg border border-app-border bg-app-surface px-3 py-2.5 text-xs text-muted" open>
+						<summary class="cursor-pointer font-medium text-fg list-none flex items-center justify-between">
+							Où trouver ce lien ?
+							<span class="text-subtle group-open:rotate-180 transition-transform">▾</span>
+						</summary>
+						<ol class="mt-2 space-y-1 leading-relaxed list-decimal pl-4">
+							<li>Ouvrez le site où vous consultez votre emploi du temps.</li>
+							<li>Cherchez une option d'<strong class="text-fg">export</strong> ou d'<strong class="text-fg">abonnement</strong> au calendrier, nommée « iCal », « .ics » ou « Exporter ».</li>
+							<li>Copiez le lien proposé et collez-le ci-dessus.</li>
+						</ol>
+					</details>
 
-					<div class="flex items-center justify-between pt-5 border-t border-app-border">
-						<button
-							type="button"
-							onclick={() => { stepError = ""; currentStep = 2; }}
-							class="flex items-center gap-1 text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
-						>
-							<ArrowLeft class="w-3.5 h-3.5" />
-							<span>Précédent</span>
-						</button>
-						<div class="flex items-center gap-3">
-							<button
-								type="button"
-								onclick={() => { stepError = ""; currentStep = 4; }}
-								class="text-xs font-medium text-muted hover:text-fg transition-colors cursor-pointer"
-							>
-								Passer cette étape
-							</button>
-							<Button variant="cisco" onclick={saveStepIcal} disabled={isSaving}>
-								{isSaving ? "Vérification en cours..." : "Enregistrer l'emploi du temps"}
-								<ArrowRight class="w-4 h-4 ml-1" />
-							</Button>
-						</div>
-					</div>
+					{@render footer(2, 4, "Enregistrer", saveStepIcal)}
 				</div>
 
-			<!-- Step 4 : Recap & Finalisation -->
 			{:else}
 				<div class="space-y-5">
-					<div class="text-center py-2 space-y-2">
-						<div class="w-12 h-12 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center mx-auto">
+					<div class="text-center space-y-2">
+						<div class="w-12 h-12 rounded-full bg-emerald-600/15 text-emerald-400 flex items-center justify-center mx-auto">
 							<Check class="w-6 h-6" />
 						</div>
 						<h3 class="font-bold text-fg text-base">
-							{#if scodocSaved && moodleSaved && icalSaved}C'est tout bon !{:else if scodocSaved || moodleSaved || icalSaved}Configuration partielle{:else}Aucun service relié{/if}
+							{#if scodocSaved && moodleSaved && icalSaved}Tout est connecté{:else if scodocSaved || moodleSaved || icalSaved}Configuration partielle{:else}Aucun service relié{/if}
 						</h3>
-						<p class="text-xs text-muted max-w-md mx-auto">
+						<p class="text-xs text-muted max-w-sm mx-auto">
 							{#if scodocSaved && moodleSaved && icalSaved}
-								Vos trois services sont connectés.
+								Vos données vont se synchroniser automatiquement.
 							{:else}
-								Les services « Non relié » n'afficheront pas de données tant qu'ils ne sont pas configurés.
+								Un service non relié n'affichera pas de données. Vous pouvez le connecter à tout moment dans les Paramètres.
 							{/if}
 						</p>
 					</div>
 
-					<!-- Recap Tiles -->
-					<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-						<!-- ScoDoc -->
-						<div class="p-4 rounded-xl border border-app-border bg-app-surface flex flex-col justify-between space-y-3">
-							<div class="flex items-center gap-2">
-								<FileText class="w-4 h-4 text-emerald-400" />
-								<span class="text-xs font-bold text-fg">ScoDoc</span>
-							</div>
-							<div>
-								{#if scodocSaved}
-									<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
-										Connecté
-									</span>
-								{:else}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
-										Non relié
-									</span>
-								{/if}
-							</div>
-						</div>
+					<ul class="divide-y divide-app-border rounded-xl border border-app-border bg-app-surface">
+						{#each [{ name: "ScoDoc", Icon: FileText, ok: scodocSaved }, { name: "Moodle", Icon: BookOpen, ok: moodleSaved }, { name: "Emploi du temps", Icon: Calendar, ok: icalSaved }] as row}
+							<li class="flex items-center justify-between px-4 py-3">
+								<span class="flex items-center gap-2 text-sm text-fg"><row.Icon class="w-4 h-4 text-muted" /> {row.name}</span>
+								<Badge variant={row.ok ? "success" : "secondary"}>{row.ok ? "Connecté" : "Non relié"}</Badge>
+							</li>
+						{/each}
+					</ul>
 
-						<!-- Moodle -->
-						<div class="p-4 rounded-xl border border-app-border bg-app-surface flex flex-col justify-between space-y-3">
-							<div class="flex items-center gap-2">
-								<BookOpen class="w-4 h-4 text-amber-400" />
-								<span class="text-xs font-bold text-fg">Moodle</span>
-							</div>
-							<div>
-								{#if moodleSaved}
-									<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
-										Connecté
-									</span>
-								{:else}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
-										Non relié
-									</span>
-								{/if}
-							</div>
-						</div>
-
-						<!-- Emploi du temps -->
-						<div class="p-4 rounded-xl border border-app-border bg-app-surface flex flex-col justify-between space-y-3">
-							<div class="flex items-center gap-2">
-								<Calendar class="w-4 h-4 text-blue-400" />
-								<span class="text-xs font-bold text-fg">Emploi du temps</span>
-							</div>
-							<div>
-								{#if icalSaved}
-									<span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-emerald-600/15 text-emerald-400">
-										Connecté
-									</span>
-								{:else}
-									<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-app-raised2 text-fg">
-										Non relié
-									</span>
-								{/if}
-							</div>
-						</div>
-					</div>
-
-					{#if auth.user?.full_name}
-						<div class="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-950/20 flex items-center justify-between">
-							<div class="flex items-center gap-2">
-								<Sparkles class="w-4 h-4 text-cyan-400" />
-								<span class="text-xs text-muted">Identité :</span>
-							</div>
-							<span class="text-xs font-bold text-fg">{auth.user.full_name}</span>
-						</div>
-					{/if}
-
-					<p class="text-[11px] text-muted text-center">
-						Vous pourrez compléter ou modifier ces connexions à tout moment dans l'onglet <strong>Paramètres</strong>.
-					</p>
-
-					<div class="pt-3 border-t border-app-border">
-						<Button variant="cisco" class="w-full" onclick={finishOnboarding}>
-							Accéder à mon tableau de bord
-							<ArrowRight class="w-4 h-4 ml-1" />
-						</Button>
-					</div>
+					<Button variant="cisco" class="w-full" onclick={finishOnboarding}>
+						Accéder à mon tableau de bord
+						<ArrowRight class="w-4 h-4 ml-1" />
+					</Button>
 				</div>
 			{/if}
 		</div>

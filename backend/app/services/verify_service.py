@@ -4,6 +4,7 @@ import requests
 from typing import Dict, Any, Optional
 from scodoc_api import ScoDoc, ScoDocAuthError, ScoDocConnectionError
 from .url_guard import validate_service_url, safe_get
+from .moodle_url import find_moodle_base
 
 logger = logging.getLogger(__name__)
 
@@ -100,54 +101,33 @@ def verify_moodle(url: str, username: Optional[str] = None, password: Optional[s
     if not token and (not username or not password):
         return {"success": False, "message": "Veuillez renseigner un identifiant et mot de passe, ou un jeton d'accès Moodle."}
 
+    effective_url = find_moodle_base(url)
+    if not effective_url:
+        return {
+            "success": False,
+            "message": "Aucun Moodle trouvé à cette adresse. Indiquez l'adresse de votre Moodle (celle de sa page d'accueil, par exemple https://moodle.votre-iut.fr ou https://moodle.votre-iut.fr/moodle)."
+        }
+
     effective_token = token
-    effective_url = url
-    candidate_urls = [url]
-    if not url.endswith("/moodle"):
-        candidate_urls.append(f"{url}/moodle")
-
     if not effective_token:
-        found_token = None
-        last_error = None
+        try:
+            resp = requests.post(
+                f"{effective_url}/login/token.php",
+                data={"username": username, "password": password, "service": "moodle_mobile_app"},
+                timeout=12
+            )
+            data = resp.json()
+        except Exception as e:
+            return {"success": False, "message": f"Échec de connexion Moodle : {e}"}
 
-        for cand in candidate_urls:
-            try:
-                resp = requests.post(
-                    f"{cand}/login/token.php",
-                    data={
-                        "username": username,
-                        "password": password,
-                        "service": "moodle_mobile_app"
-                    },
-                    timeout=12
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data.get("token"):
-                        found_token = data.get("token")
-                        effective_url = cand
-                        break
-                    elif data.get("errorcode") == "invalidlogin":
-                        return {
-                            "success": False,
-                            "message": "Identifiant ou mot de passe Moodle incorrect."
-                        }
-                    elif data.get("error"):
-                        last_error = data.get("error")
-            except Exception as e:
-                last_error = str(e)
-
-        if not found_token:
-            if last_error:
-                return {
-                    "success": False,
-                    "message": f"Échec de connexion Moodle : {last_error}"
-                }
+        if not data.get("token"):
+            if data.get("errorcode") == "invalidlogin":
+                return {"success": False, "message": "Identifiant ou mot de passe Moodle incorrect."}
             return {
                 "success": False,
-                "message": "Identifiant ou mot de passe Moodle incorrect (ou application mobile non activée sur ce Moodle)."
+                "message": data.get("error") or "Connexion impossible (l'accès par l'application mobile n'est peut-être pas activé sur ce Moodle)."
             }
-        effective_token = found_token
+        effective_token = data["token"]
 
     try:
         ws_url = f"{effective_url}/webservice/rest/server.php"
@@ -179,6 +159,7 @@ def verify_moodle(url: str, username: Optional[str] = None, password: Optional[s
             "message": f"Authentification Moodle réussie{f' ({student_name})' if student_name else ''}.",
             "student_name": student_name,
             "token": effective_token,
+            "url": effective_url,
             "details": {
                 "sitename": info.get("sitename"),
                 "username": info.get("username")
