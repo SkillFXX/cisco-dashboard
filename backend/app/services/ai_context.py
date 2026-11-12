@@ -99,14 +99,29 @@ def _timetable_section(data: Dict[str, Any], now: datetime.datetime, days: int) 
     events = [e for e in data.get("all_events", []) if start.isoformat() <= e["date"] < end.isoformat()]
     if not events:
         return f"EMPLOI DU TEMPS ({days} prochains jours): aucun cours."
-    lines = [f"EMPLOI DU TEMPS ({days} prochains jours):"]
+    now_iso = now.strftime("%Y-%m-%dT%H:%M")
+
+    def status(e: Dict[str, Any]) -> str:
+        if e["dt_end"][:16] <= now_iso:
+            return " (terminé)"
+        if e["dt_start"][:16] <= now_iso:
+            return " (EN COURS)"
+        return ""
+
+    current = next((e for e in events if status(e) == " (EN COURS)"), None)
+    upcoming = next((e for e in events if e["dt_start"][:16] > now_iso), None)
+    lines = [f"EMPLOI DU TEMPS ({days} prochains jours, heures de Paris, il est {now.strftime('%H:%M')}):"]
+    if current:
+        lines.append(f"Cours en ce moment: {current['title']} jusqu'à {current['end_time']}.")
+    if upcoming:
+        lines.append(f"PROCHAIN COURS: {_fmt_date(upcoming['date'])} {upcoming['start_time']} {upcoming['title']}.")
     last_date = None
     for e in events[:45]:
         if e["date"] != last_date:
             lines.append(f"{_fmt_date(e['date'])}:")
             last_date = e["date"]
         extra = " | ".join(x for x in (e.get("location"), e.get("teacher")) if x)
-        lines.append(f"  {e['start_time']}-{e['end_time']} {e['title']}" + (f" | {extra}" if extra else ""))
+        lines.append(f"  {e['start_time']}-{e['end_time']} {e['title']}" + (f" | {extra}" if extra else "") + status(e))
     return "\n".join(lines)
 
 
