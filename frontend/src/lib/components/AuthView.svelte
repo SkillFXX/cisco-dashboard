@@ -3,6 +3,7 @@
 	import Card from "./Card.svelte";
 	import Button from "./Button.svelte";
 	import Badge from "./Badge.svelte";
+	import OpenSourceFooter from "./OpenSourceFooter.svelte";
 	import { onMount } from "svelte";
 	import { api } from "$lib/api";
 	import { ArrowRight, Mail, Lock } from "lucide-svelte";
@@ -285,5 +286,6 @@
 				</form>
 			{/if}
 		</Card>
+		<div class="mt-6"><OpenSourceFooter /></div>
 	</div>
 </div>

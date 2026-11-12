@@ -13,6 +13,7 @@
 	import AbsencesTab from "$lib/components/tabs/AbsencesTab.svelte";
 	import SettingsTab from "$lib/components/tabs/SettingsTab.svelte";
 	import AuthView from "$lib/components/AuthView.svelte";
+	import OpenSourceFooter from "$lib/components/OpenSourceFooter.svelte";
 	import OnboardingModal from "$lib/components/OnboardingModal.svelte";
 	import NotificationsTab from "$lib/components/tabs/NotificationsTab.svelte";
 	import AdminTab from "$lib/components/tabs/AdminTab.svelte";
@@ -136,6 +137,7 @@
 							<div class="tab-pane" class:hidden={activeTab !== "admin"}><AdminTab /></div>
 						{/if}
 					{/key}
+					<div class="mt-8"><OpenSourceFooter /></div>
 				</main>
 			</div>
 		</div>
