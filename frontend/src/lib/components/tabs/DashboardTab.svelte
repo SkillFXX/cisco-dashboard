@@ -4,6 +4,7 @@
 	import { formatGrade, formatDateFr, toLocalIsoDate, getMondayOfDate, getCourseColorStyle } from "$lib/utils";
 	import Card from "../Card.svelte";
 	import DueLabel from "../DueLabel.svelte";
+	import SeeAllLink from "../SeeAllLink.svelte";
 	import Skeleton from "../Skeleton.svelte";
 	import CourseDetailModal from "../CourseDetailModal.svelte";
 	import AverageCard from "../AverageCard.svelte";
@@ -16,7 +17,6 @@
 		Clock,
 		Calendar,
 		RefreshCw,
-		ArrowUpRight,
 		MapPin,
 		User as UserIcon,
 		AlertCircle
@@ -391,12 +391,7 @@
 					<h2 class="text-sm font-bold text-fg">Cette semaine</h2>
 				</div>
 				{#if onNavigate}
-					<button
-						onclick={() => onNavigate("timetable")}
-						class="text-xs text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-					>
-						Voir tout <ArrowUpRight class="w-3 h-3" />
-					</button>
+					<SeeAllLink onclick={() => onNavigate("timetable")} />
 				{/if}
 			</div>
 
@@ -495,12 +490,7 @@
 				<div class="flex items-center justify-between mb-3">
 					<h2 class="text-sm font-bold text-fg">Devoirs à venir</h2>
 					{#if onNavigate}
-						<button
-							onclick={() => onNavigate("tasks")}
-							class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors cursor-pointer"
-						>
-							Voir tout
-						</button>
+						<SeeAllLink onclick={() => onNavigate("tasks")} />
 					{/if}
 				</div>
 
@@ -575,12 +565,7 @@
 		<div class="flex items-center justify-between">
 			<h2 class="text-sm font-bold text-fg">Dernières notes</h2>
 			{#if onNavigate}
-				<button
-					onclick={() => onNavigate("grades")}
-					class="text-xs text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-				>
-					Toutes les notes <ArrowUpRight class="w-3 h-3" />
-				</button>
+				<SeeAllLink onclick={() => onNavigate("grades")} />
 			{/if}
 		</div>
 		<GradesTable rows={recentGrades()} onSelect={onNavigate ? () => onNavigate("grades") : undefined} emptyText="Aucune note récente." />
