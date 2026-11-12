@@ -1,7 +1,9 @@
-"""Construit un contexte texte COMPACT sur l'etudiant pour l'assistant IA.
+"""Donnees de l'etudiant pour l'assistant IA, en format COMPACT (peu de tokens, quota gratuit).
 
-Objectif : peu de tokens (quota gratuit). On ne joint que les rubriques utiles a la question,
-dans un format dense, a partir des donnees deja en cache (aucun appel externe supplementaire).
+- build_base_context : petit socle toujours envoye (heure, prochains cours, devoirs, moyenne).
+- READ_TOOLS / run_read_tool : le modele va chercher lui-meme le detail dont il a besoin (notes, absences,
+  emploi du temps plus lointain, documents Moodle), sans detection de mots-cles.
+- build_full_context : tout en un seul bloc, pour les modeles qui ne gerent pas les outils.
 """
 import datetime
 import re
@@ -21,26 +23,9 @@ PARIS = ZoneInfo("Europe/Paris")
 DAYS_FR = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"]
 DAYS_LONG = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 
-TOPIC_KEYWORDS: Dict[str, List[str]] = {
-    "grades": ["note", "moyenne", " ue", "ue1", "ue2", "ue3", "rang", "classement", "ects", "resultat", "controle", "evaluation",
-               "matiere", "ressource", "sae", "module", "point", "valide", "bulletin", "promo", "coef", "r10", "r11", "ds "],
-    "absences": ["absen", "retard", "justif", "assidu", "manque"],
-    "timetable": ["cours", "emploi", "planning", "salle", "prof", "enseignant", "demain", "aujourd", "semaine", "horaire", "heure",
-                  "lundi", "mardi", "mercredi", "jeudi", "vendredi", "prochain", "libre", "edt", "amphi", "groupe", "finis", "commence"],
-    "resources": ["document", "support", "polycop", "pdf", "fichier", "telecharg", "diapo", "slides", "chapitre", "corrige", "annale",
-                  "contenu du cours", "ressources moodle", "cours moodle"],
-    "tasks": ["devoir", "rendre", "rendu", "deadline", "echeance", "dm ", "faire", "travail", "moodle", "reviser", "projet", "tp ", "ds ", "date limite"],
-}
-
-
 def _norm(text: str) -> str:
     text = unicodedata.normalize("NFKD", text.lower())
     return "".join(c for c in text if not unicodedata.combining(c))
-
-
-def detect_topics(texts: List[str]) -> Set[str]:
-    blob = " " + _norm(" ".join(texts)) + " "
-    return {topic for topic, words in TOPIC_KEYWORDS.items() if any(w in blob for w in words)}
 
 
 def _num(v: Any) -> str:
@@ -157,24 +142,21 @@ def _tasks_section(db: Session, user: User, moodle: Dict[str, Any], timetable: D
 
 
 RESOURCE_STOPWORDS = {
-    "cours", "document", "documents", "support", "supports", "fichier", "fichiers", "pdf", "moodle", "ressource", "ressources",
-    "les", "des", "pour", "dans", "quel", "quels", "quelle", "quelles", "est", "sont", "mes", "mon", "ton", "sur", "avec", "une",
-    "que", "qui", "pas", "plus", "tous", "tout", "toutes", "telecharger", "disponible", "disponibles", "trouve", "trouver",
-    "donne", "peux", "peut", "liste", "lister", "existe", "il", "elle", "the", "chapitre", "annale", "corrige",
+    "cours", "moodle", "les", "des", "pour", "dans", "sur", "avec", "une", "the", "and", "course", "module", "ressource", "ressources",
 }
 MAX_RESOURCE_ENTRIES = 40
 
 
-def _resources_section(user: User, question_texts: List[str]) -> str:
-    """Liste (noms seulement) des documents Moodle du cours cite dans la question. Le contenu des fichiers n'est jamais lu."""
+def _resources_section(user: User, course_query: str) -> str:
+    """Noms des documents Moodle du cours demande (le contenu des fichiers n'est jamais lu)."""
     listing = list_courses(user)
     if not listing.get("configured"):
-        return "RESSOURCES MOODLE: Moodle non configuré."
+        return "Moodle n'est pas configuré."
     courses = listing.get("courses", [])
     if not courses:
-        return "RESSOURCES MOODLE: aucun cours trouvé."
+        return "Aucun cours trouvé sur Moodle."
 
-    words = {w for w in re.findall(r"[a-z0-9]{3,}", _norm(" ".join(question_texts))) if w not in RESOURCE_STOPWORDS}
+    words = {w for w in re.findall(r"[a-z0-9]{2,}", _norm(course_query)) if w not in RESOURCE_STOPWORDS}
     scored = []
     for c in courses:
         name = _norm(f"{c['fullname']} {c['shortname']}")
@@ -184,13 +166,13 @@ def _resources_section(user: User, question_texts: List[str]) -> str:
     scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
 
     if not scored:
-        names = "; ".join(c["fullname"] for c in courses[:15] if not c.get("ended"))
-        return f"RESSOURCES MOODLE (cours disponibles, précise lequel pour lister ses documents): {names}"
+        names = "; ".join(c["fullname"] for c in courses[:20] if not c.get("ended"))
+        return f"Aucun cours ne correspond. Cours disponibles: {names}"
 
-    lines = ["RESSOURCES MOODLE (noms des documents, contenu non lisible):"]
+    lines = []
     for _, _, c in scored[:2]:
         data = get_course(user, c["id"])
-        lines.append(f"COURS {c['fullname']}:")
+        lines.append(f"COURS {c['fullname']} (noms des documents, contenu non lisible; téléchargement dans l'onglet Ressources):")
         if data.get("error") and not data.get("sections"):
             lines.append(f"- indisponible ({data['error']})")
             continue
@@ -199,8 +181,7 @@ def _resources_section(user: User, question_texts: List[str]) -> str:
             items = []
             for m in sec["modules"]:
                 if m["files"]:
-                    names = [f["name"] for f in m["files"]] if len(m["files"]) > 1 else [m["name"]]
-                    items.extend(names)
+                    items.extend([f["name"] for f in m["files"]] if len(m["files"]) > 1 else [m["name"]])
                 elif m.get("link"):
                     items.append(f"{m['name']} (lien)")
                 elif m["modname"] in ("assign", "quiz"):
@@ -214,63 +195,109 @@ def _resources_section(user: User, question_texts: List[str]) -> str:
             count += len(shown)
             extra = f" (+{len(items) - len(shown)})" if len(items) > len(shown) else ""
             lines.append(f"- {sec['name'][:50]}: " + "; ".join(shown) + extra)
-    lines.append("Les documents se téléchargent dans l'onglet Ressources.")
     return "\n".join(lines)
 
 
-def build_context(db: Session, user: User, question_texts: List[str], with_subjects: bool = False) -> str:
-    now = datetime.datetime.now(PARIS).replace(tzinfo=None)
-    creds = user.credentials
-    topics = detect_topics(question_texts)
-    broad = not topics and not with_subjects
-    wanted = set(TOPIC_KEYWORDS) - {"resources"} if broad else (topics or {"tasks"})
-    if with_subjects:
-        wanted = wanted | {"subjects"}
+# --- Chargement des donnees (toutes deja en cache, aucun appel externe supplementaire) ---
 
-    header = (
-        f"Maintenant: {DAYS_LONG[now.weekday()]} {now.strftime('%d/%m/%Y %H:%M')} (Paris). "
-        f"Étudiant: {user.full_name or 'inconnu'}, BUT."
-    )
-    parts = [header]
-
-    scodoc: Dict[str, Any] = {}
-    if wanted & {"grades", "absences", "subjects"} and creds and creds.scodoc_username and creds.scodoc_password:
-        scodoc = fetch_scodoc_data(user_id=user.id, url=creds.scodoc_url, username=creds.scodoc_username, password=creds.scodoc_password)
-    elif wanted & {"grades", "absences", "subjects"}:
-        scodoc = {"configured": False}
-
-    timetable: Dict[str, Any] = {}
-    if wanted & {"timetable", "tasks"} and creds and creds.ical_url:
-        timetable = fetch_timetable(ical_url=creds.ical_url)
-    elif wanted & {"timetable", "tasks"}:
-        timetable = {"configured": False}
-
-    moodle: Dict[str, Any] = {}
-    if "tasks" in wanted and creds and creds.moodle_url and (creds.moodle_token or (creds.moodle_username and creds.moodle_password)):
-        moodle = fetch_moodle_data(url=creds.moodle_url, username=creds.moodle_username, password=creds.moodle_password, token=creds.moodle_token)
-
-    if with_subjects:
-        subjects = [f"{m.get('code')} {m.get('titre')}" for m in scodoc.get("matieres", []) if m.get("code")]
-        if subjects:
-            parts.append("MATIÈRES: " + "; ".join(subjects))
-    if "grades" in wanted:
-        parts.append(_grades_section(scodoc, compact=broad))
-    if "absences" in wanted:
-        parts.append(_absences_section(scodoc))
-    if "timetable" in wanted:
-        blob = _norm(" ".join(question_texts))
-        parts.append(_timetable_section(timetable, now, 14 if "prochaine" in blob or "quinzaine" in blob else (4 if broad else 7)))
-    if "tasks" in wanted:
-        parts.append(_tasks_section(db, user, moodle, timetable, now))
-    if "resources" in wanted:
-        parts.append(_resources_section(user, question_texts))
-    return "\n".join(parts)
+def _has_moodle(creds) -> bool:
+    return bool(creds and creds.moodle_url and (creds.moodle_token or (creds.moodle_username and creds.moodle_password)))
 
 
-ACTION_WORDS = ["ajout", "rajout", "cree", "creer", "rappel", "planifi", "programme", "enregistr", "inscri", "mets", "mettre", "met "]
+def _scodoc(user: User) -> Dict[str, Any]:
+    c = user.credentials
+    if c and c.scodoc_username and c.scodoc_password:
+        return fetch_scodoc_data(user_id=user.id, url=c.scodoc_url, username=c.scodoc_username, password=c.scodoc_password)
+    return {"configured": False}
 
 
-def wants_action(texts: List[str]) -> bool:
-    """Vrai si la question demande d'ajouter quelque chose (les outils ne sont alors déclarés qu'à ce moment, pour économiser des tokens)."""
-    blob = " " + _norm(" ".join(texts)) + " "
-    return any(w in blob for w in ACTION_WORDS)
+def _timetable(user: User) -> Dict[str, Any]:
+    c = user.credentials
+    return fetch_timetable(ical_url=c.ical_url) if c and c.ical_url else {"configured": False}
+
+
+def _moodle(user: User) -> Dict[str, Any]:
+    c = user.credentials
+    if _has_moodle(c):
+        return fetch_moodle_data(url=c.moodle_url, username=c.moodle_username, password=c.moodle_password, token=c.moodle_token)
+    return {}
+
+
+def _now() -> datetime.datetime:
+    return datetime.datetime.now(PARIS).replace(tzinfo=None)
+
+
+def _header(user: User, now: datetime.datetime) -> str:
+    return f"Maintenant: {DAYS_LONG[now.weekday()]} {now.strftime('%d/%m/%Y %H:%M')} (Paris). Étudiant: {user.full_name or 'inconnu'}, BUT."
+
+
+def _grades_summary(scodoc: Dict[str, Any]) -> str:
+    if not scodoc.get("configured"):
+        return ""
+    st = scodoc.get("stats", {})
+    return f"NOTES: moyenne générale {_num(st.get('moyenne_generale'))}/20, rang {st.get('rang') or '?'}/{st.get('total_promo') or '?'}."
+
+
+def _subjects_line(scodoc: Dict[str, Any]) -> str:
+    subjects = [f"{m.get('code')} {m.get('titre')}" for m in scodoc.get("matieres", []) if m.get("code")]
+    return ("MATIÈRES: " + "; ".join(subjects)) if subjects else ""
+
+
+def build_base_context(db: Session, user: User) -> str:
+    """Socle toujours envoye : peu de tokens, le reste passe par les outils."""
+    now = _now()
+    scodoc = _scodoc(user)
+    parts = [
+        _header(user, now),
+        _subjects_line(scodoc),
+        _grades_summary(scodoc),
+        _timetable_section(_timetable(user), now, 2),
+        _tasks_section(db, user, _moodle(user), _timetable(user), now),
+    ]
+    return "\n".join(p for p in parts if p)
+
+
+def build_full_context(db: Session, user: User) -> str:
+    """Tout en un seul bloc, pour les modeles sans appel d'outils (plus de tokens)."""
+    now = _now()
+    scodoc, timetable, moodle = _scodoc(user), _timetable(user), _moodle(user)
+    parts = [
+        _header(user, now),
+        _subjects_line(scodoc),
+        _grades_section(scodoc, compact=False),
+        _absences_section(scodoc),
+        _timetable_section(timetable, now, 7),
+        _tasks_section(db, user, moodle, timetable, now),
+    ]
+    if _has_moodle(user.credentials):
+        courses = [c["fullname"] for c in list_courses(user).get("courses", []) if not c.get("ended")]
+        if courses:
+            parts.append("COURS MOODLE (liste des documents indisponible): " + "; ".join(courses[:20]))
+    return "\n".join(p for p in parts if p)
+
+
+# --- Execution des outils de lecture (declares dans gemini.py) ---
+
+MAX_TOOL_RESULT_CHARS = 5000
+
+
+def run_read_tool(name: str, args: Dict[str, Any], db: Session, user: User) -> str:
+    args = args or {}
+    try:
+        if name == "get_grades":
+            out = _grades_section(_scodoc(user), compact=False)
+        elif name == "get_absences":
+            out = _absences_section(_scodoc(user))
+        elif name == "get_timetable":
+            try:
+                days = max(1, min(21, int(args.get("days") or 7)))
+            except (TypeError, ValueError):
+                days = 7
+            out = _timetable_section(_timetable(user), _now(), days)
+        elif name == "list_course_documents":
+            out = _resources_section(user, str(args.get("course") or ""))
+        else:
+            out = f"Outil inconnu: {name}"
+    except Exception as e:
+        out = f"Données indisponibles ({e.__class__.__name__})."
+    return out[:MAX_TOOL_RESULT_CHARS]

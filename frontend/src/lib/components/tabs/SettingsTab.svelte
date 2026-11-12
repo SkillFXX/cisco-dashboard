@@ -909,7 +909,7 @@
 					<div class="space-y-4 pt-4 border-t border-app-border">
 						<p class="text-[11px] leading-relaxed text-subtle">
 							Créez une clé gratuite dans <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-fg underline">Google AI Studio</a> puis collez-la ci-dessous. Une fois la clé vérifiée, une bulle de discussion apparaît en bas à droite.
-							L'assistant peut aussi ajouter un devoir quand vous le lui demandez. Seules les données utiles à la question (notes, absences, emploi du temps, devoirs) sont envoyées à Google ; une question consomme environ 300 à 700 tokens, ce qui reste dans le quota gratuit. La clé est chiffrée sur le serveur.
+							L'assistant peut aussi ajouter un devoir quand vous le lui demandez. À chaque question, un court résumé (prochains cours, devoirs, moyenne) est envoyé à Google ; le détail (notes, absences, documents Moodle) ne l'est que si l'assistant en a besoin pour répondre. La clé est chiffrée sur le serveur.
 						</p>
 
 						{#if aiFeedback}

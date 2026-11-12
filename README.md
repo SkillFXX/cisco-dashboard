@@ -13,7 +13,7 @@ Panel étudiant auto-hébergeable pour les étudiants en **BUT**, quel que soit 
 - **Moodle** : cours inscrits et devoirs à rendre.
 - **Ressources** : les cours Moodle et leurs documents directement dans l'application (sections, dossiers, liens), avec recherche, aperçu des PDF et images, et téléchargement sans passer par le site.
 - **Notifications** : nouvelle note, rappel avant un devoir, récapitulatif quotidien, emploi du temps de la semaine suivante en image ; par email ou webhook Discord.
-- **Assistant IA (Gemini)** : chaque utilisateur renseigne sa propre clé d'API dans les Paramètres, puis pose ses questions (cours, devoirs, notes, absences, liste des documents Moodle d'un cours) et peut lui demander d'ajouter un devoir. Le contexte envoyé est réduit aux rubriques utiles à la question, avec limites de débit pour rester dans le quota gratuit.
+- **Assistant IA (Gemini)** : chaque utilisateur renseigne sa propre clé d'API dans les Paramètres, puis pose ses questions (cours, devoirs, notes, absences, liste des documents Moodle d'un cours) et peut lui demander d'ajouter un devoir. Un court résumé est envoyé à chaque question ; l'assistant va chercher lui-même le détail dont il a besoin (notes, absences, emploi du temps, documents) via des outils, sans détection de mots-clés. Les modèles sans appel d'outils reçoivent un contexte complet à la place. Des limites de débit protègent le quota gratuit.
 - **Thème** clair, sombre ou automatique, interface responsive et installable (PWA).
 - **Administration** : serveur SMTP, gestion des utilisateurs, mot de passe oublié.
 - **Préchargement en arrière-plan** : les données de chaque utilisateur sont rafraîchies toutes les 5 minutes pour un affichage instantané.

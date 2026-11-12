@@ -10,7 +10,7 @@ from ..models import User, AiSettings, PersonalTask
 from ..auth import get_current_user
 from ..ratelimit import ai_minute_limiter, ai_day_limiter
 from ..services import gemini
-from ..services.ai_context import build_context, wants_action, DAYS_LONG
+from ..services.ai_context import build_base_context, build_full_context, run_read_tool, DAYS_LONG
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/ai", tags=["ai"])
@@ -135,13 +135,14 @@ def chat(payload: ChatIn, current_user: User = Depends(get_current_user), db: Se
     ai_day_limiter.record(f"chat:{current_user.id}")
 
     messages = [{"role": m.role, "content": m.content} for m in payload.messages]
-    # Rubriques choisies d'après la question et la précédente (pour les relances « et demain ? »)
-    user_texts = [m["content"] for m in messages if m["role"] == "user"][-2:]
-    allow_actions = wants_action(user_texts)
-    context = build_context(db, current_user, user_texts, with_subjects=allow_actions)
+    context = build_base_context(db, current_user)
 
     try:
-        reply, usage, calls = gemini.chat(row.api_key, row.model, context, messages, allow_actions)
+        reply, usage, calls = gemini.chat(
+            row.api_key, row.model, context, messages,
+            run_tool=lambda name, args: run_read_tool(name, args, db, current_user),
+            full_context=lambda: build_full_context(db, current_user),
+        )
     except gemini.GeminiError as e:
         if e.invalid_key:
             row.verified = False
@@ -151,7 +152,7 @@ def chat(payload: ChatIn, current_user: User = Depends(get_current_user), db: Se
 
     created = 0
     notes: List[str] = []
-    for call in calls[:MAX_ACTIONS] if allow_actions else []:
+    for call in calls[:MAX_ACTIONS]:
         if call.get("name") != "add_homework":
             continue
         try:
