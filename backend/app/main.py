@@ -7,7 +7,7 @@ from .database import engine, Base, init_db
 from .models import User, UserCredentials, PersonalTask
 from .services.notifier import start_scheduler, stop_scheduler
 from .services.prefetch import start_prefetch, stop_prefetch
-from .routers import auth, settings as settings_router, scodoc, moodle, timetable, tasks, dashboard, admin, notifications
+from .routers import auth, settings as settings_router, scodoc, moodle, timetable, tasks, dashboard, admin, notifications, ai
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -93,6 +93,7 @@ app.include_router(timetable.router)
 app.include_router(tasks.router)
 app.include_router(admin.router)
 app.include_router(notifications.router)
+app.include_router(ai.router)
 
 @app.get("/")
 def root():

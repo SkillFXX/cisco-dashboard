@@ -145,6 +145,17 @@ class NotificationLog(Base):
     sent_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
+class AiSettings(Base):
+    """Cle d'API Gemini d'un utilisateur (chiffree) et etat de la derniere verification."""
+    __tablename__ = "ai_settings"
+
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    api_key = Column(EncryptedString(512), nullable=True)
+    model = Column(String(80), nullable=False, default="gemini-2.5-flash-lite")
+    verified = Column(Boolean, default=False)
+    last_error = Column(String(300), nullable=True)
+
+
 class GradeSnapshot(Base):
     """Un point par jour de la moyenne generale et du rang, pour les courbes d'evolution."""
     __tablename__ = "grade_snapshots"
