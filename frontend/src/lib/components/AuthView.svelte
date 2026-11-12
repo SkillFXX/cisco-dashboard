@@ -4,6 +4,7 @@
 	import Button from "./Button.svelte";
 	import Badge from "./Badge.svelte";
 	import OpenSourceFooter from "./OpenSourceFooter.svelte";
+	import LoginPreview from "./LoginPreview.svelte";
 	import { onMount } from "svelte";
 	import { api } from "$lib/api";
 	import { ArrowRight, Mail, Lock } from "lucide-svelte";
@@ -101,7 +102,7 @@
 </script>
 
 <div class="min-h-screen bg-app-bg text-fg font-sans lg:grid lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]">
-<div class="flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-12">
+<div class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-12">
 	<div class="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
 		<div class="inline-flex items-center justify-center">
 			<img src="/icon.png" alt="Cisco" class="w-16 h-16 rounded-xl object-contain shadow-2xl" />
@@ -291,8 +292,8 @@
 	</div>
 </div>
 
-<!-- Aperçu de l'application (grand écran uniquement) -->
-<aside class="hidden lg:flex items-center overflow-hidden border-l border-app-border bg-app-surface" aria-hidden="true">
-	<img src="/preview.webp" alt="" width="800" height="500" class="w-[820px] max-w-none ml-12 rounded-xl border border-app-border shadow-2xl" />
+<!-- Aperçu de l'application (grand écran uniquement), fondu vers le formulaire -->
+<aside class="hidden lg:block relative overflow-hidden min-h-screen" aria-hidden="true">
+	<LoginPreview />
 </aside>
 </div>
