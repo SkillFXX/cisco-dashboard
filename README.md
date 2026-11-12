@@ -1,6 +1,14 @@
-# Cisco Dashboard
+<p align="center">
+  <img src="frontend/static/icon.png" alt="Logo Cisco Dashboard" width="96" height="96">
+</p>
 
-Panel étudiant auto-hébergeable pour les étudiants en **BUT**, quel que soit leur IUT ou leur spécialité : notes, absences, emploi du temps, devoirs, notifications et assistant IA, dans une seule interface.
+<h1 align="center">Cisco Dashboard</h1>
+
+<p align="center">Panel étudiant auto-hébergeable pour les étudiants en <strong>BUT</strong>, quel que soit leur IUT ou leur spécialité : notes, absences, emploi du temps, devoirs, notifications et assistant IA, dans une seule interface.</p>
+
+<p align="center">
+  <img src="frontend/static/preview.webp" alt="Aperçu du tableau de bord" width="800">
+</p>
 
 > Projet non officiel, sans lien avec les universités ni avec les éditeurs de ScoDoc, Moodle ou des logiciels d'emploi du temps. Il stocke (chiffrés) des identifiants d'ENT : n'hébergez que pour des personnes qui vous font confiance, et à vos risques.
 
